@@ -1,0 +1,360 @@
+type User {
+  _id: ID!
+  user_name: String
+  password: String
+  is_active: Boolean
+}
+
+input UserInput {
+  user_name: String!
+  password: String!
+}
+
+input LoginInput {
+  user_name: String!
+  password: String!
+}
+
+type Brand {
+  _id: ID!
+  name: String
+  description: String
+  count_product: Int
+  is_active: Boolean
+}
+
+input BrandInput {
+  name: String!
+  description: String
+}
+
+input UpdateBrandInput {
+  name: String!
+  description: String!
+}
+
+type Category {
+  _id: ID!
+  name: String
+  description: String
+  count_product: Int
+  is_active: Boolean
+}
+
+input CategoryInput {
+  name: String!
+  description: String
+}
+
+input UpdateCategoryInput {
+  name: String!
+  description: String!
+}
+
+type Provider {
+  _id: ID!
+  code: String
+  name: String
+  address: String
+  phoneNumber: String
+}
+
+input ProviderInput {
+  name: String!
+  address: String!
+  phoneNumber: String
+}
+
+input UpdateProviderInput {
+  name: String!
+  address: String!
+  phoneNumber: String!
+}
+
+enum StockType {
+  serializado
+  individual
+}
+
+type Product {
+  _id: ID!
+  code: String
+  name: String
+  description: String
+  sale_price: Float
+  stock: Int
+  last_cost_price: Float
+  brand: Brand
+  category: Category
+  status: String
+  stock_type: StockType
+}
+
+input ProductInput {
+  code: String
+  name: String!
+  description: String
+  sale_price: Float
+  category: String!
+  brand: String!
+  stock_type: StockType!
+}
+
+input UpdateProductInput {
+  name: String!
+  description: String!
+  sale_price: Float!
+  category: String!
+  brand: String!
+}
+
+type PurchaseOrder {
+  _id: ID!
+  code: String
+  date: String
+  provider: Provider
+  total: Float
+  status: String
+}
+
+input PurchaseOrderInput {
+  date: String!
+  provider: String!
+}
+
+type PurchaseOrderDetail {
+  _id: ID!
+  purchase_order: PurchaseOrder
+  product: Product
+  purchase_price: Float
+  quantity: Int
+  serials: Int
+  subtotal: Float
+}
+
+input PurchaseOrderDetailInput {
+  purchase_order: String!
+  purchase_price: Float!
+  product: String!
+  quantity: Int!
+}
+
+input UpdatePurchaseOrderDetailInput {
+  purchase_price: Float!
+  quantity: Int!
+}
+
+type ProductSerial {
+  _id: ID!
+  serial: String
+  product: Product
+  purchase_order_detail: PurchaseOrderDetail
+  sale_order_detail: SaleOrderDetail
+  status: String
+}
+
+input addSerialToPurchaseOrderDetailInput {
+  purchase_order_detail: String!
+  serial: String!
+}
+
+type DeleteResponse {
+  success: Boolean!
+}
+
+type Client {
+  _id: ID!
+  code: String
+  firstName: String
+  lastName: String
+  phoneNumber: String
+}
+
+input ClientInput {
+  firstName: String!
+  lastName: String!
+  phoneNumber: String
+}
+
+input UpdateClientInput {
+  firstName: String!
+  lastName: String!
+  phoneNumber: String!
+}
+
+type SaleOrder {
+  _id: ID!
+  code: String
+  client: Client
+  date: String
+  total: Float
+  status: String
+}
+
+input SaleOrderInput {
+  date: String!
+  client: String!
+}
+
+type SaleOrderDetail {
+  _id: ID!
+  sale_order: SaleOrder
+  product: Product
+  sale_price: Float
+  quantity: Int
+  serials: Int
+  subtotal: Float
+}
+
+type SaleOrderByClient {
+  saleOrder: [SaleOrder]
+  total: String!
+}
+
+type PurchaseOrderDetailToPDF {
+  purchaseOrderDetail: PurchaseOrderDetail
+  productSerial: [ProductSerial]
+}
+
+type PurchaseOrderToPDF {
+  purchaseOrder: PurchaseOrder
+  purchaseOrderDetail: [PurchaseOrderDetailToPDF]
+}
+
+type SaleOrderDetailToPDF {
+  saleOrderDetail: SaleOrderDetail
+  productSerial: [ProductSerial]
+}
+
+type SaleOrderToPDF {
+  saleOrder: SaleOrder
+  saleOrderDetail: [SaleOrderDetailToPDF]
+}
+
+input SaleOrderDetailInput {
+  sale_order: String!
+  sale_price: Float!
+  product: String!
+  quantity: Int!
+}
+
+input UpdateSaleOrderDetailInput {
+  sale_price: Float!
+  quantity: Int!
+}
+
+input addSerialToSaleOrderDetailInput {
+  sale_order_detail: String!
+  serial: String!
+}
+
+type ReportSaleOrderByYear {
+  month: String!
+  total: Float!
+}
+
+type ReportPurchaseOrderByYear {
+  month: String!
+  total: Float!
+}
+
+type Query {
+  listBrand: [Brand]
+
+  listCategory: [Category]
+
+  listProduct: [Product]
+  listProductSerialByProduct(productId: String!): [ProductSerial]
+
+  listClient: [Client]
+
+  listProvider: [Provider]
+
+  listSaleOrder: [SaleOrder]
+  listSaleOrderDetail(saleOrderId: String!): [SaleOrderDetail]
+  listProductSerialBySaleOrder(saleOrderDetailId: String!): [ProductSerial]
+  listSaleOrderByClient(clientId: String!): SaleOrderByClient
+  findSaleOrder(saleOrderId: String!): SaleOrder
+  findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
+  reportSaleOrderByYear: [ReportSaleOrderByYear]
+  reportEarningsByYear: [ReportSaleOrderByYear]
+
+  listPurchaseOrder: [PurchaseOrder]
+  listPurchaseOrderDetail(purchaseOrderId: String!): [PurchaseOrderDetail]
+  listProductSerialByPurchaseOrder(
+    purchaseOrderDetailId: String!
+  ): [ProductSerial]
+  findPurchaseOrder(purchaseOrderId: String!): PurchaseOrder
+  findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
+  reportPurchaseOrderByYear: [ReportPurchaseOrderByYear]
+
+  generateCode(type: String!): String
+}
+
+type Mutation {
+  createUser(userInput: UserInput!): User
+  login(loginInput: LoginInput!): String
+
+  createBrand(brandInput: BrandInput!): Brand
+  updateBrand(brandId: String!, updateBrandInput: UpdateBrandInput!): Brand
+  deleteBrand(brandId: String!): DeleteResponse
+
+  createCategory(categoryInput: CategoryInput!): Category
+  updateCategory(
+    categoryId: String!
+    updateCategoryInput: UpdateCategoryInput!
+  ): Category
+  deleteCategory(categoryId: String!): DeleteResponse
+
+  createProduct(productInput: ProductInput!): Product
+  updateProduct(
+    productId: String!
+    updateProductInput: UpdateProductInput!
+  ): Product
+  deleteProduct(productId: String!): DeleteResponse
+
+  createClient(clientInput: ClientInput!): Client
+  updateClient(clientId: String!, updateClientInput: UpdateClientInput!): Client
+  deleteClient(clientId: String!): DeleteResponse
+
+  createProvider(providerInput: ProviderInput!): Provider
+  updateProvider(
+    providerId: String!
+    updateProviderInput: UpdateProviderInput!
+  ): Provider
+  deleteProvider(providerId: String!): DeleteResponse
+
+  createPurchaseOrder(purchaseOrderInput: PurchaseOrderInput!): PurchaseOrder
+  createPurchaseOrderDetail(
+    purchaseOrderDetailInput: PurchaseOrderDetailInput!
+  ): PurchaseOrderDetail
+  addSerialToPurchaseOrderDetail(
+    addSerialToPurchaseOrderDetailInput: addSerialToPurchaseOrderDetailInput!
+  ): ProductSerial
+  deleteSerialToPurchaseOrderDetail(productSerialId: String!): DeleteResponse
+  deleteProductToPurchaseOrderDetail(
+    purchaseOrderDetailId: String!
+  ): DeleteResponse
+  deletePurchaseOrder(purchaseOrderId: String!): DeleteResponse
+  approvePurchaseOrder(purchaseOrderId: String!): PurchaseOrder
+  updatePurchaseOrderDetail(
+    purchaseOrderDetailId: String!
+    updatePurchaseOrderDetailInput: UpdatePurchaseOrderDetailInput!
+  ): PurchaseOrderDetail
+
+  createSaleOrder(saleOrderInput: SaleOrderInput!): SaleOrder
+  createSaleOrderDetail(
+    saleOrderDetailInput: SaleOrderDetailInput!
+  ): SaleOrderDetail
+  addSerialToSaleOrderDetail(
+    addSerialToSaleOrderDetailInput: addSerialToSaleOrderDetailInput!
+  ): ProductSerial
+  deleteSerialToSaleOrderDetail(productSerialId: String!): DeleteResponse
+  deleteProductToSaleOrderDetail(saleOrderDetailId: String!): DeleteResponse
+  deleteSaleOrder(saleOrderId: String!): DeleteResponse
+  approveSaleOrder(saleOrderId: String!): SaleOrder
+  updateSaleOrderDetail(
+    saleOrderDetailId: String!
+    updateSaleOrderDetailInput: UpdateSaleOrderDetailInput!
+  ): SaleOrderDetail
+}
