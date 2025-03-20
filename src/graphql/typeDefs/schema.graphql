@@ -1,13 +1,26 @@
+type Role {
+  _id: ID!
+  name: String
+  description: String
+}
+
+input RoleInput {
+  name: String!
+  description: String
+}
+
 type User {
   _id: ID!
   user_name: String
   password: String
+  role: Role
   is_active: Boolean
 }
 
 input UserInput {
   user_name: String!
   password: String!
+  role: String!
 }
 
 input LoginInput {
@@ -81,6 +94,7 @@ type Product {
   code: String
   name: String
   description: String
+  image: String
   sale_price: Float
   stock: Int
   last_cost_price: Float
@@ -94,6 +108,7 @@ input ProductInput {
   code: String
   name: String!
   description: String
+  image: String
   sale_price: Float
   category: String!
   brand: String!
@@ -258,6 +273,16 @@ type ReportPurchaseOrderByYear {
   total: Float!
 }
 
+type GeneralData {
+  total_products_number: Int!
+  total_products_out: Int!
+  stock: Int!
+  best_product: Product
+  best_product_sales_number: Int!
+  total_sales_number: Int!
+  total_sales_value: Float!
+}
+
 type Query {
   listBrand: [Brand]
 
@@ -265,6 +290,7 @@ type Query {
 
   listProduct: [Product]
   listProductSerialByProduct(productId: String!): [ProductSerial]
+  searchProduct(serial: String!): Product
 
   listClient: [Client]
 
@@ -278,6 +304,7 @@ type Query {
   findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
   reportSaleOrderByYear: [ReportSaleOrderByYear]
   reportEarningsByYear: [ReportSaleOrderByYear]
+  generalData: GeneralData
 
   listPurchaseOrder: [PurchaseOrder]
   listPurchaseOrderDetail(purchaseOrderId: String!): [PurchaseOrderDetail]
@@ -292,6 +319,8 @@ type Query {
 }
 
 type Mutation {
+  createRole(roleInput: RoleInput!): Role
+
   createUser(userInput: UserInput!): User
   login(loginInput: LoginInput!): String
 

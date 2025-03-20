@@ -15,6 +15,11 @@ import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { PurchaseOrderDetail } from "../purchase_order/purchase_order_detail.model";
 import { Product } from "./product.model";
 import { ProductSerial } from "./product_serial.model";
+import { IGeneralData } from "../../interfaces/home.interface";
+import { productStatus } from "../../utils/enums/productStatus.enum";
+import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
+import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
+import { SaleOrder } from "../sale_order/sale_order.model";
 
 export const findAll = async (): Promise<IProduct[]> => {
   const listProduct = await Product.find()
@@ -75,6 +80,133 @@ export const listProductSerialByProduct = async (
   return listSerial;
 };
 
+export const searchProduct = async (serial: string): Promise<IProduct> => {
+  const foundProductSerial: IProductSerial = await ProductSerial.findOne({
+    serial: serial,
+  });
+
+  if (!foundProductSerial) {
+    throw new Error("No existe el producto con este serial");
+  }
+
+  const product: IProduct = await Product.findById(foundProductSerial.product)
+    .populate("brand")
+    .populate("category")
+    .lean<IProduct>();
+
+  return product;
+};
+
+export const generalData = async (): Promise<IGeneralData> => {
+  const total_products_number: number = await Product.countDocuments({
+    status: productStatus.DISPONIBLE,
+  });
+
+  const total_products_out: number = await Product.countDocuments({
+    status: productStatus.SIN_STOCK,
+  });
+
+  const totalStock = await Product.aggregate([
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$stock" },
+      },
+    },
+  ]);
+
+  const stock: number = totalStock.length > 0 ? totalStock[0].total : 0;
+
+  const mostSoldProduct = await SaleOrderDetail.aggregate([
+    {
+      $lookup: {
+        from: "sale_orders",
+        localField: "sale_order",
+        foreignField: "_id",
+        as: "order",
+      },
+    },
+    {
+      $match: {
+        "order.status": saleOrderStatus.APROBADO,
+      },
+    },
+    {
+      $group: {
+        _id: "$product",
+        totalSold: { $sum: "$quantity" },
+      },
+    },
+    {
+      $sort: {
+        totalSold: -1,
+      },
+    },
+    {
+      $limit: 1,
+    },
+
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "productDetails",
+      },
+    },
+    {
+      $unwind: "$productDetails",
+    },
+    {
+      $project: {
+        _id: 0,
+        totalSold: 1,
+        product: "$productDetails",
+      },
+    },
+  ]);
+
+  const best_product =
+    mostSoldProduct.length > 0 ? mostSoldProduct[0].product : null;
+  const best_product_sales_number =
+    mostSoldProduct.length > 0 ? mostSoldProduct[0].totalSold : 0;
+
+  const total_sales_number: number = await SaleOrder.countDocuments({
+    status: saleOrderStatus.APROBADO,
+  });
+
+  const total_sales_value_aggregate = await SaleOrder.aggregate([
+    {
+      $match: {
+        status: saleOrderStatus.APROBADO,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$total" },
+      },
+    },
+  ]);
+
+  const total_sales_value: number =
+    total_sales_value_aggregate.length > 0
+      ? total_sales_value_aggregate[0].total
+      : 0;
+
+  const response: IGeneralData = {
+    best_product,
+    stock,
+    total_products_number,
+    total_products_out,
+    total_sales_number,
+    total_sales_value,
+    best_product_sales_number,
+  };
+
+  return response;
+};
+
 export const createProduct = async (createProductInput: ProductInput) => {
   const productNameValidation = await Product.findOne({
     name: createProductInput.name,
@@ -85,14 +217,18 @@ export const createProduct = async (createProductInput: ProductInput) => {
   }
 
   const customDataProduct: ProductInput = {
-    code: await generate(codeType.PRODUCT),
+    code: createProductInput.code
+      ? createProductInput.code
+      : await generate(codeType.PRODUCT),
     name: createProductInput.name,
     description: createProductInput.description,
+    image: createProductInput.image,
     sale_price: createProductInput.sale_price,
     category: createProductInput.category,
     brand: createProductInput.brand,
     stock_type: createProductInput.stock_type,
   };
+
   const newProduct = await (
     await Product.create(customDataProduct)
   ).populate("category");

@@ -1,23 +1,51 @@
-import { createProduct, deleteProduct, findAll, listProductSerialByPurchaseOrder, listProductSerialBySaleOrder, listProductSerialByProduct, update } from "./product.service";
+import {
+  createProduct,
+  deleteProduct,
+  findAll,
+  listProductSerialByPurchaseOrder,
+  listProductSerialBySaleOrder,
+  listProductSerialByProduct,
+  update,
+  searchProduct,
+  generalData,
+} from "./product.service";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
+import { IGeneralData } from "../../interfaces/home.interface";
 
 export const productResolver = {
   Query: {
     async listProduct(): Promise<IProduct[]> {
       return await findAll();
     },
-    
-    async listProductSerialByPurchaseOrder(_: any, args: Record<string, any>): Promise<IProductSerial[]> {
+
+    async listProductSerialByPurchaseOrder(
+      _: any,
+      args: Record<string, any>
+    ): Promise<IProductSerial[]> {
       return await listProductSerialByPurchaseOrder(args.purchaseOrderDetailId);
     },
 
-    async listProductSerialBySaleOrder(_: any, args: Record<string, any>): Promise<IProductSerial[]> {
+    async listProductSerialBySaleOrder(
+      _: any,
+      args: Record<string, any>
+    ): Promise<IProductSerial[]> {
       return await listProductSerialBySaleOrder(args.saleOrderDetailId);
     },
 
-    async listProductSerialByProduct(_: any, args: Record<string, any>): Promise<IProductSerial[]> {
+    async listProductSerialByProduct(
+      _: any,
+      args: Record<string, any>
+    ): Promise<IProductSerial[]> {
       return await listProductSerialByProduct(args.productId);
+    },
+
+    async searchProduct(_: any, args: Record<string, any>): Promise<IProduct> {
+      return await searchProduct(args.serial);
+    },
+
+    async generalData(): Promise<IGeneralData> {
+      return await generalData();
     },
   },
   Mutation: {

@@ -9,6 +9,7 @@ import { clientResolver } from "../modules/client/client.resolver";
 import { saleOrderResolver } from "../modules/sale_order/saleOrder.resolver";
 import { providerResolver } from "../modules/provider/provider.resolver";
 import { userResolver } from "../modules/user/user.resolver";
+import { roleResolver } from "../modules/role/role.resolver";
 
 const schemaTypes = readFileSync(
   path.join(__dirname, "./typeDefs/schema.graphql"),
@@ -43,5 +44,6 @@ export const resolvers = {
     ...saleOrderResolver.Mutation,
     ...providerResolver.Mutation,
     ...userResolver.Mutation,
+    ...roleResolver.Mutation,
   },
 };

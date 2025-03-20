@@ -1,13 +1,8 @@
-import {
-  BrandInput,
-  IBrand,
-  UpdateBrandInput,
-} from "../../interfaces/brand.interface";
-import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
-import { LoginInput, UserInput } from "../../interfaces/user.interface";
-import { User } from "./user.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { IUser, LoginInput, UserInput } from "../../interfaces/user.interface";
+import { User } from "./user.model";
+import { IRole } from "../../interfaces/role.interface";
 
 export const create = async (userInput: UserInput) => {
   const user = await User.findOne({
@@ -18,7 +13,7 @@ export const create = async (userInput: UserInput) => {
     throw new Error("El usuario ya existe");
   }
 
-  const newUser = await User.create(userInput);
+  const newUser = (await User.create(userInput)).populate("role");
 
   return newUser;
 };
@@ -26,7 +21,9 @@ export const create = async (userInput: UserInput) => {
 export const login = async (loginInput: LoginInput) => {
   const user = await User.findOne({
     user_name: loginInput.user_name,
-  });
+  })
+    .populate("role")
+    .lean<IUser>();
 
   if (!user) {
     throw new Error("Usuario no encontrado");
@@ -39,7 +36,12 @@ export const login = async (loginInput: LoginInput) => {
   }
 
   const token = jwt.sign(
-    { id: user._id, username: user.user_name, access: true },
+    {
+      id: user._id,
+      username: user.user_name,
+      role: user.role.name,
+      access: true,
+    },
     process.env.JWT_SECRET,
     {
       expiresIn: "1d",

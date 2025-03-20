@@ -11,6 +11,7 @@ export interface IProduct {
   code: string;
   name: string;
   description: string;
+  image: string;
   sale_price: number;
   stock: number;
   last_cost_price: number;
@@ -24,6 +25,7 @@ export interface ProductInput {
   code?: string;
   name: string;
   description?: string;
+  image?: string;
   sale_price?: number;
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   brand: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
