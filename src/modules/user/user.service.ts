@@ -2,7 +2,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { IUser, LoginInput, UserInput } from "../../interfaces/user.interface";
 import { User } from "./user.model";
-import { IRole } from "../../interfaces/role.interface";
+
+export const findAll = async (): Promise<IUser[]> => {
+  const listUser = await User.find().populate("role").lean<IUser[]>();
+
+  return listUser;
+};
 
 export const create = async (userInput: UserInput) => {
   const user = await User.findOne({
@@ -40,6 +45,7 @@ export const login = async (loginInput: LoginInput) => {
       id: user._id,
       username: user.user_name,
       role: user.role.name,
+      permissions: user.role.permission,
       access: true,
     },
     process.env.JWT_SECRET,
@@ -48,5 +54,7 @@ export const login = async (loginInput: LoginInput) => {
     }
   );
 
-  return token;
+  const tokenWithBearer = `Bearer ${token}`;
+
+  return tokenWithBearer;
 };

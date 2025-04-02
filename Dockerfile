@@ -11,8 +11,10 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV="production"
-ENV MONGODB_URI="mongodb+srv://alfredo:alfredo123@cluster0.eqdyu9u.mongodb.net/mymanag"
+ENV MONGODB_URI="mongodb+srv://alfredo:alfredo123@cluster0.eqdyu9u.mongodb.net/mymanag-pruebas"
 ENV JWT_SECRET="ADMIN69040342"
+ENV USER_NAME_ADMIN="Admin"
+ENV PASSWORD_ADMIN="Admin123"
 
 # Throw-away build stage to reduce size of final image
 FROM base as build

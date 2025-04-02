@@ -1,8 +1,27 @@
-import { create, login} from "./user.service";
+import { IUser } from "../../interfaces/user.interface";
+import { hasPermission } from "../../utils/hasPermission";
+import { create, findAll, login } from "./user.service";
 
 export const userResolver = {
+  Query: {
+    async listUser(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IUser[]> {
+      const roleName = context.user.role;
+      const permission = ["USER_AND_ROLE"];
+      await hasPermission(roleName, permission);
+
+      return await findAll();
+    },
+  },
   Mutation: {
-    async createUser(_: any, args: Record<string, any>) {
+    async createUser(_: any, args: Record<string, any>, context: any) {
+      const roleName = context.user.role;
+      const permission = ["USER_AND_ROLE"];
+      await hasPermission(roleName, permission);
+
       return await create(args.userInput);
     },
     async login(_: any, args: Record<string, any>) {

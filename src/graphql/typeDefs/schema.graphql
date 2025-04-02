@@ -1,12 +1,26 @@
+type Permission {
+  label: String
+  name: String
+  value: String
+  children: [Permission]
+}
+
+input PermissionInput {
+  name: String!
+  description: String
+}
+
 type Role {
   _id: ID!
   name: String
   description: String
+  permission: [Permission]
 }
 
 input RoleInput {
   name: String!
   description: String
+  permission: [String!]!
 }
 
 type User {
@@ -284,11 +298,18 @@ type GeneralData {
 }
 
 type Query {
+  listUser: [User]
+
+  listRole: [Role]
+
+  listPermission: [Permission]
+
   listBrand: [Brand]
 
   listCategory: [Category]
 
   listProduct: [Product]
+  findProduct(productId: String!): Product
   listProductSerialByProduct(productId: String!): [ProductSerial]
   searchProduct(serial: String!): Product
 
@@ -319,6 +340,8 @@ type Query {
 }
 
 type Mutation {
+  createPermission(permissionInput: PermissionInput!): Permission
+
   createRole(roleInput: RoleInput!): Role
 
   createUser(userInput: UserInput!): User

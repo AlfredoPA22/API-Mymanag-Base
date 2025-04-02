@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for api-purple-shadow-8974 on 2024-10-04T02:05:34-04:00
+# fly.toml app configuration file generated for api-late-shape-1370 on 2025-03-19T22:30:28-04:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'api-purple-shadow-8974'
+app = 'api-late-shape-1370'
 primary_region = 'gru'
 
 [build]

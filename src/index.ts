@@ -3,14 +3,16 @@ import { expressMiddleware } from "@apollo/server/express4";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import jwt from "jsonwebtoken";
 
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
+import { initializeDatabase } from "./utils/initializeDatabase";
 
 dotenv.config();
 const app = express();
 const corsOptions = {
-  // origin: "https://client-my-manag.vercel.app",
+  // origin: "https://client-mymanag-base.vercel.app",
   origin: "http://localhost:5173",
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: [
@@ -22,10 +24,12 @@ const corsOptions = {
     "Pragma",
   ],
 };
+
 const port = process.env.PORT || 3000;
 
 const bootstrapServer = async () => {
   connectToMongoDB();
+  await initializeDatabase();
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -33,11 +37,51 @@ const bootstrapServer = async () => {
       return { message: error.message };
     },
   });
+
   await server.start();
+
   app.use(cors(corsOptions));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use("/graphql", expressMiddleware(server));
+
+  app.use(
+    "/graphql",
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const publicOperations = ["Login"];
+        const query = req.body?.query || "";
+
+        if (query.includes("__schema")) {
+          return {};
+        }
+
+        const isPublic = publicOperations.some((op) => query.includes(op));
+        if (isPublic) {
+          return {};
+        }
+
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+          throw new Error("No autorizado: Token no proporcionado.");
+        }
+
+        const token = authHeader.startsWith("Bearer ")
+          ? authHeader.split("Bearer ")[1]
+          : authHeader;
+
+        if (!token) {
+          throw new Error("No autorizado: Token no proporcionado.");
+        }
+
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          return { user: decoded };
+        } catch (error) {
+          throw new Error("No autorizado: Token inválido.");
+        }
+      },
+    })
+  );
 
   app.get("/", (req, res) => {
     res.send("hello world!");

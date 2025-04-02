@@ -1,5 +1,11 @@
-import { RoleInput } from "../../interfaces/role.interface";
+import { IRole, RoleInput } from "../../interfaces/role.interface";
 import { Role } from "./role.model";
+
+export const findAll = async (): Promise<IRole[]> => {
+  const listRole = await Role.find().populate("permission").lean<IRole[]>();
+
+  return listRole;
+};
 
 export const create = async (roleInput: RoleInput) => {
   const role = await Role.findOne({

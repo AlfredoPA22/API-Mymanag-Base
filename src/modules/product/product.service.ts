@@ -30,6 +30,21 @@ export const findAll = async (): Promise<IProduct[]> => {
   return listProduct;
 };
 
+export const findProduct = async (
+  productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IProduct> => {
+  const product: IProduct = await Product.findById(productId)
+    .populate("brand")
+    .populate("category")
+    .lean<IProduct>();
+
+  if (!product) {
+    throw new Error("No existe el producto");
+  }
+
+  return product;
+};
+
 export const listProductSerialByPurchaseOrder = async (
   purchaseOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProductSerial[]> => {
@@ -98,9 +113,7 @@ export const searchProduct = async (serial: string): Promise<IProduct> => {
 };
 
 export const generalData = async (): Promise<IGeneralData> => {
-  const total_products_number: number = await Product.countDocuments({
-    status: productStatus.DISPONIBLE,
-  });
+  const total_products_number: number = await Product.countDocuments();
 
   const total_products_out: number = await Product.countDocuments({
     status: productStatus.SIN_STOCK,
