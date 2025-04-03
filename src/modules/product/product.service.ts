@@ -1,4 +1,5 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
+import { IGeneralData } from "../../interfaces/home.interface";
 import {
   IProduct,
   ProductInput,
@@ -9,23 +10,55 @@ import {
   ProductSerialInput,
 } from "../../interfaces/productSerial.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
-import { addCount as addCountBrand } from "../brand/brand.service";
-import { addCount as addCountCategory } from "../category/category.service";
+import { productStatus } from "../../utils/enums/productStatus.enum";
+import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
+import {
+  addCount as addCountBrand,
+  subtractCount as subtractCountBrand,
+} from "../brand/brand.service";
+import {
+  addCount as addCountCategory,
+  subtractCount as subtractCountCategory,
+} from "../category/category.service";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { PurchaseOrderDetail } from "../purchase_order/purchase_order_detail.model";
+import { SaleOrder } from "../sale_order/sale_order.model";
+import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
 import { Product } from "./product.model";
 import { ProductSerial } from "./product_serial.model";
-import { IGeneralData } from "../../interfaces/home.interface";
-import { productStatus } from "../../utils/enums/productStatus.enum";
-import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
-import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
-import { SaleOrder } from "../sale_order/sale_order.model";
 
 export const findAll = async (): Promise<IProduct[]> => {
   const listProduct = await Product.find()
     .populate("category")
     .populate("brand")
     .lean<IProduct[]>();
+
+  return listProduct;
+};
+
+export const findAllWithParams = async (
+  categoryId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  brandId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IProduct[]> => {
+  if (!categoryId && !brandId) {
+    throw new Error(
+      "Debe proporcionar al menos un parámetro: categoria o marca"
+    );
+  }
+
+  let listProduct: IProduct[] = [];
+
+  if (categoryId && !brandId) {
+    listProduct = await Product.find({ category: categoryId })
+      .populate("category")
+      .populate("brand")
+      .lean<IProduct[]>();
+  } else if (brandId && !categoryId) {
+    listProduct = await Product.find({ brand: brandId })
+      .populate("category")
+      .populate("brand")
+      .lean<IProduct[]>();
+  }
 
   return listProduct;
 };
@@ -290,11 +323,24 @@ export const deleteProduct = async (
     throw new Error("No se puede eliminar porque pertenece a una compra");
   }
 
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new Error("Producto no encontrado");
+  }
+
   const deleted = await Product.deleteOne({
     _id: productId,
   });
 
   if (deleted.deletedCount > 0) {
+    if (product.brand) {
+      await subtractCountBrand(product.brand);
+    }
+
+    if (product.category) {
+      await subtractCountCategory(product.category);
+    }
     return {
       success: true,
     };

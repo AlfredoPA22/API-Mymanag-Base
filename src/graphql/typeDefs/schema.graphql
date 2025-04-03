@@ -194,20 +194,23 @@ type DeleteResponse {
 type Client {
   _id: ID!
   code: String
-  firstName: String
-  lastName: String
+  fullName: String
+  email: String
+  address: String
   phoneNumber: String
 }
 
 input ClientInput {
-  firstName: String!
-  lastName: String!
+  fullName: String!
+  email: String
+  address: String
   phoneNumber: String
 }
 
 input UpdateClientInput {
-  firstName: String!
-  lastName: String!
+  fullName: String!
+  email: String!
+  address: String!
   phoneNumber: String!
 }
 
@@ -309,6 +312,7 @@ type Query {
   listCategory: [Category]
 
   listProduct: [Product]
+  listProductWithParams(categoryId: String, brandId: String): [Product]
   findProduct(productId: String!): Product
   listProductSerialByProduct(productId: String!): [ProductSerial]
   searchProduct(serial: String!): Product

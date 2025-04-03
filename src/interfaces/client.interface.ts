@@ -2,19 +2,22 @@ import { Types as MongooseTypes } from "mongoose";
 
 export interface IClient {
   _id: MongooseTypes.ObjectId;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   phoneNumber: string;
+  email: string;
+  address: string;
 }
 
 export interface ClientInput {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   phoneNumber?: string;
+  email?: string;
+  address?: string;
 }
 
 export interface UpdateClientInput {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   phoneNumber: string;
+  email: string;
+  address: string;
 }

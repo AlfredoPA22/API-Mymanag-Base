@@ -9,6 +9,7 @@ import {
   searchProduct,
   generalData,
   findProduct,
+  findAllWithParams,
 } from "./product.service";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
@@ -24,7 +25,7 @@ export const productResolver = {
     ): Promise<IProduct[]> {
       const roleName = context.user.role;
       const permission = [
-        "LIST_PRODUCT",
+        "LIST_AND_CREATE_PRODUCT",
         "LIST_AND_CREATE_PURCHASE",
         "LIST_AND_CREATE_SALE",
         "EDIT_SALE",
@@ -33,6 +34,18 @@ export const productResolver = {
       await hasPermission(roleName, permission);
 
       return await findAll();
+    },
+
+    async listProductWithParams(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IProduct[]> {
+      const roleName = context.user.role;
+      const permission = ["LIST_AND_CREATE_PRODUCT"];
+      await hasPermission(roleName, permission);
+
+      return await findAllWithParams(args.categoryId, args.brandId);
     },
 
     async findProduct(
@@ -69,11 +82,7 @@ export const productResolver = {
       context: any
     ): Promise<IProductSerial[]> {
       const roleName = context.user.role;
-      const permission = [
-        "LIST_AND_CREATE_SALE",
-        "EDIT_SALE",
-        "DETAIL_SALE",
-      ];
+      const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE", "DETAIL_SALE"];
       await hasPermission(roleName, permission);
 
       return await listProductSerialBySaleOrder(args.saleOrderDetailId);

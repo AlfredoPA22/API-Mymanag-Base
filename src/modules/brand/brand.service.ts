@@ -44,6 +44,16 @@ export const addCount = async (
   );
 };
 
+export const subtractCount = async (
+  brandId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+) => {
+  const brand = await findById(brandId);
+  await Brand.updateOne(
+    { _id: brandId },
+    { count_product: brand.count_product - 1 }
+  );
+};
+
 export const deleteBrand = async (
   brandId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {

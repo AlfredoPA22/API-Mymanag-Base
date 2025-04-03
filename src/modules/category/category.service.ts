@@ -44,6 +44,16 @@ export const addCount = async (
   );
 };
 
+export const subtractCount = async (
+  categoryId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+) => {
+  const category = await findById(categoryId);
+  await Category.updateOne(
+    { _id: categoryId },
+    { count_product: category.count_product - 1 }
+  );
+};
+
 export const deleteCategory = async (
   categoryId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
