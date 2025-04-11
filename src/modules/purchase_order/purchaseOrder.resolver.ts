@@ -74,14 +74,6 @@ export const purchaseOrderResolver = {
 
       return await findPurchaseOrderToPDF(args.purchaseOrderId);
     },
-
-    async reportPurchaseOrderByYear(
-      _: any,
-      args: Record<string, any>,
-      context: any
-    ): Promise<IPurchaseOrderByYear[]> {
-      return await reportPurhaseOrderByYear();
-    },
   },
   Mutation: {
     async createPurchaseOrder(_: any, args: Record<string, any>, context: any) {

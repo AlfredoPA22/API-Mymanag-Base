@@ -1,4 +1,6 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
+import { IProduct } from "../../interfaces/product.interface";
+import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
   IPurchaseOrder,
   IPurchaseOrderByYear,
@@ -13,18 +15,18 @@ import {
   UpdatePurchaseOrderDetailInput,
 } from "../../interfaces/purchaseOrderDetail.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
+import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
+import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
+import { productStatus } from "../../utils/enums/productStatus.enum";
+import { purchaseOrderStatus } from "../../utils/enums/purchaseOrderStatus.enum";
+import { stockType } from "../../utils/enums/stockType.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
+import { Product } from "../product/product.model";
 import { createProductSerial } from "../product/product.service";
+import { ProductInventory } from "../product/product_inventory.model";
+import { ProductSerial } from "../product/product_serial.model";
 import { PurchaseOrder } from "./purchase_order.model";
 import { PurchaseOrderDetail } from "./purchase_order_detail.model";
-import { ProductSerial } from "../product/product_serial.model";
-import { purchaseOrderStatus } from "../../utils/enums/purchaseOrderStatus.enum";
-import { Product } from "../product/product.model";
-import { productStatus } from "../../utils/enums/productStatus.enum";
-import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
-import { IProductSerial } from "../../interfaces/productSerial.interface";
-import { IProduct } from "../../interfaces/product.interface";
-import { stockType } from "../../utils/enums/stockType.enum";
 
 export const findAll = async (): Promise<IPurchaseOrder[]> => {
   return await PurchaseOrder.find()
@@ -116,12 +118,23 @@ export const createDetail = async (
   if (foundDetail) {
     throw new Error("El producto ya existe en la compra");
   }
+
   if (createPurchaseOrderDetailInput.purchase_price <= 0) {
     throw new Error("Ingrese un precio mayor a 0");
   }
 
   if (createPurchaseOrderDetailInput.quantity <= 0) {
     throw new Error("Ingrese una cantidad mayor a 0");
+  }
+
+  const foundProduct = await Product.findById(
+    createPurchaseOrderDetailInput.product
+  );
+
+  if (foundProduct.stock_type === stockType.INDIVIDUAL) {
+    if (!createPurchaseOrderDetailInput.warehouse) {
+      throw new Error("Seleccione un almacén de recepción");
+    }
   }
 
   const subtotal: number =
@@ -131,7 +144,7 @@ export const createDetail = async (
         100
     ) / 100;
 
-  const newPurchaseOrderDetail = await (
+  const newPurchaseOrderDetail: IPurchaseOrderDetail = await (
     await (
       await PurchaseOrderDetail.create({
         ...createPurchaseOrderDetailInput,
@@ -149,6 +162,16 @@ export const createDetail = async (
     },
     { new: true }
   );
+
+  if (newPurchaseOrderDetail.product.stock_type === stockType.INDIVIDUAL) {
+    await ProductInventory.create({
+      product: createPurchaseOrderDetailInput.product,
+      warehouse: createPurchaseOrderDetailInput.warehouse,
+      purchase_order_detail: newPurchaseOrderDetail._id,
+      quantity: createPurchaseOrderDetailInput.quantity,
+      status: productInventoryStatus.BORRADOR,
+    });
+  }
 
   const foundPurchaseOrderDetail = await (
     await (
@@ -184,6 +207,7 @@ export const addSerialToOrder = async (
 
   const newProductSerial = await createProductSerial({
     purchase_order_detail: addSerialToOrder.purchase_order_detail,
+    warehouse: addSerialToOrder.warehouse,
     product: foundPurchaseOrderDetail.product._id,
     serial: addSerialToOrder.serial,
   });
@@ -250,6 +274,10 @@ export const deleteProductToOrder = async (
     purchase_order_detail: purchaseOrderDetailId,
   });
 
+  await ProductInventory.deleteOne({
+    purchase_order_detail: purchaseOrderDetailId,
+  });
+
   const deleteProductToPurchaseOrderDetail =
     await PurchaseOrderDetail.deleteOne({
       _id: purchaseOrderDetailId,
@@ -299,9 +327,16 @@ export const deletePurchaseOrder = async (
       },
     });
 
-    if (soldOrReservedSerials.length > 0) {
+    const blockedInventory = await ProductInventory.find({
+      purchase_order_detail: {
+        $in: foundPurchaseOrderDetails.map((d) => d._id),
+      },
+      $or: [{ sold: { $gt: 0 } }, { reserved: { $gt: 0 } }],
+    });
+
+    if (soldOrReservedSerials.length > 0 || blockedInventory.length > 0) {
       throw new Error(
-        "No se puede eliminar la compra porque algunos seriales están vendidos o reservados."
+        "No se puede eliminar la compra porque existen productos vendidos o reservados."
       );
     }
 
@@ -328,6 +363,11 @@ export const deletePurchaseOrder = async (
 
         // Actualizar los seriales del producto
         await ProductSerial.deleteMany({
+          purchase_order_detail: detail._id,
+          product: detail.product._id,
+        });
+
+        await ProductInventory.deleteOne({
           purchase_order_detail: detail._id,
           product: detail.product._id,
         });
@@ -456,6 +496,16 @@ export const approve = async (
           status: productSerialStatus.DISPONIBLE,
         }
       );
+
+      await ProductInventory.updateOne(
+        {
+          purchase_order_detail: detail._id,
+          product: detail.product._id,
+        },
+        {
+          status: productInventoryStatus.DISPONIBLE,
+        }
+      );
     })
   );
 
@@ -474,6 +524,11 @@ export const updatePurchaseOrderDetail = async (
     purchaseOrderDetailId
   );
 
+  const findPurchaseOrderDetailLean: IPurchaseOrderDetail =
+    await PurchaseOrderDetail.findById(purchaseOrderDetailId)
+      .populate("product")
+      .lean<IPurchaseOrderDetail>();
+
   if (!findPurchaseOrderDetail) {
     throw new Error("No se encontro el detalle");
   }
@@ -484,6 +539,7 @@ export const updatePurchaseOrderDetail = async (
   if (!findPurchaseOrder) {
     throw new Error("No se encontro la orden");
   }
+
   if (findPurchaseOrder.status === purchaseOrderStatus.APROBADO) {
     throw new Error(
       "No se se puede editar el detalle porque la compra esta aprobada."
@@ -493,6 +549,13 @@ export const updatePurchaseOrderDetail = async (
   if (updatePurchaseOrderInput.quantity < findPurchaseOrderDetail.serials) {
     throw new Error(
       "La nueva cantidad no puede ser menor que la cantidad de seriales."
+    );
+  }
+
+  if (findPurchaseOrderDetailLean.product.stock_type === stockType.INDIVIDUAL) {
+    await ProductInventory.findOneAndUpdate(
+      { purchase_order_detail: purchaseOrderDetailId },
+      { $set: { quantity: updatePurchaseOrderInput.quantity } }
     );
   }
 

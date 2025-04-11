@@ -28,7 +28,7 @@ export interface ISaleOrderToPDF {
   saleOrderDetail: ISaleOrderDetailToPDF[];
 }
 
-export interface ISaleOrderByYear {
-  month: string;
+export interface ISalesReportByClient {
+  client: string;
   total: Number;
 }

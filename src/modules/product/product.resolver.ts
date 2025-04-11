@@ -10,11 +10,13 @@ import {
   generalData,
   findProduct,
   findAllWithParams,
+  listProductInventoryByProduct,
 } from "./product.service";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
 import { IGeneralData } from "../../interfaces/home.interface";
 import { hasPermission } from "../../utils/hasPermission";
+import { IProductInventory } from "../../interfaces/productInventory.interface";
 
 export const productResolver = {
   Query: {
@@ -45,7 +47,11 @@ export const productResolver = {
       const permission = ["LIST_AND_CREATE_PRODUCT"];
       await hasPermission(roleName, permission);
 
-      return await findAllWithParams(args.categoryId, args.brandId);
+      return await findAllWithParams(
+        args.categoryId,
+        args.brandId,
+        args.warehouseId
+      );
     },
 
     async findProduct(
@@ -98,6 +104,18 @@ export const productResolver = {
       await hasPermission(roleName, permission);
 
       return await listProductSerialByProduct(args.productId);
+    },
+
+    async listProductInventoryByProduct(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IProductInventory[]> {
+      // const roleName = context.user.role;
+      // const permission = ["LIST_PRODUCT_SERIAL_BY_PRODUCT"];
+      // await hasPermission(roleName, permission);
+
+      return await listProductInventoryByProduct(args.productId);
     },
 
     async searchProduct(

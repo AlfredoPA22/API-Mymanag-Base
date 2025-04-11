@@ -11,6 +11,13 @@ const saleOrderDetailSchema = new mongoose.Schema({
     ref: "product",
     required: true,
   },
+  inventory_usage: [
+    {
+      warehouse: { type: MongooseSchema.Types.ObjectId, ref: "warehouse" },
+      purchase_order_detail: { type: MongooseSchema.Types.ObjectId, ref: "purchase_order_detail" },
+      quantity: Number,
+    }
+  ],
   sale_price: { type: Number, required: true },
   quantity: { type: Number, required: true },
   serials: { type: Number, required: true, default: 0 },

@@ -1,9 +1,10 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
+import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
   ISaleOrder,
-  ISaleOrderByYear,
   ISaleOrderToPDF,
+  ISalesReportByClient,
   SaleOrderInput,
 } from "../../interfaces/saleOrder.interface";
 import {
@@ -17,14 +18,14 @@ import { codeType } from "../../utils/enums/orderType.enum";
 import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
 import { productStatus } from "../../utils/enums/productStatus.enum";
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
+import { stockType } from "../../utils/enums/stockType.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { Product } from "../product/product.model";
 import { ProductSerial } from "../product/product_serial.model";
 import { SaleOrder } from "./sale_order.model";
 import { SaleOrderDetail } from "./sale_order_detail.model";
-import { IProduct } from "../../interfaces/product.interface";
-import { stockType } from "../../utils/enums/stockType.enum";
-import { IPurchaseOrderDetail } from "../../interfaces/purchaseOrderDetail.interface";
+import { ProductInventory } from "../product/product_inventory.model";
+import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
 
 export const findAll = async (): Promise<ISaleOrder[]> => {
   return await SaleOrder.find().populate("client").lean<ISaleOrder[]>();
@@ -126,6 +127,65 @@ export const createDetail = async (
 
   if (createSaleOrderDetailInput.quantity > foundProduct.stock) {
     throw new Error("No hay suficiente stock");
+  }
+
+  if (foundProduct.stock_type === stockType.INDIVIDUAL) {
+    if (!createSaleOrderDetailInput.warehouse) {
+      throw new Error("Seleccione un almacén");
+    }
+
+    const productInventories = await ProductInventory.find({
+      product: createSaleOrderDetailInput.product,
+      warehouse: createSaleOrderDetailInput.warehouse,
+    });
+
+    if (productInventories.length === 0) {
+      throw new Error(
+        "No hay stock registrado para este producto en este almacén"
+      );
+    }
+
+    let quantityToAssign = createSaleOrderDetailInput.quantity;
+    let inventoryUsage: any[] = [];
+
+    const totalAvailableStock = productInventories.reduce(
+      (total, inventory) => total + inventory.quantity,
+      0
+    );
+
+    if (totalAvailableStock < quantityToAssign) {
+      throw new Error("No hay suficiente stock disponible en los inventarios");
+    }
+
+    for (const productInventory of productInventories) {
+      if (quantityToAssign <= 0) break;
+
+      const availableQuantity = productInventory.quantity;
+      const quantityToReserve = Math.min(availableQuantity, quantityToAssign);
+
+      if (quantityToReserve > 0) {
+        // Verificamos que la cantidad sea mayor a 0
+        productInventory.reserved += quantityToReserve;
+        productInventory.quantity -= quantityToReserve;
+        await productInventory.save();
+
+        inventoryUsage.push({
+          warehouse: createSaleOrderDetailInput.warehouse,
+          purchase_order_detail: productInventory.purchase_order_detail,
+          quantity: quantityToReserve,
+        });
+
+        quantityToAssign -= quantityToReserve;
+      }
+    }
+
+    if (quantityToAssign > 0) {
+      throw new Error("No hay suficiente stock disponible en los inventarios");
+    }
+
+    createSaleOrderDetailInput.inventory_usage = inventoryUsage;
+  } else {
+    delete createSaleOrderDetailInput.warehouse;
   }
 
   const subtotal: number =
@@ -292,8 +352,12 @@ export const deleteSerialToOrder = async (
 export const deleteProductToOrder = async (
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundSaleOrderDetail =
-    await SaleOrderDetail.findById(saleOrderDetailId);
+  const foundSaleOrderDetail: ISaleOrderDetail = await SaleOrderDetail.findById(
+    saleOrderDetailId
+  )
+    .populate("product")
+    .populate("sale_order")
+    .lean<ISaleOrderDetail>();
 
   if (!foundSaleOrderDetail) {
     throw new Error("El detalle no fue encontrado");
@@ -311,12 +375,29 @@ export const deleteProductToOrder = async (
     throw new Error("No se puede borrar el detalle");
   }
 
+  if (foundSaleOrderDetail.product.stock_type === stockType.INDIVIDUAL) {
+    for (const inventoryUsage of foundSaleOrderDetail.inventory_usage) {
+      const productInventory = await ProductInventory.findOne({
+        product: foundSaleOrderDetail.product,
+        warehouse: inventoryUsage.warehouse,
+        purchase_order_detail: inventoryUsage.purchase_order_detail,
+      });
+
+      if (productInventory) {
+        productInventory.quantity += inventoryUsage.quantity;
+        productInventory.reserved -= inventoryUsage.quantity;
+        await productInventory.save();
+      }
+    }
+  }
+
   await ProductSerial.updateMany(
     { sale_order_detail: saleOrderDetailId },
     {
       $set: { sale_order_detail: null, status: productSerialStatus.DISPONIBLE },
     }
   );
+
   const deleteProductToSaleOrderDetail = await SaleOrderDetail.deleteOne({
     _id: saleOrderDetailId,
   });
@@ -389,6 +470,31 @@ export const deleteSaleOrder = async (
             sale_order_detail: null, // Poner el campo sale_order_detail a null
           }
         );
+
+        if (detail.inventory_usage && Array.isArray(detail.inventory_usage)) {
+          await Promise.all(
+            detail.inventory_usage.map(async (usage: any) => {
+              const inventory = await ProductInventory.findOne({
+                product: detail.product._id,
+                warehouse: usage.warehouse,
+                purchase_order_detail: usage.purchase_order_detail,
+              });
+
+              if (inventory) {
+                inventory.sold -= usage.quantity;
+                if (inventory.sold < 0) inventory.sold = 0;
+                inventory.quantity += usage.quantity;
+
+                // Actualizar estado del inventario
+                if (inventory.quantity > 0) {
+                  inventory.status = productInventoryStatus.DISPONIBLE;
+                }
+
+                await inventory.save();
+              }
+            })
+          );
+        }
 
         // Eliminar el detalle de la orden de venta
         await SaleOrderDetail.deleteOne({ _id: detail._id });
@@ -481,6 +587,17 @@ export const approve = async (
     throw new Error("Faltan agregar seriales a la venta");
   }
 
+  for (const detail of foundDetail) {
+    if (detail.product.stock_type === stockType.INDIVIDUAL) {
+      const product = await Product.findById(detail.product._id);
+      if (product && product.stock < detail.quantity) {
+        throw new Error(
+          `No hay suficiente stock para el producto ${product.name}. Solo quedan ${product.stock} unidades disponibles.`
+        );
+      }
+    }
+  }
+
   await Promise.all(
     foundDetail.map(async (detail) => {
       if (detail.product.stock_type === stockType.INDIVIDUAL) {
@@ -494,35 +611,56 @@ export const approve = async (
     })
   );
 
-  await Promise.all(
-    foundDetail.map(async (detail) => {
-      const productUpdate = await Product.findByIdAndUpdate(
+  for (const detail of foundDetail) {
+    const product = await Product.findByIdAndUpdate(
+      detail.product._id,
+      { $inc: { stock: -detail.quantity } },
+      { new: true }
+    );
+
+    if (product?.stock <= 0) {
+      await Product.findByIdAndUpdate(
         detail.product._id,
-        {
-          $inc: { stock: -detail.quantity },
-        },
+        { status: productStatus.SIN_STOCK },
         { new: true }
       );
+    }
 
-      if (productUpdate.stock <= 0) {
-        await Product.findByIdAndUpdate(
-          detail.product._id,
-          { status: productStatus.SIN_STOCK },
-          { new: true }
-        );
+    // Actualizar seriales a VENDIDO
+    await ProductSerial.updateMany(
+      {
+        sale_order_detail: detail._id,
+        product: detail.product._id,
+      },
+      {
+        status: productSerialStatus.VENDIDO,
+      }
+    );
+
+    // 👇 Aquí modificamos los inventarios asociados
+    const inventories = await ProductInventory.find({
+      product: detail.product._id,
+      reserved: { $gt: 0 }, // solo inventarios con reservas
+    });
+
+    let quantityToSell = detail.quantity;
+
+    for (const inventory of inventories) {
+      if (quantityToSell <= 0) break;
+
+      const canSellFromThis = Math.min(inventory.reserved, quantityToSell);
+
+      inventory.sold += canSellFromThis;
+      inventory.reserved -= canSellFromThis;
+      quantityToSell -= canSellFromThis;
+
+      if (inventory.reserved === 0 && inventory.quantity === 0) {
+        inventory.status = productInventoryStatus.SIN_STOCK;
       }
 
-      await ProductSerial.updateMany(
-        {
-          sale_order_detail: detail._id,
-          product: detail.product._id,
-        },
-        {
-          status: productSerialStatus.VENDIDO,
-        }
-      );
-    })
-  );
+      await inventory.save();
+    }
+  }
 
   foundOrder.status = saleOrderStatus.APROBADO;
 
@@ -535,7 +673,10 @@ export const updateSaleOrderDetail = async (
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateSaleOrderInput: UpdateSaleOrderDetailInput
 ) => {
-  const findSaleOrderDetail = await SaleOrderDetail.findById(saleOrderDetailId);
+  const findSaleOrderDetail = await SaleOrderDetail.findById(saleOrderDetailId)
+    .populate("product")
+    .populate("sale_order");
+
   if (!findSaleOrderDetail) {
     throw new Error("No se encontro el detalle");
   }
@@ -543,14 +684,17 @@ export const updateSaleOrderDetail = async (
   const findSaleOrder = await SaleOrder.findById(
     findSaleOrderDetail.sale_order
   );
+
   if (!findSaleOrder) {
     throw new Error("No se encontro la orden");
   }
+
   if (findSaleOrder.status === saleOrderStatus.APROBADO) {
     throw new Error(
       "No se se puede editar el detalle porque la venta esta aprobada."
     );
   }
+
   const stockProduct = await Product.findById(findSaleOrderDetail.product);
 
   if (updateSaleOrderInput.quantity > stockProduct.stock) {
@@ -560,6 +704,69 @@ export const updateSaleOrderDetail = async (
   if (updateSaleOrderInput.quantity < findSaleOrderDetail.serials) {
     throw new Error(
       "La nueva cantidad no puede ser menor que la cantidad de seriales."
+    );
+  }
+
+  if (stockProduct.stock_type === stockType.INDIVIDUAL) {
+    for (const usage of findSaleOrderDetail.inventory_usage) {
+      const productInventory = await ProductInventory.findOne({
+        warehouse: usage.warehouse,
+        purchase_order_detail: usage.purchase_order_detail,
+      });
+
+      if (productInventory) {
+        productInventory.quantity += usage.quantity;
+        productInventory.reserved -= usage.quantity;
+        await productInventory.save();
+      }
+    }
+
+    const warehousesUsed = findSaleOrderDetail.inventory_usage.map(
+      (usage) => usage.warehouse
+    );
+
+    const productInventories = await ProductInventory.find({
+      product: stockProduct._id,
+      warehouse: { $in: warehousesUsed },
+    });
+
+    let quantityToAssign = updateSaleOrderInput.quantity;
+    const inventoryUsage: any[] = [];
+
+    const totalAvailableStock = productInventories.reduce(
+      (total, inventory) => total + inventory.quantity,
+      0
+    );
+
+    if (totalAvailableStock < quantityToAssign) {
+      throw new Error("No hay suficiente stock disponible en los inventarios");
+    }
+
+    for (const productInventory of productInventories) {
+      if (quantityToAssign <= 0) break;
+
+      const availableQuantity = productInventory.quantity;
+      const quantityToReserve = Math.min(availableQuantity, quantityToAssign);
+
+      if (quantityToReserve > 0) {
+        productInventory.reserved += quantityToReserve;
+        productInventory.quantity -= quantityToReserve;
+        await productInventory.save();
+
+        inventoryUsage.push({
+          warehouse: productInventory.warehouse,
+          purchase_order_detail: productInventory.purchase_order_detail,
+          quantity: quantityToReserve,
+        });
+
+        quantityToAssign -= quantityToReserve;
+      }
+    }
+
+    findSaleOrderDetail.inventory_usage.splice(
+      0,
+      findSaleOrderDetail.inventory_usage.length,
+      ...inventoryUsage
     );
   }
 
@@ -584,10 +791,10 @@ export const updateSaleOrderDetail = async (
   return findSaleOrderDetail;
 };
 
-export const reportSaleOrderByYear = async () => {
+export const reportSaleOrderByClient = async () => {
   const currentYear = new Date().getFullYear();
 
-  const salesByMonth = await SaleOrder.aggregate([
+  const topClients = await SaleOrder.aggregate([
     {
       $match: {
         status: saleOrderStatus.APROBADO,
@@ -599,108 +806,35 @@ export const reportSaleOrderByYear = async () => {
     },
     {
       $group: {
-        _id: { $month: "$date" },
+        _id: "$client", // Agrupamos por cliente
         total: { $sum: "$total" },
       },
     },
     {
-      $sort: { _id: 1 },
+      $sort: { total: -1 }, // Ordenamos de mayor a menor
     },
-  ]);
-
-  const monthsOfYear = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-  ];
-
-  const report: ISaleOrderByYear[] = monthsOfYear.map((month, index) => {
-    const sale = salesByMonth.find((s) => s._id === index + 1);
-    return {
-      month: month || "Unknown",
-      total: sale ? sale.total : 0,
-    };
-  });
-
-  return report;
-};
-
-export const reportEarningsByYear = async () => {
-  const currentYear = new Date().getFullYear();
-
-  const earningsByMonth = await SaleOrder.aggregate([
     {
-      $match: {
-        status: saleOrderStatus.APROBADO,
-        date: {
-          $gte: new Date(`${currentYear}-01-01`),
-          $lt: new Date(`${currentYear + 1}-01-01`),
-        },
-      },
+      $limit: 5, // Solo los top 5
     },
     {
       $lookup: {
-        from: "purchaseorders", // La colección de compras
-        localField: "date", // O el campo que relaciona ventas y compras
-        foreignField: "date", // O el campo correspondiente en las compras
-        as: "purchases",
+        from: "clients", // Asegurate que este sea el nombre correcto de la colección
+        localField: "_id",
+        foreignField: "_id",
+        as: "clientData",
       },
     },
     {
-      $unwind: {
-        path: "$purchases",
-        preserveNullAndEmptyArrays: true, // Para manejar ventas sin compras
-      },
-    },
-    {
-      $group: {
-        _id: { $month: "$date" },
-        totalSales: { $sum: "$total" },
-        totalPurchases: { $sum: "$purchases.total" }, // Sumamos el total de las compras
-      },
+      $unwind: "$clientData",
     },
     {
       $project: {
-        month: "$_id",
-        earnings: { $subtract: ["$totalSales", "$totalPurchases"] }, // Restamos las compras de las ventas
+        _id: 0,
+        client: "$clientData.name",
+        total: 1,
       },
-    },
-    {
-      $sort: { month: 1 },
     },
   ]);
 
-  const monthsOfYear = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-  ];
-
-  const report: ISaleOrderByYear[] = monthsOfYear.map((month, index) => {
-    const earnings = earningsByMonth.find((e) => e.month === index + 1);
-    return {
-      month: month || "Unknown",
-      total: earnings ? earnings.earnings : 0,
-    };
-  });
-
-  return report;
+  return topClients as ISalesReportByClient[];
 };

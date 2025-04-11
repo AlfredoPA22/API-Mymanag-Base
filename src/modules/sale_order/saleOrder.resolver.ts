@@ -1,7 +1,7 @@
 import {
   ISaleOrder,
-  ISaleOrderByYear,
   ISaleOrderToPDF,
+  ISalesReportByClient,
 } from "../../interfaces/saleOrder.interface";
 import { ISaleOrderDetail } from "../../interfaces/saleOrderDetail.interface";
 import { hasPermission } from "../../utils/hasPermission";
@@ -17,9 +17,8 @@ import {
   findDetail,
   findSaleOrder,
   findSaleOrderToPDF,
-  updateSaleOrderDetail,
-  reportSaleOrderByYear,
-  reportEarningsByYear,
+  reportSaleOrderByClient,
+  updateSaleOrderDetail
 } from "./saleOrder.service";
 
 export const saleOrderResolver = {
@@ -68,20 +67,15 @@ export const saleOrderResolver = {
 
       return await findSaleOrderToPDF(args.saleOrderId);
     },
-    async reportSaleOrderByYear(
+
+    async reportSaleOrderByClient(
       _: any,
       args: Record<string, any>,
       context: any
-    ): Promise<ISaleOrderByYear[]> {
-      return await reportSaleOrderByYear();
+    ): Promise<ISalesReportByClient[]> {
+      return await reportSaleOrderByClient();
     },
-    async reportEarningsByYear(
-      _: any,
-      args: Record<string, any>,
-      context: any
-    ): Promise<ISaleOrderByYear[]> {
-      return await reportEarningsByYear();
-    },
+    
   },
   Mutation: {
     async createSaleOrder(_: any, args: Record<string, any>, context: any) {

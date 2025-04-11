@@ -26,6 +26,8 @@ import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
 import { Product } from "./product.model";
 import { ProductSerial } from "./product_serial.model";
+import { IProductInventory } from "../../interfaces/productInventory.interface";
+import { ProductInventory } from "./product_inventory.model";
 
 export const findAll = async (): Promise<IProduct[]> => {
   const listProduct = await Product.find()
@@ -38,29 +40,72 @@ export const findAll = async (): Promise<IProduct[]> => {
 
 export const findAllWithParams = async (
   categoryId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
-  brandId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+  brandId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  warehouseId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProduct[]> => {
-  if (!categoryId && !brandId) {
+  if (!categoryId && !brandId && !warehouseId) {
     throw new Error(
-      "Debe proporcionar al menos un parámetro: categoria o marca"
+      "Debe proporcionar al menos un parámetro: categoria, marca o almacén"
     );
   }
 
-  let listProduct: IProduct[] = [];
+  let filter: any = {};
 
-  if (categoryId && !brandId) {
-    listProduct = await Product.find({ category: categoryId })
-      .populate("category")
-      .populate("brand")
-      .lean<IProduct[]>();
-  } else if (brandId && !categoryId) {
-    listProduct = await Product.find({ brand: brandId })
-      .populate("category")
-      .populate("brand")
-      .lean<IProduct[]>();
+  if (categoryId) filter.category = categoryId;
+  if (brandId) filter.brand = brandId;
+
+  let productIdsByWarehouse:
+    | MongooseSchema.Types.ObjectId
+    | MongooseTypes.ObjectId[] = [];
+
+  if (warehouseId) {
+    const serialProducts = await ProductSerial.distinct("product", {
+      warehouse: warehouseId,
+    });
+
+    const inventoryProducts = await ProductInventory.distinct("product", {
+      warehouse: warehouseId,
+    });
+
+    productIdsByWarehouse = [
+      ...new Set([...serialProducts, ...inventoryProducts]),
+    ];
+
+    filter._id = { $in: productIdsByWarehouse };
   }
 
-  return listProduct;
+  const products = await Product.find(filter)
+    .populate("category")
+    .populate("brand")
+    .lean<IProduct[]>();
+
+  if (!warehouseId) return products;
+
+  // Mapear productos con stock específico del almacén
+  const updatedProducts = await Promise.all(
+    products.map(async (product) => {
+      // Stock de inventario (no serializados)
+      const inventory = await ProductInventory.findOne({
+        product: product._id,
+        warehouse: warehouseId,
+      });
+
+      // Stock de productos serializados
+      const serialCount = await ProductSerial.countDocuments({
+        product: product._id,
+        warehouse: warehouseId,
+      });
+
+      const stockTotal = (inventory?.quantity || 0) + serialCount;
+
+      return {
+        ...product,
+        stock: stockTotal,
+      };
+    })
+  );
+
+  return updatedProducts;
 };
 
 export const findProduct = async (
@@ -86,6 +131,7 @@ export const listProductSerialByPurchaseOrder = async (
   })
     .populate("product")
     .populate("purchase_order_detail")
+    .populate("warehouse")
     .lean<IProductSerial[]>();
 
   return listSerial;
@@ -99,6 +145,7 @@ export const listProductSerialBySaleOrder = async (
   })
     .populate("product")
     .populate("sale_order_detail")
+    .populate("warehouse")
     .lean<IProductSerial[]>();
 
   return listSerial;
@@ -111,6 +158,7 @@ export const listProductSerialByProduct = async (
     product: productId,
   })
     .populate("product")
+    .populate("warehouse")
     .populate({
       path: "purchase_order_detail",
       populate: {
@@ -128,19 +176,56 @@ export const listProductSerialByProduct = async (
   return listSerial;
 };
 
-export const searchProduct = async (serial: string): Promise<IProduct> => {
-  const foundProductSerial: IProductSerial = await ProductSerial.findOne({
-    serial: serial,
-  });
+export const listProductInventoryByProduct = async (
+  productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IProductInventory[]> => {
+  const listProduct = await ProductInventory.find({
+    product: productId,
+  })
+    .populate("product")
+    .populate("warehouse")
+    .populate({
+      path: "purchase_order_detail",
+      populate: {
+        path: "purchase_order",
+      },
+    })
+    .lean<IProductInventory[]>();
 
-  if (!foundProductSerial) {
-    throw new Error("No existe el producto con este serial");
+  return listProduct;
+};
+
+export const searchProduct = async (argument: string): Promise<IProduct> => {
+  const foundProductSerial: IProductSerial | null = await ProductSerial.findOne(
+    {
+      serial: argument,
+    }
+  );
+
+  if (foundProductSerial) {
+    const product: IProduct = await Product.findById(foundProductSerial.product)
+      .populate("brand")
+      .populate("category")
+      .lean<IProduct>();
+
+    return product;
   }
 
-  const product: IProduct = await Product.findById(foundProductSerial.product)
+  const product: IProduct | null = await Product.findOne({
+    $or: [
+      { name: { $regex: argument, $options: "i" } },
+      { code: { $regex: argument, $options: "i" } },
+    ],
+  })
     .populate("brand")
     .populate("category")
     .lean<IProduct>();
+
+  if (!product) {
+    throw new Error(
+      "No se encontró ningún producto con ese nombre, código o serial"
+    );
+  }
 
   return product;
 };

@@ -19,10 +19,11 @@ export interface IPurchaseOrderDetailToPDF {
 }
 
 export interface PurchaseOrderDetailInput {
-  purchase_order?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
-  product?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
-  purchase_price?: number;
-  quantity?: number;
+  purchase_order: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  product: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  purchase_price: number;
+  quantity: number;
+  warehouse?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
 }
 
 export interface UpdatePurchaseOrderDetailInput {
@@ -31,6 +32,7 @@ export interface UpdatePurchaseOrderDetailInput {
 }
 
 export interface AddSerialToPurchaseOrderDetailInput {
-  purchase_order_detail?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
-  serial?: string;
+  purchase_order_detail: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  serial: string;
+  warehouse: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
 }

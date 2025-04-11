@@ -1,3 +1,20 @@
+type Warehouse {
+  _id: ID!
+  name: String
+  description: String
+  is_active: Boolean
+}
+
+input WarehouseInput {
+  name: String!
+  description: String
+}
+
+input UpdateWarehouseInput {
+  name: String!
+  description: String!
+}
+
 type Permission {
   label: String
   name: String
@@ -166,6 +183,7 @@ input PurchaseOrderDetailInput {
   purchase_price: Float!
   product: String!
   quantity: Int!
+  warehouse: String
 }
 
 input UpdatePurchaseOrderDetailInput {
@@ -177,14 +195,27 @@ type ProductSerial {
   _id: ID!
   serial: String
   product: Product
+  warehouse: Warehouse
   purchase_order_detail: PurchaseOrderDetail
   sale_order_detail: SaleOrderDetail
+  status: String
+}
+
+type ProductInventory {
+  _id: ID!
+  product: Product
+  warehouse: Warehouse
+  purchase_order_detail: PurchaseOrderDetail
+  quantity: Int
+  reserved: Int
+  sold: Int
   status: String
 }
 
 input addSerialToPurchaseOrderDetailInput {
   purchase_order_detail: String!
   serial: String!
+  warehouse: String!
 }
 
 type DeleteResponse {
@@ -268,6 +299,7 @@ input SaleOrderDetailInput {
   sale_price: Float!
   product: String!
   quantity: Int!
+  warehouse: String
 }
 
 input UpdateSaleOrderDetailInput {
@@ -280,13 +312,8 @@ input addSerialToSaleOrderDetailInput {
   serial: String!
 }
 
-type ReportSaleOrderByYear {
-  month: String!
-  total: Float!
-}
-
-type ReportPurchaseOrderByYear {
-  month: String!
+type ReportSaleOrderByClient {
+  client: String!
   total: Float!
 }
 
@@ -311,10 +338,17 @@ type Query {
 
   listCategory: [Category]
 
+  listWarehouse: [Warehouse]
+
   listProduct: [Product]
-  listProductWithParams(categoryId: String, brandId: String): [Product]
+  listProductWithParams(
+    categoryId: String
+    brandId: String
+    warehouseId: String
+  ): [Product]
   findProduct(productId: String!): Product
   listProductSerialByProduct(productId: String!): [ProductSerial]
+  listProductInventoryByProduct(productId: String!): [ProductInventory]
   searchProduct(serial: String!): Product
 
   listClient: [Client]
@@ -327,8 +361,7 @@ type Query {
   listSaleOrderByClient(clientId: String!): SaleOrderByClient
   findSaleOrder(saleOrderId: String!): SaleOrder
   findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
-  reportSaleOrderByYear: [ReportSaleOrderByYear]
-  reportEarningsByYear: [ReportSaleOrderByYear]
+  reportSaleOrderByClient: [ReportSaleOrderByClient]
   generalData: GeneralData
 
   listPurchaseOrder: [PurchaseOrder]
@@ -338,7 +371,6 @@ type Query {
   ): [ProductSerial]
   findPurchaseOrder(purchaseOrderId: String!): PurchaseOrder
   findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
-  reportPurchaseOrderByYear: [ReportPurchaseOrderByYear]
 
   generateCode(type: String!): String
 }
@@ -361,6 +393,13 @@ type Mutation {
     updateCategoryInput: UpdateCategoryInput!
   ): Category
   deleteCategory(categoryId: String!): DeleteResponse
+
+  createWarehouse(warehouseInput: WarehouseInput!): Warehouse
+  updateWarehouse(
+    warehouseId: String!
+    updateWarehouseInput: UpdateWarehouseInput!
+  ): Warehouse
+  deleteWarehouse(warehouseId: String!): DeleteResponse
 
   createProduct(productInput: ProductInput!): Product
   updateProduct(

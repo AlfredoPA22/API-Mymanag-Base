@@ -9,6 +9,11 @@ const productSerialSchema = new mongoose.Schema({
     ref: "product",
     required: true,
   },
+  warehouse: {
+    type: MongooseSchema.Types.ObjectId,
+    ref: "warehouse",
+    required: true,
+  },
   purchase_order_detail: {
     type: MongooseSchema.Types.ObjectId,
     ref: "purchase_order_detail",
