@@ -26,6 +26,7 @@ import { SaleOrder } from "./sale_order.model";
 import { SaleOrderDetail } from "./sale_order_detail.model";
 import { ProductInventory } from "../product/product_inventory.model";
 import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
+import { Client } from "../client/client.model";
 
 export const findAll = async (): Promise<ISaleOrder[]> => {
   return await SaleOrder.find().populate("client").lean<ISaleOrder[]>();
@@ -806,34 +807,44 @@ export const reportSaleOrderByClient = async () => {
     },
     {
       $group: {
-        _id: "$client", // Agrupamos por cliente
+        _id: "$client",
         total: { $sum: "$total" },
       },
     },
     {
-      $sort: { total: -1 }, // Ordenamos de mayor a menor
-    },
-    {
-      $limit: 5, // Solo los top 5
+      $addFields: {
+        clientObjectId: {
+          $cond: [
+            { $eq: [{ $type: "$_id" }, "objectId"] },
+            "$_id",
+            { $toObjectId: "$_id" }
+          ]
+        }
+      },
     },
     {
       $lookup: {
-        from: "clients", // Asegurate que este sea el nombre correcto de la colección
-        localField: "_id",
+        from: "clients",
+        localField: "clientObjectId",
         foreignField: "_id",
         as: "clientData",
       },
     },
     {
-      $unwind: "$clientData",
+      $unwind: {
+        path: "$clientData",
+        preserveNullAndEmptyArrays: false, // ahora solo devuelve si existe
+      },
     },
     {
       $project: {
         _id: 0,
-        client: "$clientData.name",
+        client: "$clientData.fullName",
         total: 1,
       },
     },
+    { $sort: { total: -1 } },
+    { $limit: 5 }
   ]);
 
   return topClients as ISalesReportByClient[];

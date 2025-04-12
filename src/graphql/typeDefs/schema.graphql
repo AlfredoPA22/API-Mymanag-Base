@@ -382,6 +382,7 @@ type Mutation {
 
   createUser(userInput: UserInput!): User
   login(loginInput: LoginInput!): String
+  switchUserState(userId: String!): User
 
   createBrand(brandInput: BrandInput!): Brand
   updateBrand(brandId: String!, updateBrandInput: UpdateBrandInput!): Brand

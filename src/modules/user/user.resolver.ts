@@ -1,6 +1,6 @@
 import { IUser } from "../../interfaces/user.interface";
 import { hasPermission } from "../../utils/hasPermission";
-import { create, findAll, login } from "./user.service";
+import { create, findAll, login, switchUserState } from "./user.service";
 
 export const userResolver = {
   Query: {
@@ -26,6 +26,9 @@ export const userResolver = {
     },
     async login(_: any, args: Record<string, any>) {
       return await login(args.loginInput);
+    },
+    async switchUserState(_: any, args: Record<string, any>) {
+      return await switchUserState(args.userId);
     },
   },
 };
