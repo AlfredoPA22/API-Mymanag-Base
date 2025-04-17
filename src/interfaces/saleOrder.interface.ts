@@ -32,3 +32,8 @@ export interface ISalesReportByClient {
   client: string;
   total: Number;
 }
+
+export interface ISalesReportByCategory {
+  category: string;
+  total: Number;
+}

@@ -19,7 +19,7 @@ export const brandResolver = {
   Mutation: {
     async createBrand(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_BRAND"];
+      const permission = ["LIST_AND_CREATE_BRAND", "LIST_AND_CREATE_PRODUCT"];
       await hasPermission(roleName, permission);
 
       return await create(args.brandInput);

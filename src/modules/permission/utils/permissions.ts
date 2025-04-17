@@ -79,6 +79,43 @@ export const PERMISSIONS_TREE: IPermission[] = [
         value: "SEARCH_PRODUCT",
       },
       { label: "Datos generales", name: "generalData", value: "GENERAL_DATA" },
+      {
+        label: "Mejores clientes",
+        name: "reportSaleOrderByClient",
+        value: "REPORT_SALE_ORDER_BY_CLIENT",
+      },
+      {
+        label: "Mejores categorias",
+        name: "reportSaleOrderByCategory",
+        value: "REPORT_SALE_ORDER_BY_CATEGORY",
+      },
+      {
+        label: "Ventas recientes",
+        name: "reportSaleOrderByMonth",
+        value: "REPORT_SALE_ORDER_BY_MONTH",
+      },
+    ],
+  },
+  {
+    label: "Almacenes",
+    name: "Almacenes",
+    value: "ALL_WAREHOUSES",
+    children: [
+      {
+        label: "Listar y crear almacenes",
+        name: "Listar y crear almacenes",
+        value: "LIST_AND_CREATE_WAREHOUSE",
+      },
+      {
+        label: "Eliminar almacenes",
+        name: "deleteWarehouse",
+        value: "DELETE_WAREHOUSE",
+      },
+      {
+        label: "Actualizar almacenes",
+        name: "updateWarehouse",
+        value: "UPDATE_WAREHOUSE",
+      },
     ],
   },
   {
@@ -100,6 +137,11 @@ export const PERMISSIONS_TREE: IPermission[] = [
         label: "Listar seriales de producto",
         name: "listProductSerialByProduct",
         value: "LIST_PRODUCT_SERIAL_BY_PRODUCT",
+      },
+      {
+        label: "Listar inventario de producto",
+        name: "listProductInventoryByProduct",
+        value: "LIST_PRODUCT_INVENTORY_BY_PRODUCT",
       },
       {
         label: "Eliminar productos",

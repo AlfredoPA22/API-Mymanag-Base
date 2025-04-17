@@ -111,9 +111,9 @@ export const productResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IProductInventory[]> {
-      // const roleName = context.user.role;
-      // const permission = ["LIST_PRODUCT_SERIAL_BY_PRODUCT"];
-      // await hasPermission(roleName, permission);
+      const roleName = context.user.role;
+      const permission = ["LIST_PRODUCT_INVENTORY_BY_PRODUCT"];
+      await hasPermission(roleName, permission);
 
       return await listProductInventoryByProduct(args.productId);
     },

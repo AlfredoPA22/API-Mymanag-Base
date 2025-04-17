@@ -30,6 +30,7 @@ import { PurchaseOrderDetail } from "./purchase_order_detail.model";
 
 export const findAll = async (): Promise<IPurchaseOrder[]> => {
   return await PurchaseOrder.find()
+    .sort({ date: -1 })
     .populate("provider")
     .lean<IPurchaseOrder[]>();
 };

@@ -22,7 +22,10 @@ export const categoryResolver = {
   Mutation: {
     async createCategory(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_CATEGORY"];
+      const permission = [
+        "LIST_AND_CREATE_CATEGORY",
+        "LIST_AND_CREATE_PRODUCT",
+      ];
       await hasPermission(roleName, permission);
       return await create(args.categoryInput);
     },

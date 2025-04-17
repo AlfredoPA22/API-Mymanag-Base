@@ -1,6 +1,7 @@
 import {
   ISaleOrder,
   ISaleOrderToPDF,
+  ISalesReportByCategory,
   ISalesReportByClient,
 } from "../../interfaces/saleOrder.interface";
 import { ISaleOrderDetail } from "../../interfaces/saleOrderDetail.interface";
@@ -17,8 +18,10 @@ import {
   findDetail,
   findSaleOrder,
   findSaleOrderToPDF,
+  reportSaleOrderByCategory,
   reportSaleOrderByClient,
-  updateSaleOrderDetail
+  reportSaleOrderByMonth,
+  updateSaleOrderDetail,
 } from "./saleOrder.service";
 
 export const saleOrderResolver = {
@@ -73,9 +76,36 @@ export const saleOrderResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<ISalesReportByClient[]> {
+      const roleName = context.user.role;
+      const permission = ["REPORT_SALE_ORDER_BY_CLIENT"];
+      await hasPermission(roleName, permission);
+
       return await reportSaleOrderByClient();
     },
-    
+
+    async reportSaleOrderByCategory(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISalesReportByCategory[]> {
+      const roleName = context.user.role;
+      const permission = ["REPORT_SALE_ORDER_BY_CATEGORY"];
+      await hasPermission(roleName, permission);
+
+      return await reportSaleOrderByCategory();
+    },
+
+    async reportSaleOrderByMonth(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISaleOrder[]> {
+      const roleName = context.user.role;
+      const permission = ["REPORT_SALE_ORDER_BY_MONTH"];
+      await hasPermission(roleName, permission);
+
+      return await reportSaleOrderByMonth();
+    },
   },
   Mutation: {
     async createSaleOrder(_: any, args: Record<string, any>, context: any) {

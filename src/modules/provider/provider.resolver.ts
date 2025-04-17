@@ -22,7 +22,10 @@ export const providerResolver = {
   Mutation: {
     async createProvider(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PROVIDER"];
+      const permission = [
+        "LIST_AND_CREATE_PROVIDER",
+        "LIST_AND_CREATE_PURCHASE",
+      ];
       await hasPermission(roleName, permission);
 
       return await create(args.providerInput);

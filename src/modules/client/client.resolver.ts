@@ -37,7 +37,7 @@ export const clientResolver = {
   Mutation: {
     async createClient(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_CLIENT"];
+      const permission = ["LIST_AND_CREATE_CLIENT", "LIST_AND_CREATE_SALE"];
       await hasPermission(roleName, permission);
 
       return await create(args.clientInput);

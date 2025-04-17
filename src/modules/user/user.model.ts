@@ -2,16 +2,19 @@ import mongoose from "mongoose";
 import { Schema as MongooseSchema } from "mongoose";
 import bcrypt from "bcryptjs";
 
-const userSchema = new mongoose.Schema({
-  user_name: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: {
-    type: MongooseSchema.Types.ObjectId,
-    ref: "role",
-    required: true,
+const userSchema = new mongoose.Schema(
+  {
+    user_name: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "role",
+      required: true,
+    },
+    is_active: { type: Boolean, default: true },
   },
-  is_active: { type: Boolean, default: true },
-});
+  { timestamps: true }
+);
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

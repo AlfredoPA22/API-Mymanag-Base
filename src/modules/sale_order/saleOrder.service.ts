@@ -4,6 +4,7 @@ import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
   ISaleOrder,
   ISaleOrderToPDF,
+  ISalesReportByCategory,
   ISalesReportByClient,
   SaleOrderInput,
 } from "../../interfaces/saleOrder.interface";
@@ -15,21 +16,23 @@ import {
   UpdateSaleOrderDetailInput,
 } from "../../interfaces/saleOrderDetail.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
+import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
 import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
 import { productStatus } from "../../utils/enums/productStatus.enum";
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 import { stockType } from "../../utils/enums/stockType.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { Product } from "../product/product.model";
+import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
 import { SaleOrder } from "./sale_order.model";
 import { SaleOrderDetail } from "./sale_order_detail.model";
-import { ProductInventory } from "../product/product_inventory.model";
-import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
-import { Client } from "../client/client.model";
 
 export const findAll = async (): Promise<ISaleOrder[]> => {
-  return await SaleOrder.find().populate("client").lean<ISaleOrder[]>();
+  return await SaleOrder.find()
+    .sort({ date: -1 })
+    .populate("client")
+    .lean<ISaleOrder[]>();
 };
 
 export const findDetail = async (
@@ -817,9 +820,9 @@ export const reportSaleOrderByClient = async () => {
           $cond: [
             { $eq: [{ $type: "$_id" }, "objectId"] },
             "$_id",
-            { $toObjectId: "$_id" }
-          ]
-        }
+            { $toObjectId: "$_id" },
+          ],
+        },
       },
     },
     {
@@ -844,8 +847,89 @@ export const reportSaleOrderByClient = async () => {
       },
     },
     { $sort: { total: -1 } },
-    { $limit: 5 }
+    { $limit: 5 },
   ]);
 
   return topClients as ISalesReportByClient[];
+};
+
+export const reportSaleOrderByCategory = async () => {
+  const currentYear = new Date().getFullYear();
+
+  const topCategories = await SaleOrderDetail.aggregate([
+    // Hacer lookup de la orden para filtrar por estado y fecha
+    {
+      $lookup: {
+        from: "sale_orders",
+        localField: "sale_order",
+        foreignField: "_id",
+        as: "orderData",
+      },
+    },
+    { $unwind: "$orderData" },
+    {
+      $match: {
+        "orderData.status": saleOrderStatus.APROBADO,
+        "orderData.date": {
+          $gte: new Date(`${currentYear}-01-01`),
+          $lt: new Date(`${currentYear + 1}-01-01`),
+        },
+      },
+    },
+    // Lookup del producto para obtener la categoría
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "productData",
+      },
+    },
+    { $unwind: "$productData" },
+    // Lookup de la categoría
+    {
+      $lookup: {
+        from: "categories",
+        localField: "productData.category",
+        foreignField: "_id",
+        as: "categoryData",
+      },
+    },
+    { $unwind: "$categoryData" },
+    // Agrupar por categoría y sumar subtotales
+    {
+      $group: {
+        _id: "$categoryData._id",
+        category: { $first: "$categoryData.name" },
+        total: { $sum: "$subtotal" },
+      },
+    },
+    { $sort: { total: -1 } },
+    { $limit: 5 },
+    {
+      $project: {
+        _id: 0,
+        category: 1,
+        total: 1,
+      },
+    },
+  ]);
+
+  return topCategories as ISalesReportByCategory[];
+};
+
+export const reportSaleOrderByMonth = async (): Promise<ISaleOrder[]> => {
+  const now = new Date();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(now.getMonth() - 1);
+
+  return await SaleOrder.find({
+    date: {
+      $gte: oneMonthAgo,
+      $lte: now,
+    },
+    status: saleOrderStatus.APROBADO,
+  })
+    .populate("client")
+    .lean<ISaleOrder[]>();
 };
