@@ -16,6 +16,11 @@ const saleOrderSchema = new mongoose.Schema(
       required: true,
       default: purchaseOrderStatus.BORRADOR,
     },
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+    },
   },
   { timestamps: true }
 );

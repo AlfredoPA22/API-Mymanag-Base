@@ -46,12 +46,20 @@ type User {
   password: String
   role: Role
   is_active: Boolean
+  is_global: Boolean
 }
 
 input UserInput {
   user_name: String!
   password: String!
   role: String!
+  is_global: Boolean!
+}
+
+input UpdateUserInput {
+  user_name: String!
+  role: String!
+  is_global: Boolean!
 }
 
 input LoginInput {
@@ -387,8 +395,11 @@ type Mutation {
   createPermission(permissionInput: PermissionInput!): Permission
 
   createRole(roleInput: RoleInput!): Role
+  deleteRole(roleId: String!): DeleteResponse
 
   createUser(userInput: UserInput!): User
+  updateUser(userId: String!, updateUserInput: UpdateUserInput!): User
+  deleteUser(userId: String!): DeleteResponse
   login(loginInput: LoginInput!): String
   switchUserState(userId: String!): User
 

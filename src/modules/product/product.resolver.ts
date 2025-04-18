@@ -144,7 +144,7 @@ export const productResolver = {
       const permission = ["GENERAL_DATA"];
       await hasPermission(roleName, permission);
 
-      return await generalData();
+      return await generalData(context.user.id);
     },
   },
   Mutation: {

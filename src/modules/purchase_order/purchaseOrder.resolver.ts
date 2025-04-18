@@ -1,6 +1,6 @@
 import {
   IPurchaseOrder,
-  IPurchaseOrderToPDF
+  IPurchaseOrderToPDF,
 } from "../../interfaces/purchaseOrder.interface";
 import { IPurchaseOrderDetail } from "../../interfaces/purchaseOrderDetail.interface";
 import { hasPermission } from "../../utils/hasPermission";
@@ -16,7 +16,7 @@ import {
   findDetail,
   findPurchaseOrder,
   findPurchaseOrderToPDF,
-  updatePurchaseOrderDetail
+  updatePurchaseOrderDetail,
 } from "./purchaseOrder.service";
 
 export const purchaseOrderResolver = {
@@ -30,7 +30,7 @@ export const purchaseOrderResolver = {
       const permission = ["LIST_AND_CREATE_PURCHASE"];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.id);
     },
 
     async listPurchaseOrderDetail(
@@ -79,7 +79,7 @@ export const purchaseOrderResolver = {
       const permission = ["LIST_AND_CREATE_PURCHASE"];
       await hasPermission(roleName, permission);
 
-      return await create(args.purchaseOrderInput);
+      return await create(context.user.id, args.purchaseOrderInput);
     },
     async createPurchaseOrderDetail(
       _: any,

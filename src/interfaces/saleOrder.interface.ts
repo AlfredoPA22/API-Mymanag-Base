@@ -3,6 +3,7 @@ import { saleOrderStatus } from "../utils/enums/saleOrderStatus.enum";
 import { IClient } from "./client.interface";
 import { IPurchaseOrderDetailToPDF } from "./purchaseOrderDetail.interface";
 import { ISaleOrderDetailToPDF } from "./saleOrderDetail.interface";
+import { IUser } from "./user.interface";
 
 export interface ISaleOrder {
   _id: MongooseTypes.ObjectId;
@@ -11,6 +12,7 @@ export interface ISaleOrder {
   date: Date;
   total: string;
   status: saleOrderStatus;
+  created_by: IUser
 }
 
 export interface ISaleOrderByClient {

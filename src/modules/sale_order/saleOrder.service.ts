@@ -27,9 +27,21 @@ import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
 import { SaleOrder } from "./sale_order.model";
 import { SaleOrderDetail } from "./sale_order_detail.model";
+import { IUser } from "../../interfaces/user.interface";
+import { User } from "../user/user.model";
 
-export const findAll = async (): Promise<ISaleOrder[]> => {
-  return await SaleOrder.find()
+export const findAll = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<ISaleOrder[]> => {
+  const foundUser: IUser | null = await User.findById(userId);
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const filter = foundUser.is_global ? {} : { created_by: userId };
+
+  return await SaleOrder.find(filter)
     .sort({ date: -1 })
     .populate("client")
     .lean<ISaleOrder[]>();
@@ -87,12 +99,16 @@ export const findSaleOrderToPDF = async (
   return response;
 };
 
-export const create = async (createSaleOrderInput: SaleOrderInput) => {
+export const create = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  createSaleOrderInput: SaleOrderInput
+) => {
   const newSaleOrder = await (
     await SaleOrder.create({
       code: await generate(codeType.SALE_ORDER),
       date: createSaleOrderInput.date,
       client: createSaleOrderInput.client,
+      created_by: userId,
     })
   ).populate("client");
 
@@ -795,19 +811,30 @@ export const updateSaleOrderDetail = async (
   return findSaleOrderDetail;
 };
 
-export const reportSaleOrderByClient = async () => {
+export const reportSaleOrderByClient = async (
+  userId: MongooseTypes.ObjectId // Usamos solo MongooseTypes.ObjectId
+) => {
+  const foundUser: IUser | null = await User.findById(userId);
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
   const currentYear = new Date().getFullYear();
 
-  const topClients = await SaleOrder.aggregate([
-    {
-      $match: {
-        status: saleOrderStatus.APROBADO,
-        date: {
-          $gte: new Date(`${currentYear}-01-01`),
-          $lt: new Date(`${currentYear + 1}-01-01`),
-        },
-      },
+  const matchStage: any = {
+    status: saleOrderStatus.APROBADO,
+    date: {
+      $gte: new Date(`${currentYear}-01-01`),
+      $lt: new Date(`${currentYear + 1}-01-01`),
     },
+  };
+
+  if (!foundUser.is_global) {
+    matchStage["created_by"] = new MongooseTypes.ObjectId(userId);
+  }
+
+  const topClients = await SaleOrder.aggregate([
+    { $match: matchStage },
     {
       $group: {
         _id: "$client",
@@ -836,7 +863,7 @@ export const reportSaleOrderByClient = async () => {
     {
       $unwind: {
         path: "$clientData",
-        preserveNullAndEmptyArrays: false, // ahora solo devuelve si existe
+        preserveNullAndEmptyArrays: false,
       },
     },
     {
@@ -853,11 +880,29 @@ export const reportSaleOrderByClient = async () => {
   return topClients as ISalesReportByClient[];
 };
 
-export const reportSaleOrderByCategory = async () => {
+export const reportSaleOrderByCategory = async (
+  userId: MongooseTypes.ObjectId // Usa MongooseTypes.ObjectId
+) => {
+  const foundUser: IUser | null = await User.findById(userId);
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
   const currentYear = new Date().getFullYear();
 
+  const matchStage: any = {
+    "orderData.status": saleOrderStatus.APROBADO,
+    "orderData.date": {
+      $gte: new Date(`${currentYear}-01-01`),
+      $lt: new Date(`${currentYear + 1}-01-01`),
+    },
+  };
+
+  if (!foundUser.is_global) {
+    matchStage["orderData.created_by"] = new MongooseTypes.ObjectId(userId);
+  }
+
   const topCategories = await SaleOrderDetail.aggregate([
-    // Hacer lookup de la orden para filtrar por estado y fecha
     {
       $lookup: {
         from: "sale_orders",
@@ -867,16 +912,7 @@ export const reportSaleOrderByCategory = async () => {
       },
     },
     { $unwind: "$orderData" },
-    {
-      $match: {
-        "orderData.status": saleOrderStatus.APROBADO,
-        "orderData.date": {
-          $gte: new Date(`${currentYear}-01-01`),
-          $lt: new Date(`${currentYear + 1}-01-01`),
-        },
-      },
-    },
-    // Lookup del producto para obtener la categoría
+    { $match: matchStage },
     {
       $lookup: {
         from: "products",
@@ -886,7 +922,6 @@ export const reportSaleOrderByCategory = async () => {
       },
     },
     { $unwind: "$productData" },
-    // Lookup de la categoría
     {
       $lookup: {
         from: "categories",
@@ -896,7 +931,6 @@ export const reportSaleOrderByCategory = async () => {
       },
     },
     { $unwind: "$categoryData" },
-    // Agrupar por categoría y sumar subtotales
     {
       $group: {
         _id: "$categoryData._id",
@@ -918,18 +952,33 @@ export const reportSaleOrderByCategory = async () => {
   return topCategories as ISalesReportByCategory[];
 };
 
-export const reportSaleOrderByMonth = async (): Promise<ISaleOrder[]> => {
+export const reportSaleOrderByMonth = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<ISaleOrder[]> => {
+  const foundUser: IUser | null = await User.findById(userId);
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
   const now = new Date();
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(now.getMonth() - 1);
 
-  return await SaleOrder.find({
+  const filter: any = {
     date: {
       $gte: oneMonthAgo,
       $lte: now,
     },
     status: saleOrderStatus.APROBADO,
-  })
-    .populate("client")
+  };
+
+  if (!foundUser.is_global) {
+    filter.created_by = userId;
+  }
+
+  return await SaleOrder.find(filter)
+    .sort({ date: -1 }) // Ordena por fecha de manera descendente (más recientes primero)
+    .limit(10) // Limita a las últimas 10 ventas
+    .populate("client") // Llenar información del cliente
     .lean<ISaleOrder[]>();
 };

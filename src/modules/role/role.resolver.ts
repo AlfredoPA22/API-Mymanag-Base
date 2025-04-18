@@ -1,6 +1,11 @@
 import { IRole } from "../../interfaces/role.interface";
 import { hasPermission } from "../../utils/hasPermission";
-import { create, findAll, listPermissionsByRole } from "./role.service";
+import {
+  create,
+  deleteRole,
+  findAll,
+  listPermissionsByRole,
+} from "./role.service";
 
 export const roleResolver = {
   Query: {
@@ -35,6 +40,13 @@ export const roleResolver = {
       await hasPermission(roleName, permission);
 
       return await create(args.roleInput);
+    },
+    async deleteRole(_: any, args: Record<string, any>, context: any) {
+      const roleName = context.user.role;
+      const permission = ["USER_AND_ROLE"];
+      await hasPermission(roleName, permission);
+
+      return await deleteRole(args.roleId);
     },
   },
 };

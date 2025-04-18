@@ -28,6 +28,8 @@ import { Product } from "./product.model";
 import { ProductSerial } from "./product_serial.model";
 import { IProductInventory } from "../../interfaces/productInventory.interface";
 import { ProductInventory } from "./product_inventory.model";
+import { IUser } from "../../interfaces/user.interface";
+import { User } from "../user/user.model";
 
 export const findAll = async (): Promise<IProduct[]> => {
   const listProduct = await Product.find()
@@ -230,7 +232,14 @@ export const searchProduct = async (argument: string): Promise<IProduct> => {
   return product;
 };
 
-export const generalData = async (): Promise<IGeneralData> => {
+export const generalData = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IGeneralData> => {
+  const foundUser: IUser | null = await User.findById(userId);
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
   const total_products_number: number = await Product.countDocuments();
 
   const total_products_out: number = await Product.countDocuments({
@@ -260,6 +269,9 @@ export const generalData = async (): Promise<IGeneralData> => {
     {
       $match: {
         "order.status": saleOrderStatus.APROBADO,
+        ...(foundUser.is_global
+          ? {}
+          : { "order.created_by": new MongooseTypes.ObjectId(`${userId}`) }),
       },
     },
     {
@@ -304,12 +316,16 @@ export const generalData = async (): Promise<IGeneralData> => {
 
   const total_sales_number: number = await SaleOrder.countDocuments({
     status: saleOrderStatus.APROBADO,
+    ...(foundUser.is_global ? {} : { created_by: userId }),
   });
 
   const total_sales_value_aggregate = await SaleOrder.aggregate([
     {
       $match: {
         status: saleOrderStatus.APROBADO,
+        ...(foundUser.is_global
+          ? {}
+          : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
       },
     },
     {

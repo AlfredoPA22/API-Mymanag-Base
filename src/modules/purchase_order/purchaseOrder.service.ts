@@ -27,9 +27,21 @@ import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
 import { PurchaseOrder } from "./purchase_order.model";
 import { PurchaseOrderDetail } from "./purchase_order_detail.model";
+import { IUser } from "../../interfaces/user.interface";
+import { User } from "../user/user.model";
 
-export const findAll = async (): Promise<IPurchaseOrder[]> => {
-  return await PurchaseOrder.find()
+export const findAll = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IPurchaseOrder[]> => {
+  const foundUser: IUser | null = await User.findById(userId);
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const filter = foundUser.is_global ? {} : { created_by: userId };
+
+  return await PurchaseOrder.find(filter)
     .sort({ date: -1 })
     .populate("provider")
     .lean<IPurchaseOrder[]>();
@@ -90,12 +102,16 @@ export const findPurchaseOrderToPDF = async (
   return response;
 };
 
-export const create = async (createPurchaseOrderInput: PurchaseOrderInput) => {
+export const create = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  createPurchaseOrderInput: PurchaseOrderInput
+) => {
   const newPurchaseOrder = await (
     await PurchaseOrder.create({
       code: await generate(codeType.PURCHASE_ORDER),
       date: createPurchaseOrderInput.date,
       provider: createPurchaseOrderInput.provider,
+      created_by: userId,
     })
   ).populate("provider");
 

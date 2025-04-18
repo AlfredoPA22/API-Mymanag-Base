@@ -35,7 +35,7 @@ export const saleOrderResolver = {
       const permission = ["LIST_AND_CREATE_SALE"];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.id);
     },
     async findSaleOrder(
       _: any,
@@ -80,7 +80,7 @@ export const saleOrderResolver = {
       const permission = ["REPORT_SALE_ORDER_BY_CLIENT"];
       await hasPermission(roleName, permission);
 
-      return await reportSaleOrderByClient();
+      return await reportSaleOrderByClient(context.user.id);
     },
 
     async reportSaleOrderByCategory(
@@ -92,7 +92,7 @@ export const saleOrderResolver = {
       const permission = ["REPORT_SALE_ORDER_BY_CATEGORY"];
       await hasPermission(roleName, permission);
 
-      return await reportSaleOrderByCategory();
+      return await reportSaleOrderByCategory(context.user.id);
     },
 
     async reportSaleOrderByMonth(
@@ -104,7 +104,7 @@ export const saleOrderResolver = {
       const permission = ["REPORT_SALE_ORDER_BY_MONTH"];
       await hasPermission(roleName, permission);
 
-      return await reportSaleOrderByMonth();
+      return await reportSaleOrderByMonth(context.user.id);
     },
   },
   Mutation: {
@@ -113,7 +113,7 @@ export const saleOrderResolver = {
       const permission = ["LIST_AND_CREATE_SALE"];
       await hasPermission(roleName, permission);
 
-      return await create(args.saleOrderInput);
+      return await create(context.user.id, args.saleOrderInput);
     },
     async deleteSaleOrder(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;

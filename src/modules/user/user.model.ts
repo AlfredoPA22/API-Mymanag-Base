@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     is_active: { type: Boolean, default: true },
+    is_global: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
