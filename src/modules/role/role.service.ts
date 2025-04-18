@@ -1,10 +1,19 @@
 import { IRole, RoleInput } from "../../interfaces/role.interface";
 import { Role } from "./role.model";
+import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 
 export const findAll = async (): Promise<IRole[]> => {
   const listRole = await Role.find().populate("permission").lean<IRole[]>();
 
   return listRole;
+};
+
+export const listPermissionsByRole = async (
+  roleId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<[]> => {
+  const role: IRole | null = await Role.findById(roleId).lean<IRole>();
+
+  return role.permission || [];
 };
 
 export const create = async (roleInput: RoleInput) => {

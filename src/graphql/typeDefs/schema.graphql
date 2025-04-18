@@ -31,7 +31,7 @@ type Role {
   _id: ID!
   name: String
   description: String
-  permission: [Permission]
+  permission: [String]
 }
 
 input RoleInput {
@@ -336,6 +336,7 @@ type Query {
   listUser: [User]
 
   listRole: [Role]
+  listPermissionsByRole(roleId: String!): [String]
 
   listPermission: [Permission]
 

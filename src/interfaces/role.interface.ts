@@ -1,11 +1,10 @@
 import { Types as MongooseTypes } from "mongoose";
-import { IPermission } from "./permission.interface";
 
 export interface IRole {
   _id: MongooseTypes.ObjectId;
   name: string;
   description: string;
-  permission: IPermission[];
+  permission: [];
 }
 
 export interface RoleInput {

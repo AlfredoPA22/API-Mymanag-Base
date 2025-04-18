@@ -44,7 +44,12 @@ export const productResolver = {
       context: any
     ): Promise<IProduct[]> {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PRODUCT"];
+      const permission = [
+        "LIST_AND_CREATE_PRODUCT",
+        "LIST_AND_CREATE_BRAND",
+        "LIST_AND_CREATE_CATEGORY",
+        "LIST_AND_CREATE_WAREHOUSE",
+      ];
       await hasPermission(roleName, permission);
 
       return await findAllWithParams(

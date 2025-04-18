@@ -12,8 +12,8 @@ import { initializeDatabase } from "./utils/initializeDatabase";
 dotenv.config();
 const app = express();
 const corsOptions = {
-  origin: "https://client-mymanag-base.vercel.app",
-  // origin: "http://localhost:5173",
+  // origin: "https://client-mymanag-base.vercel.app",
+  origin: "http://localhost:5173",
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
