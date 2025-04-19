@@ -31,6 +31,7 @@ import { IProductInventory } from "../../interfaces/productInventory.interface";
 import { ProductInventory } from "./product_inventory.model";
 import { IUser } from "../../interfaces/user.interface";
 import { User } from "../user/user.model";
+import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
 
 export const findAll = async (): Promise<IProduct[]> => {
   const listProduct = await Product.find()
@@ -79,23 +80,25 @@ export const findAllWithParams = async (
   if (categoryId) filter.category = categoryId;
   if (brandId) filter.brand = brandId;
 
-  let productIdsByWarehouse:
-    | MongooseSchema.Types.ObjectId
-    | MongooseTypes.ObjectId[] = [];
+  let productIdsByWarehouse: MongooseTypes.ObjectId[] = [];
 
   if (warehouseId) {
+    // Obtener TODOS los productos serializados en ese almacén (sin filtrar por estado)
     const serialProducts = await ProductSerial.distinct("product", {
       warehouse: warehouseId,
     });
 
+    // Obtener los productos de inventario en ese almacén
     const inventoryProducts = await ProductInventory.distinct("product", {
       warehouse: warehouseId,
     });
 
+    // Unir los productos de seriales e inventario y eliminar duplicados
     productIdsByWarehouse = [
       ...new Set([...serialProducts, ...inventoryProducts]),
     ];
 
+    // Asegurarse de filtrar solo los productos que existen en el almacén
     filter._id = { $in: productIdsByWarehouse };
   }
 
@@ -106,7 +109,7 @@ export const findAllWithParams = async (
 
   if (!warehouseId) return products;
 
-  // Mapear productos con stock específico del almacén
+  // Mapear productos con stock específico en ese almacén
   const updatedProducts = await Promise.all(
     products.map(async (product) => {
       // Stock de inventario (no serializados)
@@ -115,12 +118,14 @@ export const findAllWithParams = async (
         warehouse: warehouseId,
       });
 
-      // Stock de productos serializados
+      // Stock de productos serializados (solo los DISPONIBLES)
       const serialCount = await ProductSerial.countDocuments({
         product: product._id,
         warehouse: warehouseId,
+        status: productSerialStatus.DISPONIBLE, // Solo contar seriales DISPONIBLES
       });
 
+      // Calcular el stock total sumando inventarios y seriales DISPONIBLES
       const stockTotal = (inventory?.quantity || 0) + serialCount;
 
       return {

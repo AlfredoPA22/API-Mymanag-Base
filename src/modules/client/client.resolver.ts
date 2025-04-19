@@ -35,7 +35,7 @@ export const clientResolver = {
       const permission = ["LIST_SALE_ORDER_BY_CLIENT"];
       await hasPermission(roleName, permission);
 
-      return await findAllSaleOrderByClient(args.clientId);
+      return await findAllSaleOrderByClient(context.user.id, args.clientId);
     },
   },
   Mutation: {

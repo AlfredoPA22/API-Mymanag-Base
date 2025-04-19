@@ -1,5 +1,9 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
-import { ClientInput, IClient, UpdateClientInput } from "../../interfaces/client.interface";
+import {
+  ClientInput,
+  IClient,
+  UpdateClientInput,
+} from "../../interfaces/client.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { Client } from "./client.model";
@@ -9,29 +13,45 @@ import {
   ISaleOrderByClient,
 } from "../../interfaces/saleOrder.interface";
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
+import { IUser } from "../../interfaces/user.interface";
+import { User } from "../user/user.model";
 
 export const findAll = async (): Promise<IClient[]> => {
   return await Client.find();
 };
 
 export const findAllSaleOrderByClient = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   clientId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrderByClient> => {
-  await findById(clientId);
+  const foundUser: IUser | null = await User.findById(userId);
 
-  const allSalesOrderByClient = await SaleOrder.find({
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const foundClient = await findById(clientId);
+  if (!foundClient) {
+    throw new Error("Cliente no encontrado");
+  }
+
+  const filter: any = {
     client: clientId,
-  })
+  };
+
+  if (!foundUser.is_global) {
+    filter.created_by = userId;
+  }
+
+  const allSalesOrderByClient = await SaleOrder.find(filter)
     .populate("client")
     .lean<ISaleOrder[]>();
 
-  let total: number = allSalesOrderByClient
+  const total: number = allSalesOrderByClient
     .filter(
       (saleOrder: ISaleOrder) => saleOrder.status === saleOrderStatus.APROBADO
     )
-    .reduce((sum, saleOrder) => {
-      return sum + Number(saleOrder.total || 0);
-    }, 0);
+    .reduce((sum, saleOrder) => sum + Number(saleOrder.total || 0), 0);
 
   const response: ISaleOrderByClient = {
     saleOrder: allSalesOrderByClient,
@@ -106,4 +126,3 @@ export const update = async (
 
   return clientUpdated;
 };
-
