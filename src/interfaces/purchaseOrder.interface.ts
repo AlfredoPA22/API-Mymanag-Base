@@ -1,4 +1,4 @@
-import { Types as MongooseTypes } from "mongoose";
+import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { purchaseOrderStatus } from "../utils/enums/purchaseOrderStatus.enum";
 import { IPurchaseOrderDetailToPDF } from "./purchaseOrderDetail.interface";
 import { IProvider } from "./provider.interface";
@@ -25,4 +25,11 @@ export interface IPurchaseOrderToPDF {
 export interface IPurchaseOrderByYear {
   month: string;
   total: Number;
+}
+
+export interface FilterPurchaseOrderInput {
+  startDate?: Date;
+  endDate?: Date;
+  provider?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  status?: string;
 }

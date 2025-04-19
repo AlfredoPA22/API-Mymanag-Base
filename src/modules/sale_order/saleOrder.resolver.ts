@@ -21,6 +21,7 @@ import {
   reportSaleOrderByCategory,
   reportSaleOrderByClient,
   reportSaleOrderByMonth,
+  saleOrderReport,
   updateSaleOrderDetail,
 } from "./saleOrder.service";
 
@@ -105,6 +106,17 @@ export const saleOrderResolver = {
       await hasPermission(roleName, permission);
 
       return await reportSaleOrderByMonth(context.user.id);
+    },
+    async saleOrderReport(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISaleOrder[]> {
+      const roleName = context.user.role;
+      const permission = ["SALE_ORDER_REPORT"];
+      await hasPermission(roleName, permission);
+
+      return await saleOrderReport(context.user.id, args.filterSaleOrderInput);
     },
   },
   Mutation: {

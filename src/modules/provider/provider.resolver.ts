@@ -13,6 +13,7 @@ export const providerResolver = {
       const permission = [
         "LIST_AND_CREATE_PROVIDER",
         "LIST_AND_CREATE_PURCHASE",
+        "PURCHASE_ORDER_REPORT",
       ];
       await hasPermission(roleName, permission);
 

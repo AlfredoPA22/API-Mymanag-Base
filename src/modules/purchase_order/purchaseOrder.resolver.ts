@@ -16,6 +16,7 @@ import {
   findDetail,
   findPurchaseOrder,
   findPurchaseOrderToPDF,
+  purchaseOrderReport,
   updatePurchaseOrderDetail,
 } from "./purchaseOrder.service";
 
@@ -71,6 +72,21 @@ export const purchaseOrderResolver = {
       await hasPermission(roleName, permission);
 
       return await findPurchaseOrderToPDF(args.purchaseOrderId);
+    },
+
+    async purchaseOrderReport(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IPurchaseOrder[]> {
+      const roleName = context.user.role;
+      const permission = ["PURCHASE_ORDER_REPORT"];
+      await hasPermission(roleName, permission);
+
+      return await purchaseOrderReport(
+        context.user.id,
+        args.filterPurchaseOrderInput
+      );
     },
   },
   Mutation: {

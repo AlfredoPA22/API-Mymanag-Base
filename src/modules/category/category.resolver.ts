@@ -13,6 +13,7 @@ export const categoryResolver = {
       const permission = [
         "LIST_AND_CREATE_CATEGORY",
         "LIST_AND_CREATE_PRODUCT",
+        "PRODUCT_REPORT",
       ];
       await hasPermission(roleName, permission);
 

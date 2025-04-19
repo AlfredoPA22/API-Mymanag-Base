@@ -97,6 +97,28 @@ export const PERMISSIONS_TREE: IPermission[] = [
     ],
   },
   {
+    label: "Reportes",
+    name: "Reportes",
+    value: "ALL_REPORT",
+    children: [
+      {
+        label: "Reporte de productos",
+        name: "productReport",
+        value: "PRODUCT_REPORT",
+      },
+      {
+        label: "Reporte de compras",
+        name: "purchaseOrderReport",
+        value: "PURCHASE_ORDER_REPORT",
+      },
+      {
+        label: "Reporte de ventas",
+        name: "saleOrderReport",
+        value: "SALE_ORDER_REPORT",
+      },
+    ],
+  },
+  {
     label: "Almacenes",
     name: "Almacenes",
     value: "ALL_WAREHOUSES",

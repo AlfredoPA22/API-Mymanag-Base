@@ -11,6 +11,7 @@ import {
   findProduct,
   findAllWithParams,
   listProductInventoryByProduct,
+  productReport,
 } from "./product.service";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
@@ -145,6 +146,18 @@ export const productResolver = {
       await hasPermission(roleName, permission);
 
       return await generalData(context.user.id);
+    },
+
+    async productReport(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IProduct[]> {
+      const roleName = context.user.role;
+      const permission = ["PRODUCT_REPORT"];
+      await hasPermission(roleName, permission);
+
+      return await productReport(args.filterProductInput);
     },
   },
   Mutation: {

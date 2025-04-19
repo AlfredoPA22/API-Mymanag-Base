@@ -2,6 +2,7 @@ import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
+  FilterSaleOrderInput,
   ISaleOrder,
   ISaleOrderToPDF,
   ISalesReportByCategory,
@@ -45,6 +46,53 @@ export const findAll = async (
     .sort({ date: -1 })
     .populate("client")
     .lean<ISaleOrder[]>();
+};
+
+export const saleOrderReport = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  filterSaleOrderInput: FilterSaleOrderInput
+): Promise<ISaleOrder[]> => {
+  const foundUser: IUser | null = await User.findById(userId);
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const query: any = {};
+
+  if (!foundUser.is_global) {
+    query.created_by = userId;
+  }
+
+  if (filterSaleOrderInput.startDate || filterSaleOrderInput.endDate) {
+    query.date = {};
+
+    if (filterSaleOrderInput.startDate) {
+      const startDate = new Date(filterSaleOrderInput.startDate);
+      startDate.setUTCHours(0, 0, 0, 0);
+      query.date.$gte = startDate;
+    }
+
+    if (filterSaleOrderInput.endDate) {
+      const endDate = new Date(filterSaleOrderInput.endDate);
+      endDate.setUTCHours(23, 59, 59, 999);
+      query.date.$lte = endDate;
+    }
+  }
+
+  if (filterSaleOrderInput.client) {
+    query.client = filterSaleOrderInput.client;
+  }
+
+  if (filterSaleOrderInput.status && filterSaleOrderInput.status !== "Todos") {
+    query.status = filterSaleOrderInput.status;
+  }
+
+  const saleOrders = await SaleOrder.find(query)
+    .populate("client")
+    .lean<ISaleOrder[]>();
+
+  return saleOrders;
 };
 
 export const findDetail = async (

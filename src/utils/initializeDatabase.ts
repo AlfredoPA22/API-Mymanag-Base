@@ -45,6 +45,9 @@ export const initializeDatabase = async () => {
           "EDIT_SALE",
           "DELETE_SALE",
           "USER_AND_ROLE",
+          "PRODUCT_REPORT",
+          "SALE_ORDER_REPORT",
+          "PURCHASE_ORDER_REPORT",
         ],
       });
 

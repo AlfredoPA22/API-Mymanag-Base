@@ -17,7 +17,11 @@ export const clientResolver = {
       context: any
     ): Promise<IClient[]> {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_CLIENT", "LIST_AND_CREATE_SALE"];
+      const permission = [
+        "LIST_AND_CREATE_CLIENT",
+        "LIST_AND_CREATE_SALE",
+        "SALE_ORDER_REPORT",
+      ];
       await hasPermission(roleName, permission);
 
       return await findAll();

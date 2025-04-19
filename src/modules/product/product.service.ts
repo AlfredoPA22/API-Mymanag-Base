@@ -1,6 +1,7 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { IGeneralData } from "../../interfaces/home.interface";
 import {
+  FilterProductInput,
   IProduct,
   ProductInput,
   UpdateProductInput,
@@ -33,6 +34,28 @@ import { User } from "../user/user.model";
 
 export const findAll = async (): Promise<IProduct[]> => {
   const listProduct = await Product.find()
+    .populate("category")
+    .populate("brand")
+    .lean<IProduct[]>();
+
+  return listProduct;
+};
+
+export const productReport = async (
+  filterProductInput: FilterProductInput
+): Promise<IProduct[]> => {
+  const query: any = {};
+  if (filterProductInput.category) {
+    query.category = filterProductInput.category;
+  }
+  if (filterProductInput.brand) {
+    query.brand = filterProductInput.brand;
+  }
+  if (filterProductInput.status && filterProductInput.status !== "Todos") {
+    query.status = filterProductInput.status;
+  }
+
+  const listProduct = await Product.find(query)
     .populate("category")
     .populate("brand")
     .lean<IProduct[]>();

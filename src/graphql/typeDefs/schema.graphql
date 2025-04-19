@@ -1,3 +1,5 @@
+scalar Date
+
 type Warehouse {
   _id: ID!
   name: String
@@ -162,6 +164,12 @@ input UpdateProductInput {
   brand: String!
 }
 
+input FilterProductInput {
+  category: String
+  brand: String
+  status: String
+}
+
 type PurchaseOrder {
   _id: ID!
   code: String
@@ -174,6 +182,13 @@ type PurchaseOrder {
 input PurchaseOrderInput {
   date: String!
   provider: String!
+}
+
+input FilterPurchaseOrderInput {
+  startDate: Date
+  endDate: Date
+  provider: String
+  status: String
 }
 
 type PurchaseOrderDetail {
@@ -265,6 +280,13 @@ type SaleOrder {
 input SaleOrderInput {
   date: String!
   client: String!
+}
+
+input FilterSaleOrderInput {
+  startDate: Date
+  endDate: Date
+  client: String
+  status: String
 }
 
 type SaleOrderDetail {
@@ -361,6 +383,7 @@ type Query {
     warehouseId: String
   ): [Product]
   findProduct(productId: String!): Product
+  productReport(filterProductInput: FilterProductInput!): [Product]
   listProductSerialByProduct(productId: String!): [ProductSerial]
   listProductInventoryByProduct(productId: String!): [ProductInventory]
   searchProduct(serial: String!): Product
@@ -373,6 +396,7 @@ type Query {
   listSaleOrderDetail(saleOrderId: String!): [SaleOrderDetail]
   listProductSerialBySaleOrder(saleOrderDetailId: String!): [ProductSerial]
   listSaleOrderByClient(clientId: String!): SaleOrderByClient
+  saleOrderReport(filterSaleOrderInput: FilterSaleOrderInput!): [SaleOrder]
   findSaleOrder(saleOrderId: String!): SaleOrder
   findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
   reportSaleOrderByClient: [ReportSaleOrderByClient]
@@ -385,6 +409,9 @@ type Query {
   listProductSerialByPurchaseOrder(
     purchaseOrderDetailId: String!
   ): [ProductSerial]
+  purchaseOrderReport(
+    filterPurchaseOrderInput: FilterPurchaseOrderInput!
+  ): [PurchaseOrder]
   findPurchaseOrder(purchaseOrderId: String!): PurchaseOrder
   findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
 

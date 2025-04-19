@@ -1,7 +1,6 @@
-import { Types as MongooseTypes } from "mongoose";
+import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { saleOrderStatus } from "../utils/enums/saleOrderStatus.enum";
 import { IClient } from "./client.interface";
-import { IPurchaseOrderDetailToPDF } from "./purchaseOrderDetail.interface";
 import { ISaleOrderDetailToPDF } from "./saleOrderDetail.interface";
 import { IUser } from "./user.interface";
 
@@ -12,7 +11,7 @@ export interface ISaleOrder {
   date: Date;
   total: string;
   status: saleOrderStatus;
-  created_by: IUser
+  created_by: IUser;
 }
 
 export interface ISaleOrderByClient {
@@ -23,7 +22,7 @@ export interface ISaleOrderByClient {
 export interface SaleOrderInput {
   date: Date;
   client: string;
-} 
+}
 
 export interface ISaleOrderToPDF {
   saleOrder: ISaleOrder;
@@ -38,4 +37,11 @@ export interface ISalesReportByClient {
 export interface ISalesReportByCategory {
   category: string;
   total: Number;
+}
+
+export interface FilterSaleOrderInput {
+  startDate?: Date;
+  endDate?: Date;
+  client?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  status?: string;
 }

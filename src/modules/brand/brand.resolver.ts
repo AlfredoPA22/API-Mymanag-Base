@@ -10,7 +10,7 @@ export const brandResolver = {
       context: any
     ): Promise<IBrand[]> {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_BRAND", "LIST_AND_CREATE_PRODUCT"];
+      const permission = ["LIST_AND_CREATE_BRAND", "LIST_AND_CREATE_PRODUCT","PRODUCT_REPORT"];
       await hasPermission(roleName, permission);
 
       return await findAll();

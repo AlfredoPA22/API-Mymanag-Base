@@ -2,6 +2,7 @@ import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
+  FilterPurchaseOrderInput,
   IPurchaseOrder,
   IPurchaseOrderByYear,
   IPurchaseOrderToPDF,
@@ -45,6 +46,56 @@ export const findAll = async (
     .sort({ date: -1 })
     .populate("provider")
     .lean<IPurchaseOrder[]>();
+};
+
+export const purchaseOrderReport = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  filterPurchaseOrderInput: FilterPurchaseOrderInput
+): Promise<IPurchaseOrder[]> => {
+  const foundUser: IUser | null = await User.findById(userId);
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const query: any = {};
+
+  if (!foundUser.is_global) {
+    query.created_by = userId;
+  }
+
+  if (filterPurchaseOrderInput.startDate || filterPurchaseOrderInput.endDate) {
+    query.date = {};
+
+    if (filterPurchaseOrderInput.startDate) {
+      const startDate = new Date(filterPurchaseOrderInput.startDate);
+      startDate.setUTCHours(0, 0, 0, 0);
+      query.date.$gte = startDate;
+    }
+
+    if (filterPurchaseOrderInput.endDate) {
+      const endDate = new Date(filterPurchaseOrderInput.endDate);
+      endDate.setUTCHours(23, 59, 59, 999);
+      query.date.$lte = endDate;
+    }
+  }
+
+  if (filterPurchaseOrderInput.provider) {
+    query.provider = filterPurchaseOrderInput.provider;
+  }
+
+  if (
+    filterPurchaseOrderInput.status &&
+    filterPurchaseOrderInput.status !== "Todos"
+  ) {
+    query.status = filterPurchaseOrderInput.status;
+  }
+
+  const purchaseOrders = await PurchaseOrder.find(query)
+    .populate("provider")
+    .lean<IPurchaseOrder[]>();
+
+  return purchaseOrders;
 };
 
 export const findDetail = async (

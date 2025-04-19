@@ -1,10 +1,10 @@
-import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
+import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 
 import { IBrand } from "./brand.interface";
 import { ICategory } from "./category.interface";
 
-import { stockType } from "../utils/enums/stockType.enum";
 import { purchaseOrderStatus } from "../utils/enums/purchaseOrderStatus.enum";
+import { stockType } from "../utils/enums/stockType.enum";
 
 export interface IProduct {
   _id: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
@@ -38,4 +38,10 @@ export interface UpdateProductInput {
   sale_price: number;
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   brand: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+}
+
+export interface FilterProductInput {
+  category?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  brand?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  status?: string;
 }
