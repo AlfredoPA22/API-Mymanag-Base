@@ -177,6 +177,7 @@ type PurchaseOrder {
   provider: Provider
   total: Float
   status: String
+  created_by: User
 }
 
 input PurchaseOrderInput {
@@ -275,6 +276,7 @@ type SaleOrder {
   date: String
   total: Float
   status: String
+  created_by: User
 }
 
 input SaleOrderInput {

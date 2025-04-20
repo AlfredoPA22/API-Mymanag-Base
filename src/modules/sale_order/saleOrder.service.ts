@@ -45,6 +45,7 @@ export const findAll = async (
   return await SaleOrder.find(filter)
     .sort({ date: -1 })
     .populate("client")
+    .populate("created_by")
     .lean<ISaleOrder[]>();
 };
 

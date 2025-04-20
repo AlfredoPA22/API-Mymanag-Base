@@ -45,6 +45,7 @@ export const findAll = async (
   return await PurchaseOrder.find(filter)
     .sort({ date: -1 })
     .populate("provider")
+    .populate("created_by")
     .lean<IPurchaseOrder[]>();
 };
 

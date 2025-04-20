@@ -2,6 +2,7 @@ import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { purchaseOrderStatus } from "../utils/enums/purchaseOrderStatus.enum";
 import { IPurchaseOrderDetailToPDF } from "./purchaseOrderDetail.interface";
 import { IProvider } from "./provider.interface";
+import { IUser } from "./user.interface";
 
 export interface IPurchaseOrder {
   _id: MongooseTypes.ObjectId;
@@ -10,6 +11,7 @@ export interface IPurchaseOrder {
   provider: IProvider;
   total: string;
   status: purchaseOrderStatus;
+  created_by: IUser;
 }
 
 export interface PurchaseOrderInput {
