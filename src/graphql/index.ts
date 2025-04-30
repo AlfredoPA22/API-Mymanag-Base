@@ -12,6 +12,7 @@ import { userResolver } from "../modules/user/user.resolver";
 import { roleResolver } from "../modules/role/role.resolver";
 import { permissionResolver } from "../modules/permission/permission.resolver";
 import { warehouseResolver } from "../modules/warehouse/warehouse.resolver";
+import { salePaymentResolver } from "../modules/sale_payment/salePayment.resolver";
 
 const schemaTypes = readFileSync(
   path.join(__dirname, "./typeDefs/schema.graphql"),
@@ -38,6 +39,7 @@ export const resolvers = {
     ...roleResolver.Query,
     ...permissionResolver.Query,
     ...warehouseResolver.Query,
+    ...salePaymentResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,
@@ -51,5 +53,6 @@ export const resolvers = {
     ...roleResolver.Mutation,
     ...permissionResolver.Mutation,
     ...warehouseResolver.Mutation,
+    ...salePaymentResolver.Mutation,
   },
 };

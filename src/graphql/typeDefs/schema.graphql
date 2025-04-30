@@ -277,11 +277,14 @@ type SaleOrder {
   total: Float
   status: String
   created_by: User
+  payment_method: String
+  is_paid: Boolean
 }
 
 input SaleOrderInput {
   date: String!
   client: String!
+  payment_method: String!
 }
 
 input FilterSaleOrderInput {
@@ -304,6 +307,31 @@ type SaleOrderDetail {
 type SaleOrderByClient {
   saleOrder: [SaleOrder]
   total: String!
+}
+
+type SalePayment {
+  _id: ID!
+  sale_order: SaleOrder
+  date: String
+  amount: Float
+  payment_method: String
+  note: String
+  created_by: User
+}
+
+input SalePaymentInput {
+  sale_order: String!
+  date: String!
+  amount: Float!
+  payment_method: String!
+  note: String
+}
+
+type IDetailSalePayment {
+  sale_order: SaleOrder
+  total_amount: Float
+  total_paid: Float
+  total_pending: Float
 }
 
 type PurchaseOrderDetailToPDF {
@@ -406,6 +434,10 @@ type Query {
   reportSaleOrderByMonth: [SaleOrder]
   generalData: GeneralData
 
+  listSalePayment: [SalePayment]
+  listSalePaymentBySaleOrder(saleOrderId: String!): [SalePayment]
+  detailSalePaymentBySaleOrder(saleOrderId: String!): IDetailSalePayment
+
   listPurchaseOrder: [PurchaseOrder]
   listPurchaseOrderDetail(purchaseOrderId: String!): [PurchaseOrderDetail]
   listProductSerialByPurchaseOrder(
@@ -501,4 +533,7 @@ type Mutation {
     saleOrderDetailId: String!
     updateSaleOrderDetailInput: UpdateSaleOrderDetailInput!
   ): SaleOrderDetail
+
+  createSalePayment(salePaymentInput: SalePaymentInput!): SalePayment
+  deleteSalePayment(salePaymentId: String!): DeleteResponse
 }

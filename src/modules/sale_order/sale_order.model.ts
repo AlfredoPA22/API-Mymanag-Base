@@ -1,5 +1,6 @@
 import mongoose, { Schema as MongooseSchema } from "mongoose";
-import { purchaseOrderStatus } from "../../utils/enums/purchaseOrderStatus.enum";
+import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
+import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 
 const saleOrderSchema = new mongoose.Schema(
   {
@@ -14,8 +15,14 @@ const saleOrderSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      default: purchaseOrderStatus.BORRADOR,
+      default: saleOrderStatus.BORRADOR,
     },
+    payment_method: {
+      type: String,
+      required: true,
+      default: paymentMethod.CONTADO,
+    },
+    is_paid: { type: Boolean, required: true, default: false },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",

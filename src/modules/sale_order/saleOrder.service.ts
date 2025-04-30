@@ -30,6 +30,8 @@ import { SaleOrder } from "./sale_order.model";
 import { SaleOrderDetail } from "./sale_order_detail.model";
 import { IUser } from "../../interfaces/user.interface";
 import { User } from "../user/user.model";
+import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
+import { SalePayment } from "../sale_payment/sale_payment.model";
 
 export const findAll = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -152,11 +154,18 @@ export const create = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createSaleOrderInput: SaleOrderInput
 ) => {
+  const isPaid: boolean =
+    createSaleOrderInput.payment_method === paymentMethod.CONTADO
+      ? true
+      : false;
+
   const newSaleOrder = await (
     await SaleOrder.create({
       code: await generate(codeType.SALE_ORDER),
       date: createSaleOrderInput.date,
       client: createSaleOrderInput.client,
+      payment_method: createSaleOrderInput.payment_method,
+      is_paid: isPaid,
       created_by: userId,
     })
   ).populate("client");
@@ -499,6 +508,14 @@ export const deleteSaleOrder = async (
 
   if (!foundSaleOrder) {
     throw new Error("La venta no fue encontrada");
+  }
+
+  const foundPayments = await SalePayment.find({ sale_order: saleOrderId });
+
+  if (foundPayments.length > 0) {
+    throw new Error(
+      "No se puede eliminar venta porque tiene pagos registrados"
+    );
   }
 
   const foundSaleOrderDetails = await SaleOrderDetail.find({

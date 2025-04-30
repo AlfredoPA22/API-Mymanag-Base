@@ -253,6 +253,23 @@ export const PERMISSIONS_TREE: IPermission[] = [
       },
     ],
   },
+  {
+    label: "Pagos",
+    name: "Pagos",
+    value: "ALL_PAYMENTS",
+    children: [
+      {
+        label: "Listar y crear pagos",
+        name: "Listar y crear pagos",
+        value: "LIST_AND_CREATE_PAYMENT",
+      },
+      {
+        label: "Eliminar pago",
+        name: "Eliminar pago",
+        value: "DELETE_PAYMENT",
+      },
+    ],
+  },
 
   {
     label: "Usuarios y roles",

@@ -3,14 +3,17 @@ import { saleOrderStatus } from "../utils/enums/saleOrderStatus.enum";
 import { IClient } from "./client.interface";
 import { ISaleOrderDetailToPDF } from "./saleOrderDetail.interface";
 import { IUser } from "./user.interface";
+import { paymentMethod } from "../utils/enums/saleOrderPaymentMethod";
 
 export interface ISaleOrder {
   _id: MongooseTypes.ObjectId;
   code: string;
   client: IClient;
   date: Date;
-  total: string;
+  total: number;
   status: saleOrderStatus;
+  payment_method: paymentMethod;
+  is_paid: boolean;
   created_by: IUser;
 }
 
@@ -22,6 +25,7 @@ export interface ISaleOrderByClient {
 export interface SaleOrderInput {
   date: Date;
   client: string;
+  payment_method: string;
 }
 
 export interface ISaleOrderToPDF {
