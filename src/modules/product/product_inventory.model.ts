@@ -16,9 +16,21 @@ const productInventorySchema = new mongoose.Schema(
     purchase_order_detail: {
       type: MongooseSchema.Types.ObjectId,
       ref: "purchase_order_detail",
-      required: true,
+      default: null,
+      required: false,
+    },
+    product_transfer_detail: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "product_transfer_detail",
+      default: null,
+      required: false,
     },
     quantity: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    available: {
       type: Number,
       required: true,
       default: 0,
@@ -29,6 +41,11 @@ const productInventorySchema = new mongoose.Schema(
       default: 0,
     },
     sold: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    transferred: {
       type: Number,
       required: true,
       default: 0,

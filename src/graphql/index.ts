@@ -2,17 +2,18 @@ import { readFileSync } from "fs";
 import path from "path";
 import { brandResolver } from "../modules/brand/brand.resolver";
 import { categoryResolver } from "../modules/category/category.resolver";
-import { codeGeneratorResolver } from "../modules/codeGenerator/codeGenerator.resolver";
-import { productResolver } from "../modules/product/product.resolver";
-import { purchaseOrderResolver } from "../modules/purchase_order/purchaseOrder.resolver";
 import { clientResolver } from "../modules/client/client.resolver";
-import { saleOrderResolver } from "../modules/sale_order/saleOrder.resolver";
-import { providerResolver } from "../modules/provider/provider.resolver";
-import { userResolver } from "../modules/user/user.resolver";
-import { roleResolver } from "../modules/role/role.resolver";
+import { codeGeneratorResolver } from "../modules/codeGenerator/codeGenerator.resolver";
 import { permissionResolver } from "../modules/permission/permission.resolver";
-import { warehouseResolver } from "../modules/warehouse/warehouse.resolver";
+import { productResolver } from "../modules/product/product.resolver";
+import { ProductTransferResolver } from "../modules/product_transfer/productTransfer.resolver";
+import { providerResolver } from "../modules/provider/provider.resolver";
+import { purchaseOrderResolver } from "../modules/purchase_order/purchaseOrder.resolver";
+import { roleResolver } from "../modules/role/role.resolver";
+import { saleOrderResolver } from "../modules/sale_order/saleOrder.resolver";
 import { salePaymentResolver } from "../modules/sale_payment/salePayment.resolver";
+import { userResolver } from "../modules/user/user.resolver";
+import { warehouseResolver } from "../modules/warehouse/warehouse.resolver";
 
 const schemaTypes = readFileSync(
   path.join(__dirname, "./typeDefs/schema.graphql"),
@@ -54,5 +55,6 @@ export const resolvers = {
     ...permissionResolver.Mutation,
     ...warehouseResolver.Mutation,
     ...salePaymentResolver.Mutation,
+    ...ProductTransferResolver.Mutation,
   },
 };

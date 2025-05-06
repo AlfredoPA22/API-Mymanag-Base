@@ -16,22 +16,22 @@ import {
   SaleOrderDetailInput,
   UpdateSaleOrderDetailInput,
 } from "../../interfaces/saleOrderDetail.interface";
+import { IUser } from "../../interfaces/user.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
 import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
 import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
 import { productStatus } from "../../utils/enums/productStatus.enum";
+import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 import { stockType } from "../../utils/enums/stockType.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { Product } from "../product/product.model";
 import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
+import { SalePayment } from "../sale_payment/sale_payment.model";
+import { User } from "../user/user.model";
 import { SaleOrder } from "./sale_order.model";
 import { SaleOrderDetail } from "./sale_order_detail.model";
-import { IUser } from "../../interfaces/user.interface";
-import { User } from "../user/user.model";
-import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
-import { SalePayment } from "../sale_payment/sale_payment.model";
 
 export const findAll = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -227,7 +227,7 @@ export const createDetail = async (
     let inventoryUsage: any[] = [];
 
     const totalAvailableStock = productInventories.reduce(
-      (total, inventory) => total + inventory.quantity,
+      (total, inventory) => total + inventory.available,
       0
     );
 
@@ -238,13 +238,13 @@ export const createDetail = async (
     for (const productInventory of productInventories) {
       if (quantityToAssign <= 0) break;
 
-      const availableQuantity = productInventory.quantity;
+      const availableQuantity = productInventory.available;
       const quantityToReserve = Math.min(availableQuantity, quantityToAssign);
 
       if (quantityToReserve > 0) {
         // Verificamos que la cantidad sea mayor a 0
         productInventory.reserved += quantityToReserve;
-        productInventory.quantity -= quantityToReserve;
+        productInventory.available -= quantityToReserve;
         await productInventory.save();
 
         inventoryUsage.push({
@@ -462,7 +462,7 @@ export const deleteProductToOrder = async (
       });
 
       if (productInventory) {
-        productInventory.quantity += inventoryUsage.quantity;
+        productInventory.available += inventoryUsage.quantity;
         productInventory.reserved -= inventoryUsage.quantity;
         await productInventory.save();
       }
@@ -569,10 +569,10 @@ export const deleteSaleOrder = async (
               if (inventory) {
                 inventory.sold -= usage.quantity;
                 if (inventory.sold < 0) inventory.sold = 0;
-                inventory.quantity += usage.quantity;
+                inventory.available += usage.quantity;
 
                 // Actualizar estado del inventario
-                if (inventory.quantity > 0) {
+                if (inventory.available > 0) {
                   inventory.status = productInventoryStatus.DISPONIBLE;
                 }
 
@@ -740,7 +740,7 @@ export const approve = async (
       inventory.reserved -= canSellFromThis;
       quantityToSell -= canSellFromThis;
 
-      if (inventory.reserved === 0 && inventory.quantity === 0) {
+      if (inventory.reserved === 0 && inventory.available === 0) {
         inventory.status = productInventoryStatus.SIN_STOCK;
       }
 
@@ -801,7 +801,7 @@ export const updateSaleOrderDetail = async (
       });
 
       if (productInventory) {
-        productInventory.quantity += usage.quantity;
+        productInventory.available += usage.quantity;
         productInventory.reserved -= usage.quantity;
         await productInventory.save();
       }
@@ -820,7 +820,7 @@ export const updateSaleOrderDetail = async (
     const inventoryUsage: any[] = [];
 
     const totalAvailableStock = productInventories.reduce(
-      (total, inventory) => total + inventory.quantity,
+      (total, inventory) => total + inventory.available,
       0
     );
 
@@ -831,12 +831,12 @@ export const updateSaleOrderDetail = async (
     for (const productInventory of productInventories) {
       if (quantityToAssign <= 0) break;
 
-      const availableQuantity = productInventory.quantity;
+      const availableQuantity = productInventory.available;
       const quantityToReserve = Math.min(availableQuantity, quantityToAssign);
 
       if (quantityToReserve > 0) {
         productInventory.reserved += quantityToReserve;
-        productInventory.quantity -= quantityToReserve;
+        productInventory.available -= quantityToReserve;
         await productInventory.save();
 
         inventoryUsage.push({

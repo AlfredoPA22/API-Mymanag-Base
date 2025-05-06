@@ -15,6 +15,7 @@ import {
   PurchaseOrderDetailInput,
   UpdatePurchaseOrderDetailInput,
 } from "../../interfaces/purchaseOrderDetail.interface";
+import { IUser } from "../../interfaces/user.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
 import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
 import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
@@ -26,10 +27,9 @@ import { Product } from "../product/product.model";
 import { createProductSerial } from "../product/product.service";
 import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
+import { User } from "../user/user.model";
 import { PurchaseOrder } from "./purchase_order.model";
 import { PurchaseOrderDetail } from "./purchase_order_detail.model";
-import { IUser } from "../../interfaces/user.interface";
-import { User } from "../user/user.model";
 
 export const findAll = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -573,6 +573,7 @@ export const approve = async (
         },
         {
           status: productInventoryStatus.DISPONIBLE,
+          available: detail.quantity
         }
       );
     })

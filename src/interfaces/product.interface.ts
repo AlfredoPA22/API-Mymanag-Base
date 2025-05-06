@@ -33,11 +33,14 @@ export interface ProductInput {
 }
 
 export interface UpdateProductInput {
+  code: string;
   name: string;
+  image: string;
   description: string;
   sale_price: number;
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   brand: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  stock_type: stockType;
 }
 
 export interface FilterProductInput {

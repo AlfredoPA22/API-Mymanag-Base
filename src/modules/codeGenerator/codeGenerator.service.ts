@@ -34,6 +34,12 @@ export const generate = async (type: codeType) => {
         sequence: "00000",
         type,
       });
+    } else if (type == codeType.PRODUCT_TRANSFER) {
+      currentCode = await CodeGenerator.create({
+        code: "TRAN_",
+        sequence: "00000",
+        type,
+      });
     }
   }
   let num = parseInt(currentCode.sequence);

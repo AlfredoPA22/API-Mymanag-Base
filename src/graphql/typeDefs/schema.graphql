@@ -157,11 +157,14 @@ input ProductInput {
 }
 
 input UpdateProductInput {
+  code: String!
   name: String!
+  image: String!
   description: String!
   sale_price: Float!
   category: String!
   brand: String!
+  stock_type: StockType!
 }
 
 input FilterProductInput {
@@ -215,6 +218,36 @@ input UpdatePurchaseOrderDetailInput {
   quantity: Int!
 }
 
+type ProductTransfer {
+  _id: ID!
+  code: String
+  date: String
+  origin_warehouse: Warehouse
+  destination_warehouse: Warehouse
+  status: String
+  created_by: User
+}
+
+input ProductTransferInput {
+  date: String!
+  origin_warehouse: String!
+  destination_warehouse: String!
+}
+
+type ProductTransferDetail {
+  _id: ID!
+  product_transfer: ProductTransfer
+  product: Product
+  quantity: Int
+  serials: [String]
+}
+
+input ProductTransferDetailInput {
+  product_transfer: String!
+  product: String!
+  quantity: Int!
+}
+
 type ProductSerial {
   _id: ID!
   serial: String
@@ -230,9 +263,12 @@ type ProductInventory {
   product: Product
   warehouse: Warehouse
   purchase_order_detail: PurchaseOrderDetail
+  product_transfer_detail: ProductTransferDetail
   quantity: Int
+  available: Int
   reserved: Int
   sold: Int
+  transferred: Int
   status: String
 }
 
@@ -536,4 +572,11 @@ type Mutation {
 
   createSalePayment(salePaymentInput: SalePaymentInput!): SalePayment
   deleteSalePayment(salePaymentId: String!): DeleteResponse
+
+  createProductTransfer(
+    productTransferInput: ProductTransferInput!
+  ): ProductTransfer
+  createProductTransferDetail(
+    productTransferDetailInput: ProductTransferDetailInput!
+  ): ProductTransferDetail
 }

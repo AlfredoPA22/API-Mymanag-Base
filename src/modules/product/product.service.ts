@@ -6,11 +6,14 @@ import {
   ProductInput,
   UpdateProductInput,
 } from "../../interfaces/product.interface";
+import { IProductInventory } from "../../interfaces/productInventory.interface";
 import {
   IProductSerial,
   ProductSerialInput,
 } from "../../interfaces/productSerial.interface";
+import { IUser } from "../../interfaces/user.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
+import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
 import { productStatus } from "../../utils/enums/productStatus.enum";
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 import {
@@ -25,13 +28,10 @@ import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { PurchaseOrderDetail } from "../purchase_order/purchase_order_detail.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
-import { Product } from "./product.model";
-import { ProductSerial } from "./product_serial.model";
-import { IProductInventory } from "../../interfaces/productInventory.interface";
-import { ProductInventory } from "./product_inventory.model";
-import { IUser } from "../../interfaces/user.interface";
 import { User } from "../user/user.model";
-import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
+import { Product } from "./product.model";
+import { ProductInventory } from "./product_inventory.model";
+import { ProductSerial } from "./product_serial.model";
 
 export const findAll = async (): Promise<IProduct[]> => {
   const listProduct = await Product.find()
@@ -483,6 +483,46 @@ export const update = async (
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateProductInput: UpdateProductInput
 ) => {
+  const existingProduct: IProduct = await Product.findById(productId);
+  if (!existingProduct) {
+    throw new Error("Producto no encontrado.");
+  }
+
+  if (updateProductInput.code !== existingProduct.code) {
+    const codeExists = await Product.findOne({
+      code: updateProductInput.code,
+      _id: { $ne: productId },
+    });
+
+    if (codeExists) {
+      throw new Error("Ya existe un producto con ese código.");
+    }
+  }
+
+  const isStockTypeChanged =
+    updateProductInput.stock_type !== existingProduct.stock_type;
+
+  if (isStockTypeChanged) {
+    const serialCount = await ProductSerial.countDocuments({
+      product: productId,
+    });
+    const inventoryCount = await ProductInventory.countDocuments({
+      product: productId,
+    });
+
+    if (serialCount > 0 || inventoryCount > 0) {
+      throw new Error(
+        "No se puede cambiar el tipo de stock porque ya existen registros relacionados."
+      );
+    }
+  }
+
+  const brandChanged =
+    updateProductInput.brand?.toString() !== existingProduct.brand.toString();
+  const categoryChanged =
+    updateProductInput.category?.toString() !==
+    existingProduct.category.toString();
+
   const productUpdated = await Product.findByIdAndUpdate(
     productId,
     { $set: updateProductInput },
@@ -491,6 +531,19 @@ export const update = async (
 
   if (!productUpdated) {
     throw new Error("Ocurrio un error al actualizar el producto.");
+  }
+
+  if (brandChanged) {
+    if (existingProduct.brand)
+      await subtractCountBrand(existingProduct.brand._id);
+    if (productUpdated.brand) await addCountBrand(productUpdated.brand);
+  }
+
+  if (categoryChanged) {
+    if (existingProduct.category)
+      await subtractCountCategory(existingProduct.category._id);
+    if (productUpdated.category)
+      await addCountCategory(productUpdated.category);
   }
 
   return productUpdated;
