@@ -16,6 +16,11 @@ const purchaseOrderDetailSchema = new mongoose.Schema(
     quantity: { type: Number, required: true },
     serials: { type: Number, required: true, default: 0 },
     subtotal: { type: Number, required: true, default: 0 },
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
   },
   { timestamps: true }
 );

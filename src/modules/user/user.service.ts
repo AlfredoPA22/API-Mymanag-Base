@@ -10,15 +10,25 @@ import {
 import { User } from "./user.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { PurchaseOrder } from "../purchase_order/purchase_order.model";
+import { SalePayment } from "../sale_payment/sale_payment.model";
 
-export const findAll = async (): Promise<IUser[]> => {
-  const listUser = await User.find().populate("role").lean<IUser[]>();
-
-  return listUser;
+export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IUser[]> => {
+  return await User.find({
+    company: companyId,
+  })
+    .populate("role")
+    .populate("company")
+    .lean<IUser[]>();
 };
 
-export const create = async (userInput: UserInput) => {
+export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  userInput: UserInput
+) => {
   const user = await User.findOne({
+    company: companyId,
     user_name: userInput.user_name,
   });
 
@@ -26,15 +36,18 @@ export const create = async (userInput: UserInput) => {
     throw new Error("El usuario ya existe");
   }
 
-  const newUser = (await User.create(userInput)).populate("role");
+  const newUser = (
+    await User.create({ ...userInput, company: companyId })
+  ).populate("role");
 
   return newUser;
 };
 
 export const switchUserState = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const user = await User.findById(userId);
+  const user = await User.findOne({ _id: userId, company: companyId });
 
   if (!user) {
     throw new Error("Usuario no encontrado");
@@ -52,6 +65,7 @@ export const login = async (loginInput: LoginInput) => {
     user_name: loginInput.user_name,
   })
     .populate("role")
+    .populate("company")
     .lean<IUser>();
 
   if (!user) {
@@ -71,6 +85,8 @@ export const login = async (loginInput: LoginInput) => {
       id: user._id,
       username: user.user_name,
       role: user.role.name,
+      company: user.company.name,
+      companyId: user.company._id,
       permissions: user.role.permission,
       access: true,
     },
@@ -86,47 +102,68 @@ export const login = async (loginInput: LoginInput) => {
 };
 
 export const update = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateUserInput: UpdateUserInput
 ) => {
-  const userUpdated = await User.findByIdAndUpdate(
-    userId,
+  const user = await User.findOne({ _id: userId, company: companyId });
+
+  if (!user) {
+    throw new Error("El usuario no existe");
+  }
+
+  const userUpdated = await User.findOneAndUpdate(
+    { _id: userId, company: companyId },
     { $set: updateUserInput },
     { new: true }
   );
-
-  if (!userUpdated) {
-    throw new Error("Ocurrio un error al actualizar el usuario.");
-  }
 
   return userUpdated;
 };
 
 export const deleteUser = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
+  const user = await User.findOne({ _id: userId, company: companyId });
+
+  if (!user) {
+    throw new Error("El usuario no existe");
+  }
+
+  if (user.is_admin) {
+    throw new Error("No se puede eliminar porque es administrador");
+  }
+
   const findPurchaseOrder = await PurchaseOrder.find({
+    company: companyId,
     created_by: userId,
   });
 
   const findSaleOrder = await SaleOrder.find({
+    company: companyId,
     created_by: userId,
   });
 
-  if (findPurchaseOrder.length > 0 || findSaleOrder.length > 0) {
+  const findSalePayment = await SalePayment.find({
+    company: companyId,
+    created_by: userId,
+  });
+
+  if (
+    findPurchaseOrder.length > 0 ||
+    findSaleOrder.length > 0 ||
+    findSalePayment.length > 0
+  ) {
     throw new Error("No se puede eliminar porque pertenece a una transaccion");
   }
 
   const deleted = await User.deleteOne({
     _id: userId,
+    company: companyId,
   });
 
-  if (deleted.deletedCount > 0) {
-    return {
-      success: true,
-    };
-  }
   return {
-    success: false,
+    success: deleted.deletedCount > 0,
   };
 };

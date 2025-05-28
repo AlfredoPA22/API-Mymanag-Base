@@ -34,15 +34,21 @@ import { SaleOrder } from "./sale_order.model";
 import { SaleOrderDetail } from "./sale_order_detail.model";
 
 export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrder[]> => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
 
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
 
-  const filter = foundUser.is_global ? {} : { created_by: userId };
+  const filter = foundUser.is_global
+    ? { company: companyId }
+    : { company: companyId, created_by: userId };
 
   return await SaleOrder.find(filter)
     .sort({ date: -1 })
@@ -52,16 +58,20 @@ export const findAll = async (
 };
 
 export const saleOrderReport = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   filterSaleOrderInput: FilterSaleOrderInput
 ): Promise<ISaleOrder[]> => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
 
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
 
-  const query: any = {};
+  const query: any = { company: companyId };
 
   if (!foundUser.is_global) {
     query.created_by = userId;
@@ -93,18 +103,22 @@ export const saleOrderReport = async (
 
   const saleOrders = await SaleOrder.find(query)
     .populate("client")
+    .populate("company")
     .lean<ISaleOrder[]>();
 
   return saleOrders;
 };
 
 export const findDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrderDetail[]> => {
   const listDetail = await SaleOrderDetail.find({
+    company: companyId,
     sale_order: saleOrderId,
   })
     .populate("sale_order")
+    .populate("company")
     .populate({
       path: "product",
       populate: {
@@ -117,22 +131,29 @@ export const findDetail = async (
 };
 
 export const findSaleOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrder> => {
-  return await SaleOrder.findById(saleOrderId)
+  return await SaleOrder.findOne({ _id: saleOrderId, company: companyId })
     .populate("client")
+    .populate("company")
     .lean<ISaleOrder>();
 };
 
 export const findSaleOrderToPDF = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrderToPDF> => {
-  const saleOrder: ISaleOrder = await findSaleOrder(saleOrderId);
-  const saleOrderDetail: ISaleOrderDetail[] = await findDetail(saleOrderId);
+  const saleOrder: ISaleOrder = await findSaleOrder(companyId, saleOrderId);
+  const saleOrderDetail: ISaleOrderDetail[] = await findDetail(
+    companyId,
+    saleOrderId
+  );
 
   const saleOrderDetailToPDF: ISaleOrderDetailToPDF[] = await Promise.all(
     saleOrderDetail.map(async (detail: ISaleOrderDetail) => {
       const productSerials: IProductSerial[] = await ProductSerial.find({
+        company: companyId,
         sale_order_detail: detail._id,
       }).lean<IProductSerial[]>();
 
@@ -151,6 +172,7 @@ export const findSaleOrderToPDF = async (
 };
 
 export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createSaleOrderInput: SaleOrderInput
 ) => {
@@ -161,7 +183,8 @@ export const create = async (
 
   const newSaleOrder = await (
     await SaleOrder.create({
-      code: await generate(codeType.SALE_ORDER),
+      company: companyId,
+      code: await generate(companyId, codeType.SALE_ORDER),
       date: createSaleOrderInput.date,
       client: createSaleOrderInput.client,
       payment_method: createSaleOrderInput.payment_method,
@@ -170,21 +193,24 @@ export const create = async (
     })
   ).populate("client");
 
-  await increment(codeType.SALE_ORDER);
+  await increment(companyId, codeType.SALE_ORDER);
 
   return newSaleOrder;
 };
 
 export const createDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createSaleOrderDetailInput: SaleOrderDetailInput
 ) => {
   const foundDetail = await SaleOrderDetail.findOne({
+    company: companyId,
     sale_order: createSaleOrderDetailInput.sale_order,
     product: createSaleOrderDetailInput.product,
   });
 
   const foundOrder = await SaleOrder.findOne({
     _id: createSaleOrderDetailInput.sale_order,
+    company: companyId,
   });
 
   if (foundDetail) {
@@ -199,9 +225,10 @@ export const createDetail = async (
     throw new Error("Ingrese una cantidad mayor a 0");
   }
 
-  const foundProduct = await Product.findById(
-    createSaleOrderDetailInput.product
-  );
+  const foundProduct = await Product.findOne({
+    _id: createSaleOrderDetailInput.product,
+    company: companyId,
+  });
 
   if (createSaleOrderDetailInput.quantity > foundProduct.stock) {
     throw new Error("No hay suficiente stock");
@@ -213,6 +240,7 @@ export const createDetail = async (
     }
 
     const productInventories = await ProductInventory.find({
+      company: companyId,
       product: createSaleOrderDetailInput.product,
       warehouse: createSaleOrderDetailInput.warehouse,
     });
@@ -276,6 +304,7 @@ export const createDetail = async (
   const newSaleOrderDetail = await (
     await (
       await SaleOrderDetail.create({
+        company: companyId,
         ...createSaleOrderDetailInput,
         subtotal,
       })
@@ -284,8 +313,8 @@ export const createDetail = async (
 
   const updatedTotal = parseFloat((foundOrder.total + subtotal).toFixed(2));
 
-  await SaleOrder.findByIdAndUpdate(
-    createSaleOrderDetailInput.sale_order,
+  await SaleOrder.findOneAndUpdate(
+    { _id: createSaleOrderDetailInput.sale_order, company: companyId },
     {
       total: updatedTotal,
     },
@@ -294,7 +323,10 @@ export const createDetail = async (
 
   const foundSaleOrderDetail = await (
     await (
-      await SaleOrderDetail.findById(newSaleOrderDetail._id)
+      await SaleOrderDetail.findOne({
+        _id: newSaleOrderDetail._id,
+        company: companyId,
+      })
     ).populate("sale_order")
   ).populate("product");
 
@@ -302,37 +334,42 @@ export const createDetail = async (
 };
 
 export const incrementSerials = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
   await SaleOrderDetail.updateOne(
-    { _id: saleOrderDetailId },
+    { _id: saleOrderDetailId, company: companyId },
     { $inc: { serials: 1 } }
   );
 };
 
 export const decrementSerials = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
   await SaleOrderDetail.updateOne(
-    { _id: saleOrderDetailId },
+    { _id: saleOrderDetailId, company: companyId },
     { $inc: { serials: -1 } }
   );
 };
 
 export const addSerialToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   addSerialToOrder: AddSerialToSaleOrderDetailInput
 ) => {
-  const foundSaleOrderDetail = await SaleOrderDetail.findById(
-    addSerialToOrder.sale_order_detail
-  );
+  const foundSaleOrderDetail = await SaleOrderDetail.findOne({
+    _id: addSerialToOrder.sale_order_detail,
+    company: companyId,
+  });
 
   if (!foundSaleOrderDetail) {
     throw new Error("No existe el detalle en la venta");
   }
 
-  const foundProduct: IProduct = await Product.findById(
-    foundSaleOrderDetail.product
-  );
+  const foundProduct: IProduct = await Product.findOne({
+    _id: foundSaleOrderDetail.product,
+    company: companyId,
+  });
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
     throw new Error("No se pueden agregar seriales a este producto");
@@ -343,6 +380,7 @@ export const addSerialToOrder = async (
   }
 
   const foundProductSerial = await ProductSerial.findOne({
+    company: companyId,
     serial: addSerialToOrder.serial,
   });
 
@@ -376,6 +414,7 @@ export const addSerialToOrder = async (
   await ProductSerial.updateOne(
     {
       _id: foundProductSerial._id,
+      company: companyId,
     },
     {
       $set: {
@@ -385,19 +424,24 @@ export const addSerialToOrder = async (
     }
   );
 
-  await incrementSerials(addSerialToOrder.sale_order_detail);
+  await incrementSerials(companyId, addSerialToOrder.sale_order_detail);
 
   const updatedProductSerial = await ProductSerial.findOne({
     _id: foundProductSerial._id,
+    company: companyId,
   });
 
   return updatedProductSerial;
 };
 
 export const deleteSerialToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productSerialId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundProductSerial = await ProductSerial.findById(productSerialId);
+  const foundProductSerial = await ProductSerial.findOne({
+    _id: productSerialId,
+    company: companyId,
+  });
 
   if (!foundProductSerial) {
     throw new Error("Serial no fue encontrado");
@@ -409,11 +453,12 @@ export const deleteSerialToOrder = async (
     throw new Error("No se puede borrar el serial");
   }
 
-  await decrementSerials(foundProductSerial.sale_order_detail._id);
+  await decrementSerials(companyId, foundProductSerial.sale_order_detail._id);
 
   await ProductSerial.updateOne(
     {
       _id: foundProductSerial._id,
+      company: companyId,
     },
     {
       $set: {
@@ -428,11 +473,13 @@ export const deleteSerialToOrder = async (
 };
 
 export const deleteProductToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundSaleOrderDetail: ISaleOrderDetail = await SaleOrderDetail.findById(
-    saleOrderDetailId
-  )
+  const foundSaleOrderDetail: ISaleOrderDetail = await SaleOrderDetail.findOne({
+    _id: saleOrderDetailId,
+    company: companyId,
+  })
     .populate("product")
     .populate("sale_order")
     .lean<ISaleOrderDetail>();
@@ -441,9 +488,10 @@ export const deleteProductToOrder = async (
     throw new Error("El detalle no fue encontrado");
   }
 
-  const foundSaleOrder = await SaleOrder.findById(
-    foundSaleOrderDetail.sale_order._id
-  );
+  const foundSaleOrder = await SaleOrder.findOne({
+    _id: foundSaleOrderDetail.sale_order._id,
+    company: companyId,
+  });
 
   if (!foundSaleOrder) {
     throw new Error("La orden no fue encontrada");
@@ -456,6 +504,7 @@ export const deleteProductToOrder = async (
   if (foundSaleOrderDetail.product.stock_type === stockType.INDIVIDUAL) {
     for (const inventoryUsage of foundSaleOrderDetail.inventory_usage) {
       const productInventory = await ProductInventory.findOne({
+        company: companyId,
         product: foundSaleOrderDetail.product,
         warehouse: inventoryUsage.warehouse,
         purchase_order_detail: inventoryUsage.purchase_order_detail,
@@ -470,7 +519,7 @@ export const deleteProductToOrder = async (
   }
 
   await ProductSerial.updateMany(
-    { sale_order_detail: saleOrderDetailId },
+    { sale_order_detail: saleOrderDetailId, company: companyId },
     {
       $set: { sale_order_detail: null, status: productSerialStatus.DISPONIBLE },
     }
@@ -478,6 +527,7 @@ export const deleteProductToOrder = async (
 
   const deleteProductToSaleOrderDetail = await SaleOrderDetail.deleteOne({
     _id: saleOrderDetailId,
+    company: companyId,
   });
 
   if (deleteProductToSaleOrderDetail.deletedCount > 0) {
@@ -486,7 +536,7 @@ export const deleteProductToOrder = async (
     );
 
     await SaleOrder.updateOne(
-      { _id: foundSaleOrder._id },
+      { _id: foundSaleOrder._id, company: companyId },
       {
         total: updatedTotal,
       }
@@ -502,15 +552,22 @@ export const deleteProductToOrder = async (
 };
 
 export const deleteSaleOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundSaleOrder = await SaleOrder.findById(saleOrderId);
+  const foundSaleOrder = await SaleOrder.findOne({
+    _id: saleOrderId,
+    company: companyId,
+  });
 
   if (!foundSaleOrder) {
     throw new Error("La venta no fue encontrada");
   }
 
-  const foundPayments = await SalePayment.find({ sale_order: saleOrderId });
+  const foundPayments = await SalePayment.find({
+    sale_order: saleOrderId,
+    company: companyId,
+  });
 
   if (foundPayments.length > 0) {
     throw new Error(
@@ -519,6 +576,7 @@ export const deleteSaleOrder = async (
   }
 
   const foundSaleOrderDetails = await SaleOrderDetail.find({
+    company: companyId,
     sale_order: saleOrderId,
   });
 
@@ -527,8 +585,8 @@ export const deleteSaleOrder = async (
     await Promise.all(
       foundSaleOrderDetails.map(async (detail) => {
         // Actualizar el stock del producto
-        const productUpdate = await Product.findByIdAndUpdate(
-          detail.product._id,
+        const productUpdate = await Product.findOneAndUpdate(
+          { _id: detail.product._id, company: companyId },
           {
             $inc: { stock: detail.quantity }, // Sumar la cantidad vendida al stock
           },
@@ -540,14 +598,18 @@ export const deleteSaleOrder = async (
           productUpdate.stock > 0 &&
           productUpdate.status === productStatus.SIN_STOCK
         ) {
-          await Product.findByIdAndUpdate(detail.product._id, {
-            status: productStatus.DISPONIBLE,
-          });
+          await Product.findOneAndUpdate(
+            { _id: detail.product._id, company: companyId },
+            {
+              status: productStatus.DISPONIBLE,
+            }
+          );
         }
 
         // Actualizar los seriales del producto
         await ProductSerial.updateMany(
           {
+            company: companyId,
             sale_order_detail: detail._id,
             product: detail.product._id,
           },
@@ -561,6 +623,7 @@ export const deleteSaleOrder = async (
           await Promise.all(
             detail.inventory_usage.map(async (usage: any) => {
               const inventory = await ProductInventory.findOne({
+                company: companyId,
                 product: detail.product._id,
                 warehouse: usage.warehouse,
                 purchase_order_detail: usage.purchase_order_detail,
@@ -583,13 +646,17 @@ export const deleteSaleOrder = async (
         }
 
         // Eliminar el detalle de la orden de venta
-        await SaleOrderDetail.deleteOne({ _id: detail._id });
+        await SaleOrderDetail.deleteOne({
+          _id: detail._id,
+          company: companyId,
+        });
       })
     );
 
     // Eliminar la orden de venta
     const deleteSaleOrder = await SaleOrder.deleteOne({
       _id: saleOrderId,
+      company: companyId,
     });
 
     if (deleteSaleOrder.deletedCount > 0) {
@@ -606,6 +673,7 @@ export const deleteSaleOrder = async (
       foundSaleOrderDetails.map(async (detail) => {
         await ProductSerial.updateMany(
           {
+            company: companyId,
             sale_order_detail: detail._id,
             product: detail.product._id,
           },
@@ -616,13 +684,17 @@ export const deleteSaleOrder = async (
         );
 
         // Eliminar el detalle de la orden de venta
-        await SaleOrderDetail.deleteOne({ _id: detail._id });
+        await SaleOrderDetail.deleteOne({
+          _id: detail._id,
+          company: companyId,
+        });
       })
     );
 
     // Eliminar la orden de venta
     const deleteSaleOrder = await SaleOrder.deleteOne({
       _id: saleOrderId,
+      company: companyId,
     });
 
     if (deleteSaleOrder.deletedCount > 0) {
@@ -638,10 +710,15 @@ export const deleteSaleOrder = async (
 };
 
 export const approve = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundOrder = await SaleOrder.findById(saleOrderId);
+  const foundOrder = await SaleOrder.findOne({
+    _id: saleOrderId,
+    company: companyId,
+  });
   const foundDetail: ISaleOrderDetail[] = await SaleOrderDetail.find({
+    company: companyId,
     sale_order: saleOrderId,
   })
     .populate("product")
@@ -675,7 +752,10 @@ export const approve = async (
 
   for (const detail of foundDetail) {
     if (detail.product.stock_type === stockType.INDIVIDUAL) {
-      const product = await Product.findById(detail.product._id);
+      const product = await Product.findOne({
+        _id: detail.product._id,
+        company: companyId,
+      });
       if (product && product.stock < detail.quantity) {
         throw new Error(
           `No hay suficiente stock para el producto ${product.name}. Solo quedan ${product.stock} unidades disponibles.`
@@ -687,7 +767,10 @@ export const approve = async (
   await Promise.all(
     foundDetail.map(async (detail) => {
       if (detail.product.stock_type === stockType.INDIVIDUAL) {
-        const product = await Product.findById(detail.product._id);
+        const product = await Product.findOne({
+          _id: detail.product._id,
+          company: companyId,
+        });
         if (product && product.stock < detail.quantity) {
           throw new Error(
             `No hay suficiente stock para el producto ${product.name}. Solo quedan ${product.stock} unidades disponibles.`
@@ -698,15 +781,15 @@ export const approve = async (
   );
 
   for (const detail of foundDetail) {
-    const product = await Product.findByIdAndUpdate(
-      detail.product._id,
+    const product = await Product.findOneAndUpdate(
+      { _id: detail.product._id, company: companyId },
       { $inc: { stock: -detail.quantity } },
       { new: true }
     );
 
     if (product?.stock <= 0) {
-      await Product.findByIdAndUpdate(
-        detail.product._id,
+      await Product.findOneAndUpdate(
+        { _id: detail.product._id, company: companyId },
         { status: productStatus.SIN_STOCK },
         { new: true }
       );
@@ -715,6 +798,7 @@ export const approve = async (
     // Actualizar seriales a VENDIDO
     await ProductSerial.updateMany(
       {
+        company: companyId,
         sale_order_detail: detail._id,
         product: detail.product._id,
       },
@@ -725,6 +809,7 @@ export const approve = async (
 
     // 👇 Aquí modificamos los inventarios asociados
     const inventories = await ProductInventory.find({
+      company: companyId,
       product: detail.product._id,
       reserved: { $gt: 0 }, // solo inventarios con reservas
     });
@@ -756,10 +841,14 @@ export const approve = async (
 };
 
 export const updateSaleOrderDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateSaleOrderInput: UpdateSaleOrderDetailInput
 ) => {
-  const findSaleOrderDetail = await SaleOrderDetail.findById(saleOrderDetailId)
+  const findSaleOrderDetail = await SaleOrderDetail.findOne({
+    _id: saleOrderDetailId,
+    company: companyId,
+  })
     .populate("product")
     .populate("sale_order");
 
@@ -767,9 +856,10 @@ export const updateSaleOrderDetail = async (
     throw new Error("No se encontro el detalle");
   }
 
-  const findSaleOrder = await SaleOrder.findById(
-    findSaleOrderDetail.sale_order
-  );
+  const findSaleOrder = await SaleOrder.findOne({
+    _id: findSaleOrderDetail.sale_order,
+    company: companyId,
+  });
 
   if (!findSaleOrder) {
     throw new Error("No se encontro la orden");
@@ -781,7 +871,10 @@ export const updateSaleOrderDetail = async (
     );
   }
 
-  const stockProduct = await Product.findById(findSaleOrderDetail.product);
+  const stockProduct = await Product.findOne({
+    _id: findSaleOrderDetail.product,
+    company: companyId,
+  });
 
   if (updateSaleOrderInput.quantity > stockProduct.stock) {
     throw new Error("No hay stock suficiente.");
@@ -796,6 +889,7 @@ export const updateSaleOrderDetail = async (
   if (stockProduct.stock_type === stockType.INDIVIDUAL) {
     for (const usage of findSaleOrderDetail.inventory_usage) {
       const productInventory = await ProductInventory.findOne({
+        company: companyId,
         warehouse: usage.warehouse,
         purchase_order_detail: usage.purchase_order_detail,
       });
@@ -812,6 +906,7 @@ export const updateSaleOrderDetail = async (
     );
 
     const productInventories = await ProductInventory.find({
+      company: companyId,
       product: stockProduct._id,
       warehouse: { $in: warehousesUsed },
     });
@@ -865,6 +960,7 @@ export const updateSaleOrderDetail = async (
   await findSaleOrderDetail.save();
 
   const saleOrderDetails = await SaleOrderDetail.find({
+    company: companyId,
     sale_order: findSaleOrder._id,
   });
   let newTotal = 0;
@@ -878,9 +974,14 @@ export const updateSaleOrderDetail = async (
 };
 
 export const reportSaleOrderByClient = async (
+  companyId: MongooseTypes.ObjectId,
   userId: MongooseTypes.ObjectId // Usamos solo MongooseTypes.ObjectId
 ) => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
+
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
@@ -888,6 +989,7 @@ export const reportSaleOrderByClient = async (
   const currentYear = new Date().getFullYear();
 
   const matchStage: any = {
+    company: new MongooseTypes.ObjectId(companyId),
     status: saleOrderStatus.APROBADO,
     date: {
       $gte: new Date(`${currentYear}-01-01`),
@@ -947,9 +1049,14 @@ export const reportSaleOrderByClient = async (
 };
 
 export const reportSaleOrderByCategory = async (
+  companyId: MongooseTypes.ObjectId,
   userId: MongooseTypes.ObjectId // Usa MongooseTypes.ObjectId
 ) => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
+
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
@@ -957,6 +1064,7 @@ export const reportSaleOrderByCategory = async (
   const currentYear = new Date().getFullYear();
 
   const matchStage: any = {
+    "orderData.company": new MongooseTypes.ObjectId(companyId),
     "orderData.status": saleOrderStatus.APROBADO,
     "orderData.date": {
       $gte: new Date(`${currentYear}-01-01`),
@@ -1019,9 +1127,14 @@ export const reportSaleOrderByCategory = async (
 };
 
 export const reportSaleOrderByMonth = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrder[]> => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
+
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
@@ -1031,6 +1144,7 @@ export const reportSaleOrderByMonth = async (
   oneMonthAgo.setMonth(now.getMonth() - 1);
 
   const filter: any = {
+    company: companyId,
     date: {
       $gte: oneMonthAgo,
       $lte: now,

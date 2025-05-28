@@ -51,6 +51,11 @@ const productInventorySchema = new mongoose.Schema(
       default: 0,
     },
     status: { type: String, default: productInventoryStatus.BORRADOR },
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
   },
   { timestamps: true }
 );

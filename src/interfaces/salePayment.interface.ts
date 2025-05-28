@@ -1,4 +1,5 @@
 import { salePaymentMethod } from "../utils/enums/salePaymentMethod";
+import { ICompany } from "./company.interface";
 import { ISaleOrder } from "./saleOrder.interface";
 import { IUser } from "./user.interface";
 
@@ -9,6 +10,7 @@ export interface ISalePayment {
   payment_method: salePaymentMethod;
   note: string;
   created_by: IUser;
+  company: ICompany;
 }
 
 export interface IDetailSalePaymentBySaleOrder {

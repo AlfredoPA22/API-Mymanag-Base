@@ -6,30 +6,43 @@ import {
 import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
 import { Brand } from "./brand.model";
 
-export const findAll = async (): Promise<IBrand[]> => {
-  return await Brand.find();
+export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IBrand[]> => {
+  return await Brand.find({
+    company: companyId,
+  })
+    .populate("company")
+    .lean<IBrand[]>();
 };
 
 export const findById = async (
   brandId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IBrand> => {
-  const brand = await Brand.findById(brandId);
-  if (brand) {
-    return brand.toObject() as IBrand;
-  } else {
+  const brand = await Brand.findById(brandId)
+    .populate("company")
+    .lean<IBrand>();
+
+  if (!brand) {
     throw new Error("La marca no existe");
   }
+
+  return brand;
 };
 
-export const create = async (brandInput: BrandInput) => {
+export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  brandInput: BrandInput
+) => {
   const brand = await Brand.findOne({
     name: brandInput.name,
+    company: companyId,
   });
 
   if (brand) {
     throw new Error("La marca ya existe");
   }
-  const newBrand = await Brand.create(brandInput);
+  const newBrand = await Brand.create({ ...brandInput, company: companyId });
 
   return newBrand;
 };
@@ -55,41 +68,52 @@ export const subtractCount = async (
 };
 
 export const deleteBrand = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   brandId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const brand = await findById(brandId);
+  const brand = await Brand.findOne({ _id: brandId, company: companyId });
+
+  if (!brand) {
+    throw new Error("La marca no existe");
+  }
 
   if (brand.count_product > 0) {
     throw new Error("No se puede eliminar porque tiene productos asociados");
   }
 
-  const deleted = await Brand.deleteOne({
-    _id: brandId,
-  });
+  const deleted = await Brand.deleteOne({ _id: brandId, company: companyId });
 
-  if (deleted.deletedCount > 0) {
-    return {
-      success: true,
-    };
-  }
   return {
-    success: false,
+    success: deleted.deletedCount > 0,
   };
 };
 
 export const update = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   brandId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateBrandInput: UpdateBrandInput
 ) => {
-  const brandUpdated = await Brand.findByIdAndUpdate(
-    brandId,
+  const brand = await Brand.findOne({ _id: brandId, company: companyId });
+
+  if (!brand) {
+    throw new Error("La marca no existe");
+  }
+
+  const existingBrand = await Brand.findOne({
+    name: updateBrandInput.name,
+    company: companyId,
+    _id: { $ne: brandId },
+  });
+
+  if (existingBrand) {
+    throw new Error("La marca ya existe");
+  }
+
+  const brandUpdated = await Brand.findOneAndUpdate(
+    { _id: brandId, company: companyId },
     { $set: updateBrandInput },
     { new: true }
   );
-
-  if (!brandUpdated) {
-    throw new Error("La marca no existe");
-  }
 
   return brandUpdated;
 };

@@ -4,7 +4,7 @@ import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum"
 
 const productSerialSchema = new mongoose.Schema(
   {
-    serial: { type: String, required: true, unique: true },
+    serial: { type: String, required: true },
     product: {
       type: MongooseSchema.Types.ObjectId,
       ref: "product",
@@ -27,6 +27,11 @@ const productSerialSchema = new mongoose.Schema(
       required: false,
     },
     status: { type: String, default: productSerialStatus.BORRADOR },
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
   },
   { timestamps: true }
 );

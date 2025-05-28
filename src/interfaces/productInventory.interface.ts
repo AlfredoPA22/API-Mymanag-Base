@@ -3,7 +3,7 @@ import { IProduct } from "./product.interface";
 import { IProductTransferDetail } from "./productTransferDetail.interface";
 import { IPurchaseOrderDetail } from "./purchaseOrderDetail.interface";
 import { IWarehouse } from "./warehouse.interface";
-
+import { ICompany } from "./company.interface";
 
 export interface IProductInventory {
   _id: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
@@ -17,4 +17,5 @@ export interface IProductInventory {
   sold: number;
   transferred: number;
   status: string;
+  company: ICompany;
 }

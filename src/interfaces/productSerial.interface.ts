@@ -3,6 +3,7 @@ import { IProduct } from "./product.interface";
 import { IPurchaseOrderDetail } from "./purchaseOrderDetail.interface";
 import { ISaleOrderDetail } from "./saleOrderDetail.interface";
 import { IWarehouse } from "./warehouse.interface";
+import { ICompany } from "./company.interface";
 
 export interface ProductSerialInput {
   serial: string;
@@ -20,4 +21,5 @@ export interface IProductSerial {
   purchase_order_detail: IPurchaseOrderDetail;
   sale_order_detail: ISaleOrderDetail;
   status: string;
+  company: ICompany;
 }

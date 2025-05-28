@@ -10,10 +10,14 @@ export const brandResolver = {
       context: any
     ): Promise<IBrand[]> {
       const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_BRAND", "LIST_AND_CREATE_PRODUCT","PRODUCT_REPORT"];
+      const permission = [
+        "LIST_AND_CREATE_BRAND",
+        "LIST_AND_CREATE_PRODUCT",
+        "PRODUCT_REPORT",
+      ];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.companyId);
     },
   },
   Mutation: {
@@ -22,21 +26,25 @@ export const brandResolver = {
       const permission = ["LIST_AND_CREATE_BRAND", "LIST_AND_CREATE_PRODUCT"];
       await hasPermission(roleName, permission);
 
-      return await create(args.brandInput);
+      return await create(context.user.companyId, args.brandInput);
     },
     async deleteBrand(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_BRAND"];
       await hasPermission(roleName, permission);
 
-      return await deleteBrand(args.brandId);
+      return await deleteBrand(context.user.companyId, args.brandId);
     },
     async updateBrand(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_BRAND"];
       await hasPermission(roleName, permission);
 
-      return await update(args.brandId, args.updateBrandInput);
+      return await update(
+        context.user.companyId,
+        args.brandId,
+        args.updateBrandInput
+      );
     },
   },
 };

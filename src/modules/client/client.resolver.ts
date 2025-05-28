@@ -24,7 +24,7 @@ export const clientResolver = {
       ];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.companyId);
     },
     async listSaleOrderByClient(
       _: any,
@@ -35,7 +35,11 @@ export const clientResolver = {
       const permission = ["LIST_SALE_ORDER_BY_CLIENT"];
       await hasPermission(roleName, permission);
 
-      return await findAllSaleOrderByClient(context.user.id, args.clientId);
+      return await findAllSaleOrderByClient(
+        context.user.companyId,
+        context.user.id,
+        args.clientId
+      );
     },
   },
   Mutation: {
@@ -44,21 +48,25 @@ export const clientResolver = {
       const permission = ["LIST_AND_CREATE_CLIENT", "LIST_AND_CREATE_SALE"];
       await hasPermission(roleName, permission);
 
-      return await create(args.clientInput);
+      return await create(context.user.companyId, args.clientInput);
     },
     async deleteClient(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_CLIENT"];
       await hasPermission(roleName, permission);
 
-      return await deleteClient(args.clientId);
+      return await deleteClient(context.user.companyId, args.clientId);
     },
     async updateClient(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_CLIENT"];
       await hasPermission(roleName, permission);
 
-      return await update(args.clientId, args.updateClientInput);
+      return await update(
+        context.user.companyId,
+        args.clientId,
+        args.updateClientInput
+      );
     },
   },
 };

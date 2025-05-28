@@ -18,7 +18,7 @@ export const roleResolver = {
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.companyId);
     },
 
     async listPermissionsByRole(
@@ -30,7 +30,7 @@ export const roleResolver = {
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await listPermissionsByRole(args.roleId);
+      return await listPermissionsByRole(context.user.companyId, args.roleId);
     },
   },
   Mutation: {
@@ -39,14 +39,14 @@ export const roleResolver = {
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await create(args.roleInput);
+      return await create(context.user.companyId, args.roleInput);
     },
     async deleteRole(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await deleteRole(args.roleId);
+      return await deleteRole(context.user.companyId, args.roleId);
     },
   },
 };

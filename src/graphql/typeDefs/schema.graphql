@@ -1,5 +1,55 @@
 scalar Date
 
+input LoginLandingInput {
+  clientId: String!
+  credential: String!
+}
+
+type AdminCredentials {
+  user_name: String!
+  password: String!
+}
+
+type Company {
+  _id: ID!
+  name: String
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  image: String
+  currency: String
+  plan: String
+  status: String
+  trial_expires_at: String
+  subscription_expires_at: String
+}
+
+type CompanyOutput {
+  company: Company!
+  adminCredentials: AdminCredentials!
+}
+
+input CompanyInput {
+  name: String!
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  plan: String!
+}
+
+type Warehouse {
+  _id: ID!
+  name: String
+  description: String
+  is_active: Boolean
+}
+
 type Warehouse {
   _id: ID!
   name: String
@@ -428,7 +478,59 @@ type GeneralData {
   total_sales_value: Float!
 }
 
+type BillingInfo {
+  name: String
+  nit: String
+  email: String
+}
+
+type PaymentLanding {
+  _id: ID!
+  company: Company
+  plan: String
+  amount: Float
+  currency: String
+  method: String
+  status: String
+  paid_at: String
+  proof_url: String
+  billing_info: BillingInfo
+}
+
+input PaymentLandingInput {
+  company: String!
+  plan: String!
+  amount: Float!
+  currency: String!
+  method: String!
+  proof_url: String!
+  billing_name: String
+  billing_nit: String
+  billing_email: String
+}
+
+type CompanyWithPayment {
+  _id: ID!
+  name: String
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  image: String
+  currency: String
+  plan: String
+  status: String
+  trial_expires_at: String
+  subscription_expires_at: String
+  latest_payment: PaymentLanding
+}
+
 type Query {
+  listCompany: [CompanyWithPayment]
+  listCompanyAdmin: [CompanyWithPayment]
+
   listUser: [User]
 
   listRole: [Role]
@@ -486,9 +588,13 @@ type Query {
   findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
 
   generateCode(type: String!): String
+
+  listPaymentLandingByCompany(companyId: String!): [PaymentLanding]
 }
 
 type Mutation {
+  createCompany(companyInput: CompanyInput!): CompanyOutput
+
   createPermission(permissionInput: PermissionInput!): Permission
 
   createRole(roleInput: RoleInput!): Role
@@ -499,6 +605,8 @@ type Mutation {
   deleteUser(userId: String!): DeleteResponse
   login(loginInput: LoginInput!): String
   switchUserState(userId: String!): User
+
+  loginLanding(loginLandingInput: LoginLandingInput!): String
 
   createBrand(brandInput: BrandInput!): Brand
   updateBrand(brandId: String!, updateBrandInput: UpdateBrandInput!): Brand
@@ -579,4 +687,11 @@ type Mutation {
   createProductTransferDetail(
     productTransferDetailInput: ProductTransferDetailInput!
   ): ProductTransferDetail
+
+  createPaymentLanding(
+    paymentLandingInput: PaymentLandingInput!
+  ): PaymentLanding
+  approvePaymentLanding(paymentId: String!): PaymentLanding
+  rejectPaymentLanding(paymentId: String!): PaymentLanding
+  updatePaymentLanding(paymentId: String!, proof_url: String!): PaymentLanding
 }

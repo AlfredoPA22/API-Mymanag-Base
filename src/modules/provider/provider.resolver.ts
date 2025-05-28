@@ -17,7 +17,7 @@ export const providerResolver = {
       ];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.companyId);
     },
   },
   Mutation: {
@@ -29,21 +29,25 @@ export const providerResolver = {
       ];
       await hasPermission(roleName, permission);
 
-      return await create(args.providerInput);
+      return await create(context.user.companyId, args.providerInput);
     },
     async deleteProvider(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_PROVIDER"];
       await hasPermission(roleName, permission);
 
-      return await deleteProvider(args.providerId);
+      return await deleteProvider(context.user.companyId, args.providerId);
     },
     async updateProvider(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_PROVIDER"];
       await hasPermission(roleName, permission);
 
-      return await update(args.providerId, args.updateProviderInput);
+      return await update(
+        context.user.companyId,
+        args.providerId,
+        args.updateProviderInput
+      );
     },
   },
 };

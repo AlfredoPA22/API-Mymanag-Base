@@ -33,19 +33,23 @@ import { Product } from "./product.model";
 import { ProductInventory } from "./product_inventory.model";
 import { ProductSerial } from "./product_serial.model";
 
-export const findAll = async (): Promise<IProduct[]> => {
-  const listProduct = await Product.find()
+export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IProduct[]> => {
+  return await Product.find({
+    company: companyId,
+  })
     .populate("category")
     .populate("brand")
+    .populate("company")
     .lean<IProduct[]>();
-
-  return listProduct;
 };
 
 export const productReport = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   filterProductInput: FilterProductInput
 ): Promise<IProduct[]> => {
-  const query: any = {};
+  const query: any = { company: companyId };
   if (filterProductInput.category) {
     query.category = filterProductInput.category;
   }
@@ -59,12 +63,14 @@ export const productReport = async (
   const listProduct = await Product.find(query)
     .populate("category")
     .populate("brand")
+    .populate("company")
     .lean<IProduct[]>();
 
   return listProduct;
 };
 
 export const findAllWithParams = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   categoryId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   brandId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   warehouseId?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -75,7 +81,7 @@ export const findAllWithParams = async (
     );
   }
 
-  let filter: any = {};
+  let filter: any = { company: companyId };
 
   if (categoryId) filter.category = categoryId;
   if (brandId) filter.brand = brandId;
@@ -105,6 +111,7 @@ export const findAllWithParams = async (
   const products = await Product.find(filter)
     .populate("category")
     .populate("brand")
+    .populate("company")
     .lean<IProduct[]>();
 
   if (!warehouseId) return products;
@@ -114,12 +121,14 @@ export const findAllWithParams = async (
     products.map(async (product) => {
       // Stock de inventario (no serializados)
       const inventory = await ProductInventory.findOne({
+        company: companyId,
         product: product._id,
         warehouse: warehouseId,
       });
 
       // Stock de productos serializados (solo los DISPONIBLES)
       const serialCount = await ProductSerial.countDocuments({
+        company: companyId,
         product: product._id,
         warehouse: warehouseId,
         status: productSerialStatus.DISPONIBLE, // Solo contar seriales DISPONIBLES
@@ -139,11 +148,16 @@ export const findAllWithParams = async (
 };
 
 export const findProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProduct> => {
-  const product: IProduct = await Product.findById(productId)
+  const product: IProduct = await Product.findOne({
+    _id: productId,
+    company: companyId,
+  })
     .populate("brand")
     .populate("category")
+    .populate("company")
     .lean<IProduct>();
 
   if (!product) {
@@ -154,37 +168,45 @@ export const findProduct = async (
 };
 
 export const listProductSerialByPurchaseOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProductSerial[]> => {
   const listSerial = await ProductSerial.find({
+    company: companyId,
     purchase_order_detail: purchaseOrderDetailId,
   })
     .populate("product")
     .populate("purchase_order_detail")
     .populate("warehouse")
+    .populate("company")
     .lean<IProductSerial[]>();
 
   return listSerial;
 };
 
 export const listProductSerialBySaleOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProductSerial[]> => {
   const listSerial = await ProductSerial.find({
+    company: companyId,
     sale_order_detail: saleOrderDetailId,
   })
     .populate("product")
     .populate("sale_order_detail")
     .populate("warehouse")
+    .populate("company")
     .lean<IProductSerial[]>();
 
   return listSerial;
 };
 
 export const listProductSerialByProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProductSerial[]> => {
   const listSerial = await ProductSerial.find({
+    company: companyId,
     product: productId,
   })
     .populate("product")
@@ -201,15 +223,18 @@ export const listProductSerialByProduct = async (
         path: "sale_order",
       },
     })
+    .populate("company")
     .lean<IProductSerial[]>();
 
   return listSerial;
 };
 
 export const listProductInventoryByProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProductInventory[]> => {
   const listProduct = await ProductInventory.find({
+    company: companyId,
     product: productId,
   })
     .populate("product")
@@ -220,28 +245,38 @@ export const listProductInventoryByProduct = async (
         path: "purchase_order",
       },
     })
+    .populate("company")
     .lean<IProductInventory[]>();
 
   return listProduct;
 };
 
-export const searchProduct = async (argument: string): Promise<IProduct> => {
+export const searchProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  argument: string
+): Promise<IProduct> => {
   const foundProductSerial: IProductSerial | null = await ProductSerial.findOne(
     {
+      company: companyId,
       serial: argument,
     }
   );
 
   if (foundProductSerial) {
-    const product: IProduct = await Product.findById(foundProductSerial.product)
+    const product: IProduct = await Product.findOne({
+      _id: foundProductSerial.product,
+      company: companyId,
+    })
       .populate("brand")
       .populate("category")
+      .populate("company")
       .lean<IProduct>();
 
     return product;
   }
 
   const product: IProduct | null = await Product.findOne({
+    company: companyId,
     $or: [
       { name: { $regex: argument, $options: "i" } },
       { code: { $regex: argument, $options: "i" } },
@@ -249,6 +284,7 @@ export const searchProduct = async (argument: string): Promise<IProduct> => {
   })
     .populate("brand")
     .populate("category")
+    .populate("company")
     .lean<IProduct>();
 
   if (!product) {
@@ -261,20 +297,32 @@ export const searchProduct = async (argument: string): Promise<IProduct> => {
 };
 
 export const generalData = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IGeneralData> => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
 
-  const total_products_number: number = await Product.countDocuments();
+  const total_products_number: number = await Product.countDocuments({
+    company: companyId,
+  });
 
   const total_products_out: number = await Product.countDocuments({
+    company: companyId,
     status: productStatus.SIN_STOCK,
   });
 
   const totalStock = await Product.aggregate([
+    {
+      $match: {
+        company: new MongooseTypes.ObjectId(`${companyId}`),
+      },
+    },
     {
       $group: {
         _id: null,
@@ -297,6 +345,7 @@ export const generalData = async (
     {
       $match: {
         "order.status": saleOrderStatus.APROBADO,
+        "order.company": new MongooseTypes.ObjectId(`${companyId}`),
         ...(foundUser.is_global
           ? {}
           : { "order.created_by": new MongooseTypes.ObjectId(`${userId}`) }),
@@ -343,6 +392,7 @@ export const generalData = async (
     mostSoldProduct.length > 0 ? mostSoldProduct[0].totalSold : 0;
 
   const total_sales_number: number = await SaleOrder.countDocuments({
+    company: companyId,
     status: saleOrderStatus.APROBADO,
     ...(foundUser.is_global ? {} : { created_by: userId }),
   });
@@ -350,6 +400,7 @@ export const generalData = async (
   const total_sales_value_aggregate = await SaleOrder.aggregate([
     {
       $match: {
+        company: new MongooseTypes.ObjectId(`${companyId}`),
         status: saleOrderStatus.APROBADO,
         ...(foundUser.is_global
           ? {}
@@ -382,8 +433,12 @@ export const generalData = async (
   return response;
 };
 
-export const createProduct = async (createProductInput: ProductInput) => {
+export const createProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  createProductInput: ProductInput
+) => {
   const productNameValidation = await Product.findOne({
+    company: companyId,
     name: createProductInput.name,
   });
 
@@ -394,7 +449,7 @@ export const createProduct = async (createProductInput: ProductInput) => {
   const customDataProduct: ProductInput = {
     code: createProductInput.code
       ? createProductInput.code
-      : await generate(codeType.PRODUCT),
+      : await generate(companyId, codeType.PRODUCT),
     name: createProductInput.name,
     description: createProductInput.description,
     image: createProductInput.image,
@@ -405,10 +460,10 @@ export const createProduct = async (createProductInput: ProductInput) => {
   };
 
   const newProduct = await (
-    await Product.create(customDataProduct)
+    await Product.create({ ...customDataProduct, company: companyId })
   ).populate("category");
 
-  await increment(codeType.PRODUCT);
+  await increment(companyId, codeType.PRODUCT);
 
   if (createProductInput.category) {
     await addCountCategory(createProductInput.category);
@@ -422,9 +477,11 @@ export const createProduct = async (createProductInput: ProductInput) => {
 };
 
 export const createProductSerial = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createProductSerialInput: ProductSerialInput
 ) => {
   const productSerialValidation = await ProductSerial.findOne({
+    company: companyId,
     serial: createProductSerialInput.serial,
   });
 
@@ -434,7 +491,10 @@ export const createProductSerial = async (
 
   const newProductSerial: IProductSerial = await (
     await (
-      await ProductSerial.create(createProductSerialInput)
+      await ProductSerial.create({
+        ...createProductSerialInput,
+        company: companyId,
+      })
     ).populate("product")
   ).populate("purchase_order_detail");
 
@@ -442,9 +502,11 @@ export const createProductSerial = async (
 };
 
 export const deleteProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
   const findPurchase = await PurchaseOrderDetail.find({
+    company: companyId,
     product: productId,
   });
 
@@ -452,7 +514,7 @@ export const deleteProduct = async (
     throw new Error("No se puede eliminar porque pertenece a una compra");
   }
 
-  const product = await Product.findById(productId);
+  const product = await Product.findOne({ _id: productId, company: companyId });
 
   if (!product) {
     throw new Error("Producto no encontrado");
@@ -460,6 +522,7 @@ export const deleteProduct = async (
 
   const deleted = await Product.deleteOne({
     _id: productId,
+    company: companyId,
   });
 
   if (deleted.deletedCount > 0) {
@@ -480,22 +543,40 @@ export const deleteProduct = async (
 };
 
 export const update = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateProductInput: UpdateProductInput
 ) => {
-  const existingProduct: IProduct = await Product.findById(productId);
+  const existingProduct: IProduct = await Product.findOne({
+    _id: productId,
+    company: companyId,
+  });
+
   if (!existingProduct) {
     throw new Error("Producto no encontrado.");
   }
 
   if (updateProductInput.code !== existingProduct.code) {
     const codeExists = await Product.findOne({
+      company: companyId,
       code: updateProductInput.code,
       _id: { $ne: productId },
     });
 
     if (codeExists) {
-      throw new Error("Ya existe un producto con ese código.");
+      throw new Error("Ya existe un producto con este código.");
+    }
+  }
+
+  if (updateProductInput.name !== existingProduct.name) {
+    const nameExists = await Product.findOne({
+      company: companyId,
+      name: updateProductInput.name,
+      _id: { $ne: productId },
+    });
+
+    if (nameExists) {
+      throw new Error("Ya existe un producto con este nombre.");
     }
   }
 
@@ -504,9 +585,11 @@ export const update = async (
 
   if (isStockTypeChanged) {
     const serialCount = await ProductSerial.countDocuments({
+      company: companyId,
       product: productId,
     });
     const inventoryCount = await ProductInventory.countDocuments({
+      company: companyId,
       product: productId,
     });
 
@@ -517,14 +600,21 @@ export const update = async (
     }
   }
 
+  if (!updateProductInput.image) {
+    updateProductInput.image = existingProduct.image;
+  }
+
   const brandChanged =
     updateProductInput.brand?.toString() !== existingProduct.brand.toString();
   const categoryChanged =
     updateProductInput.category?.toString() !==
     existingProduct.category.toString();
 
-  const productUpdated = await Product.findByIdAndUpdate(
-    productId,
+  const productUpdated = await Product.findOneAndUpdate(
+    {
+      _id: productId,
+      company: companyId,
+    },
     { $set: updateProductInput },
     { new: true }
   );

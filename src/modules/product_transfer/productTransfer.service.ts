@@ -1,21 +1,19 @@
-import mongoose, {
-  Schema as MongooseSchema,
-  Types as MongooseTypes,
-} from "mongoose";
+import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { ProductTransferInput } from "../../interfaces/productTransfer.interface";
-import { ProductTransfer } from "./product_transfer.model";
-import { generate, increment } from "../codeGenerator/codeGenerator.service";
-import { codeType } from "../../utils/enums/orderType.enum";
-import { Product } from "../product/product.model";
 import { ProductTransferDetailInput } from "../../interfaces/productTransferDetail.interface";
-import { ProductTransferDetail } from "./product_transfer_detail.model";
+import { codeType } from "../../utils/enums/orderType.enum";
+import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
+import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
 import { stockType } from "../../utils/enums/stockType.enum";
+import { generate, increment } from "../codeGenerator/codeGenerator.service";
+import { Product } from "../product/product.model";
 import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
-import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
-import { productInventoryStatus } from "../../utils/enums/productInventoryStatus.enum";
+import { ProductTransfer } from "./product_transfer.model";
+import { ProductTransferDetail } from "./product_transfer_detail.model";
 
 export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createProductTransferInput: ProductTransferInput
 ) => {
@@ -29,18 +27,20 @@ export const create = async (
   }
 
   const newProductTransfer = await await ProductTransfer.create({
-    code: await generate(codeType.PRODUCT_TRANSFER),
+    company: companyId,
+    code: await generate(companyId, codeType.PRODUCT_TRANSFER),
     date: createProductTransferInput.date,
     origin_warehouse: createProductTransferInput.origin_warehouse,
     destination_warehouse: createProductTransferInput.destination_warehouse,
     created_by: userId,
   });
 
-  await increment(codeType.PRODUCT_TRANSFER);
+  await increment(companyId, codeType.PRODUCT_TRANSFER);
 
-  const populatedTransfer = await ProductTransfer.findById(
-    newProductTransfer._id
-  )
+  const populatedTransfer = await ProductTransfer.findOne({
+    _id: newProductTransfer._id,
+    company: companyId,
+  })
     .populate("origin_warehouse")
     .populate("destination_warehouse")
     .populate("created_by");
@@ -49,25 +49,29 @@ export const create = async (
 };
 
 export const createDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createProductTransferDetailInput: ProductTransferDetailInput
 ) => {
   if (createProductTransferDetailInput.quantity <= 0) {
     throw new Error("La cantidad debe ser mayor a cero");
   }
 
-  const foundProduct = await Product.findById(
-    createProductTransferDetailInput.product
-  );
+  const foundProduct = await Product.findOne({
+    _id: createProductTransferDetailInput.product,
+    company: companyId,
+  });
 
   if (!foundProduct) throw new Error("Producto no encontrado");
 
-  const foundTransfer = await ProductTransfer.findById(
-    createProductTransferDetailInput.product_transfer
-  );
+  const foundTransfer = await ProductTransfer.findOne({
+    _id: createProductTransferDetailInput.product_transfer,
+    company: companyId,
+  });
 
   if (!foundTransfer) throw new Error("Transferencia no encontrada");
 
   const foundDetail = await ProductTransferDetail.findOne({
+    company: companyId,
     product_transfer: foundTransfer._id,
     product: foundProduct._id,
   });
@@ -75,6 +79,7 @@ export const createDetail = async (
   if (foundDetail) throw new Error("El producto ya esta en la transferencia");
 
   const newDetail = await ProductTransferDetail.create({
+    company: companyId,
     product_transfer: createProductTransferDetailInput.product_transfer,
     product: createProductTransferDetailInput.product,
     quantity: createProductTransferDetailInput.quantity,
@@ -83,6 +88,7 @@ export const createDetail = async (
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
     const inventories = await ProductInventory.find({
+      company: companyId,
       product: foundProduct._id,
       warehouse: foundTransfer.origin_warehouse,
       available: { $gt: 0 },
@@ -114,6 +120,7 @@ export const createDetail = async (
 
     // Crear nuevo ProductInventory en almacén destino en estado BORRADOR
     await ProductInventory.create({
+      company: companyId,
       product: foundProduct._id,
       warehouse: foundTransfer.destination_warehouse,
       product_transfer_detail: newDetail._id,
@@ -123,6 +130,7 @@ export const createDetail = async (
     });
   } else if (foundProduct.stock_type === stockType.SERIALIZADO) {
     const availableSerials = await ProductSerial.countDocuments({
+      company: companyId,
       product: foundProduct._id,
       warehouse: foundTransfer.origin_warehouse,
       status: productSerialStatus.DISPONIBLE,

@@ -6,30 +6,47 @@ import {
 import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
 import { Category } from "./category.model";
 
-export const findAll = async (): Promise<ICategory[]> => {
-  return await Category.find();
+export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<ICategory[]> => {
+  return await Category.find({ company: companyId })
+    .populate("company")
+    .lean<ICategory[]>();
 };
 
 export const findById = async (
   categoryId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ICategory> => {
-  const category = await Category.findById(categoryId);
-  if (category) {
-    return category.toObject() as ICategory;
-  } else {
-    throw new Error("La categoria no existe");
+  const category = await Category.findOne({
+    _id: categoryId,
+  })
+    .populate("company")
+    .lean<ICategory>();
+
+  if (!category) {
+    throw new Error("La categoría no existe");
   }
+
+  return category;
 };
 
-export const create = async (categoryInput: CategoryInput) => {
+export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  categoryInput: CategoryInput
+) => {
   const category = await Category.findOne({
     name: categoryInput.name,
+    company: companyId,
   });
 
   if (category) {
-    throw new Error("La categoria ya existe");
+    throw new Error("La categoría ya existe");
   }
-  const newCategory = await Category.create(categoryInput);
+
+  const newCategory = await Category.create({
+    ...categoryInput,
+    company: companyId,
+  });
 
   return newCategory;
 };
@@ -55,9 +72,17 @@ export const subtractCount = async (
 };
 
 export const deleteCategory = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   categoryId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const category = await findById(categoryId);
+  const category = await Category.findOne({
+    _id: categoryId,
+    company: companyId,
+  });
+
+  if (!category) {
+    throw new Error("La categoría no existe");
+  }
 
   if (category.count_product > 0) {
     throw new Error("No se puede eliminar porque tiene productos asociados");
@@ -65,31 +90,43 @@ export const deleteCategory = async (
 
   const deleted = await Category.deleteOne({
     _id: categoryId,
+    company: companyId,
   });
 
-  if (deleted.deletedCount > 0) {
-    return {
-      success: true,
-    };
-  }
   return {
-    success: false,
+    success: deleted.deletedCount > 0,
   };
 };
 
 export const update = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   categoryId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateCategoryInput: UpdateCategoryInput
 ) => {
-  const categoryUpdated = await Category.findByIdAndUpdate(
-    categoryId,
+  const category = await Category.findOne({
+    _id: categoryId,
+    company: companyId,
+  });
+
+  if (!category) {
+    throw new Error("La categoría no existe");
+  }
+
+  const existingCategory = await Category.findOne({
+    name: updateCategoryInput.name,
+    company: companyId,
+    _id: { $ne: categoryId },
+  });
+
+  if (existingCategory) {
+    throw new Error("La categoría ya existe");
+  }
+
+  const categoryUpdated = await Category.findOneAndUpdate(
+    { _id: categoryId, company: companyId },
     { $set: updateCategoryInput },
     { new: true }
   );
-
-  if (!categoryUpdated) {
-    throw new Error("La categoria no existe");
-  }
 
   return categoryUpdated;
 };

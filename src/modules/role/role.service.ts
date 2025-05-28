@@ -3,22 +3,35 @@ import { User } from "../user/user.model";
 import { Role } from "./role.model";
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 
-export const findAll = async (): Promise<IRole[]> => {
-  const listRole = await Role.find().populate("permission").lean<IRole[]>();
-
-  return listRole;
+export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IRole[]> => {
+  return await Role.find({
+    company: companyId,
+  })
+    .populate("permission")
+    .populate("company")
+    .lean<IRole[]>();
 };
 
 export const listPermissionsByRole = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   roleId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<[]> => {
-  const role: IRole | null = await Role.findById(roleId).lean<IRole>();
+  const role: IRole | null = await Role.findOne({
+    _id: roleId,
+    company: companyId,
+  }).lean<IRole>();
 
   return role.permission || [];
 };
 
-export const create = async (roleInput: RoleInput) => {
+export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  roleInput: RoleInput
+) => {
   const role = await Role.findOne({
+    company: companyId,
     name: roleInput.name,
   });
 
@@ -26,15 +39,17 @@ export const create = async (roleInput: RoleInput) => {
     throw new Error("El rol ya existe");
   }
 
-  const newRole = await Role.create(roleInput);
+  const newRole = await Role.create({ ...roleInput, company: companyId });
 
   return newRole;
 };
 
 export const deleteRole = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   roleId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
   const findUser = await User.find({
+    company: companyId,
     role: roleId,
   });
 
@@ -44,14 +59,10 @@ export const deleteRole = async (
 
   const deleted = await Role.deleteOne({
     _id: roleId,
+    company: companyId,
   });
 
-  if (deleted.deletedCount > 0) {
-    return {
-      success: true,
-    };
-  }
   return {
-    success: false,
+    success: deleted.deletedCount > 0,
   };
 };

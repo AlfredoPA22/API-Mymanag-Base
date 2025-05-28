@@ -1,73 +1,54 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import {
-    IProvider,
-    ProviderInput,
-    UpdateProviderInput,
+  IProvider,
+  ProviderInput,
+  UpdateProviderInput,
 } from "../../interfaces/provider.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { PurchaseOrder } from "../purchase_order/purchase_order.model";
 import { Provider } from "./provider.model";
 
-export const findAll = async (): Promise<IProvider[]> => {
-  return await Provider.find();
+export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IProvider[]> => {
+  return await Provider.find({
+    company: companyId,
+  })
+    .populate("company")
+    .lean<IProvider[]>();
 };
 
-// export const findAllSaleOrderByClient = async (
-//   providerId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
-// ): Promise<ISaleOrderByClient> => {
-//   await findById(clientId);
-
-//   const allSalesOrderByClient = await SaleOrder.find({
-//     client: clientId,
-//   })
-//     .populate("client")
-//     .lean<ISaleOrder[]>();
-
-//   let total: number = allSalesOrderByClient
-//     .filter(
-//       (saleOrder: ISaleOrder) => saleOrder.status === saleOrderStatus.APROBADO
-//     )
-//     .reduce((sum, saleOrder) => {
-//       return sum + Number(saleOrder.total || 0);
-//     }, 0);
-
-//   const response: ISaleOrderByClient = {
-//     saleOrder: allSalesOrderByClient,
-//     total: total.toString(),
-//   };
-
-//   return response;
-// };
-
-export const findById = async (
-  providerId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
-): Promise<IProvider> => {
-  const provider = await Provider.findById(providerId);
-  if (provider) {
-    return provider.toObject() as IProvider;
-  } else {
-    throw new Error("El proveedor no existe");
-  }
-};
-
-export const create = async (providerInput: ProviderInput) => {
+export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  providerInput: ProviderInput
+) => {
   const newProvider = await Provider.create({
-    code: await generate(codeType.PROVIDER),
+    company: companyId,
+    code: await generate(companyId, codeType.PROVIDER),
     ...providerInput,
   });
 
-  await increment(codeType.PROVIDER);
+  await increment(companyId, codeType.PROVIDER);
 
   return newProvider;
 };
 
 export const deleteProvider = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   providerId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  await findById(providerId);
+  const provider = await Provider.findOne({
+    _id: providerId,
+    company: companyId,
+  });
+
+  if (!provider) {
+    throw new Error("El proveedor no existe");
+  }
 
   const purchaseOrderProvider = await PurchaseOrder.find({
+    company: companyId,
     provider: providerId,
   });
 
@@ -76,32 +57,34 @@ export const deleteProvider = async (
   }
 
   const deleted = await Provider.deleteOne({
+    company: companyId,
     _id: providerId,
   });
 
-  if (deleted.deletedCount > 0) {
-    return {
-      success: true,
-    };
-  }
   return {
-    success: false,
+    success: deleted.deletedCount > 0,
   };
 };
 
 export const update = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   providerId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateProviderInput: UpdateProviderInput
 ) => {
-  const providertUpdated = await Provider.findByIdAndUpdate(
-    providerId,
+  const provider = await Provider.findOne({
+    _id: providerId,
+    company: companyId,
+  });
+
+  if (!provider) {
+    throw new Error("El proveedor no existe");
+  }
+
+  const providertUpdated = await Provider.findOneAndUpdate(
+    { _id: providerId, company: companyId },
     { $set: updateProviderInput },
     { new: true }
   );
-
-  if (!providertUpdated) {
-    throw new Error("El proveedor no existe");
-  }
 
   return providertUpdated;
 };

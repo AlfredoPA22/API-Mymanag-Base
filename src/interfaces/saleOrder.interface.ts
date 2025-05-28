@@ -4,6 +4,7 @@ import { IClient } from "./client.interface";
 import { ISaleOrderDetailToPDF } from "./saleOrderDetail.interface";
 import { IUser } from "./user.interface";
 import { paymentMethod } from "../utils/enums/saleOrderPaymentMethod";
+import { ICompany } from "./company.interface";
 
 export interface ISaleOrder {
   _id: MongooseTypes.ObjectId;
@@ -15,6 +16,7 @@ export interface ISaleOrder {
   payment_method: paymentMethod;
   is_paid: boolean;
   created_by: IUser;
+  company: ICompany;
 }
 
 export interface ISaleOrderByClient {

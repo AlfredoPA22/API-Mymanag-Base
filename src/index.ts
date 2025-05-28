@@ -7,13 +7,29 @@ import jwt from "jsonwebtoken";
 
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
-import { initializeDatabase } from "./utils/initializeDatabase";
+import {
+  checkCompanyExpirations,
+  initCompanyExpirationCron,
+} from "./cron/checkCompanyExpirations";
 
 dotenv.config();
 const app = express();
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://client-mymanag-base.vercel.app",
+  "http://localhost:5174",
+];
+
 const corsOptions = {
-  origin: "https://client-mymanag-base.vercel.app",
-  // origin: "http://localhost:5173",
+  // origin: (origin, callback) => {
+  //   if (!origin || allowedOrigins.includes(origin)) {
+  //     callback(null, true);
+  //   } else {
+  //     callback(new Error("No autorizado por CORS"));
+  //   }
+  // },
+  origin: "http://localhost:5173",
+  credentials: true,
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
@@ -29,7 +45,7 @@ const port = process.env.PORT || 3000;
 
 const bootstrapServer = async () => {
   connectToMongoDB();
-  await initializeDatabase();
+  initCompanyExpirationCron();
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -48,7 +64,7 @@ const bootstrapServer = async () => {
     "/graphql",
     expressMiddleware(server, {
       context: async ({ req }) => {
-        const publicOperations = ["Login"];
+        const publicOperations = ["Login", "loginLanding"];
         const query = req.body?.query || "";
 
         if (query.includes("__schema")) {
@@ -85,6 +101,11 @@ const bootstrapServer = async () => {
 
   app.get("/", (req, res) => {
     res.send("hello world!");
+  });
+
+  app.get("/admin/test-cron", async (req, res) => {
+    await checkCompanyExpirations();
+    res.send("✔ Cron ejecutado manualmente.");
   });
 
   app.listen(port, () => {

@@ -5,6 +5,7 @@ import { ICategory } from "./category.interface";
 
 import { purchaseOrderStatus } from "../utils/enums/purchaseOrderStatus.enum";
 import { stockType } from "../utils/enums/stockType.enum";
+import { ICompany } from "./company.interface";
 
 export interface IProduct {
   _id: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
@@ -19,6 +20,7 @@ export interface IProduct {
   brand: IBrand;
   stock_type: stockType;
   status: purchaseOrderStatus;
+  company: ICompany;
 }
 
 export interface ProductInput {

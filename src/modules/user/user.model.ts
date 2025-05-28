@@ -11,8 +11,14 @@ const userSchema = new mongoose.Schema(
       ref: "role",
       required: true,
     },
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
     is_active: { type: Boolean, default: true },
     is_global: { type: Boolean, default: false },
+    is_admin: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

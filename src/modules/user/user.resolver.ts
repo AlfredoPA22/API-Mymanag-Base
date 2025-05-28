@@ -20,16 +20,12 @@ export const userResolver = {
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.companyId);
     },
   },
   Mutation: {
     async createUser(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
-
-      return await create(args.userInput);
+      return await create(context.user.companyId, args.userInput);
     },
     async login(_: any, args: Record<string, any>) {
       return await login(args.loginInput);
@@ -39,21 +35,25 @@ export const userResolver = {
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await switchUserState(args.userId);
+      return await switchUserState(context.user.companyId, args.userId);
     },
     async updateUser(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await update(args.userId, args.updateUserInput);
+      return await update(
+        context.user.companyId,
+        args.userId,
+        args.updateUserInput
+      );
     },
     async deleteUser(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
       await hasPermission(roleName, permission);
 
-      return await deleteUser(args.userId);
+      return await deleteUser(context.user.companyId, args.userId);
     },
   },
 };

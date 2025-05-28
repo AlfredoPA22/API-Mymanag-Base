@@ -1,10 +1,12 @@
 import { Types as MongooseTypes } from "mongoose";
+import { ICompany } from "./company.interface";
 
 export interface IProvider {
   _id: MongooseTypes.ObjectId;
   name: string;
   address: string;
   phoneNumber: string;
+  company: ICompany;
 }
 
 export interface ProviderInput {

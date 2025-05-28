@@ -17,7 +17,7 @@ export const warehouseResolver = {
       ];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.companyId);
     },
   },
   Mutation: {
@@ -30,21 +30,25 @@ export const warehouseResolver = {
       ];
       await hasPermission(roleName, permission);
 
-      return await create(args.warehouseInput);
+      return await create(context.user.companyId, args.warehouseInput);
     },
     async deleteWarehouse(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_WAREHOUSE"];
       await hasPermission(roleName, permission);
 
-      return await deleteWarehouse(args.warehouseId);
+      return await deleteWarehouse(context.user.companyId, args.warehouseId);
     },
     async updateWarehouse(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_WAREHOUSE"];
       await hasPermission(roleName, permission);
 
-      return await update(args.warehouseId, args.updateWarehouseInput);
+      return await update(
+        context.user.companyId,
+        args.warehouseId,
+        args.updateWarehouseInput
+      );
     },
   },
 };

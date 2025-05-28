@@ -2,6 +2,7 @@ import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
 import { IPurchaseOrder } from "./purchaseOrder.interface";
 import { IProduct } from "./product.interface";
 import { IProductSerial } from "./productSerial.interface";
+import { ICompany } from "./company.interface";
 
 export interface IPurchaseOrderDetail {
   _id: MongooseTypes.ObjectId;
@@ -11,6 +12,7 @@ export interface IPurchaseOrderDetail {
   quantity: number;
   serials: number;
   subtotal: number;
+  company: ICompany;
 }
 
 export interface IPurchaseOrderDetailToPDF {

@@ -14,6 +14,11 @@ const productTransferDetailSchema = new mongoose.Schema(
     },
     quantity: { type: Number, required: true },
     serials: [{ type: String }],
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
   },
   { timestamps: true }
 );

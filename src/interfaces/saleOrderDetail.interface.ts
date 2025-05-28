@@ -5,6 +5,7 @@ import { ISaleOrder } from "./saleOrder.interface";
 import { IProductSerial } from "./productSerial.interface";
 import { IWarehouse } from "./warehouse.interface";
 import { IPurchaseOrderDetail } from "./purchaseOrderDetail.interface";
+import { ICompany } from "./company.interface";
 
 export interface IInventoryUsage {
   warehouse: IWarehouse | null;
@@ -21,6 +22,7 @@ export interface ISaleOrderDetail {
   serials: number;
   inventory_usage: IInventoryUsage[];
   subtotal: number;
+  company: ICompany;
 }
 
 export interface SaleOrderDetailInput {

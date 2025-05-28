@@ -21,6 +21,11 @@ const purchaseOrderSchema = new mongoose.Schema(
       ref: "user",
       required: true,
     },
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
   },
   { timestamps: true }
 );

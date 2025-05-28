@@ -1,4 +1,5 @@
 import { Types as MongooseTypes } from "mongoose";
+import { ICompany } from "./company.interface";
 
 export interface IBrand {
   _id: MongooseTypes.ObjectId;
@@ -6,6 +7,7 @@ export interface IBrand {
   description: string;
   count_product: number;
   is_active: boolean;
+  company: ICompany;
 }
 
 export interface BrandInput {

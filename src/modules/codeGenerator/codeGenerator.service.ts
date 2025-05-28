@@ -1,46 +1,28 @@
 import { codeType } from "../../utils/enums/orderType.enum";
 import { CodeGenerator } from "./codeGenerator.model";
+import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
 
-export const generate = async (type: codeType) => {
-  let currentCode = await CodeGenerator.findOne({ type });
+export const generate = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  type: codeType
+) => {
+  let currentCode = await CodeGenerator.findOne({ type, company: companyId });
   if (!currentCode) {
-    if (type == codeType.PURCHASE_ORDER) {
-      currentCode = await CodeGenerator.create({
-        code: "COMP_",
-        sequence: "00000",
-        type,
-      });
-    } else if (type == codeType.SALE_ORDER) {
-      currentCode = await CodeGenerator.create({
-        code: "VENT_",
-        sequence: "00000",
-        type,
-      });
-    } else if (type == codeType.PRODUCT) {
-      currentCode = await CodeGenerator.create({
-        code: "PROD_",
-        sequence: "00000",
-        type,
-      });
-    } else if (type == codeType.CLIENT) {
-      currentCode = await CodeGenerator.create({
-        code: "CLIE_",
-        sequence: "00000",
-        type,
-      });
-    } else if (type == codeType.PROVIDER) {
-      currentCode = await CodeGenerator.create({
-        code: "PROV_",
-        sequence: "00000",
-        type,
-      });
-    } else if (type == codeType.PRODUCT_TRANSFER) {
-      currentCode = await CodeGenerator.create({
-        code: "TRAN_",
-        sequence: "00000",
-        type,
-      });
-    }
+    const defaultPrefixes = {
+      [codeType.PURCHASE_ORDER]: "COMP_",
+      [codeType.SALE_ORDER]: "VENT_",
+      [codeType.PRODUCT]: "PROD_",
+      [codeType.CLIENT]: "CLIE_",
+      [codeType.PROVIDER]: "PROV_",
+      [codeType.PRODUCT_TRANSFER]: "TRAN_",
+    };
+
+    currentCode = await CodeGenerator.create({
+      company: companyId,
+      type,
+      code: defaultPrefixes[type],
+      sequence: "00000",
+    });
   }
   let num = parseInt(currentCode.sequence);
   num++;
@@ -51,14 +33,19 @@ export const generate = async (type: codeType) => {
   return code;
 };
 
-export const increment = async (type: codeType) => {
-  let currentCode = await CodeGenerator.findOne({ type });
+export const increment = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  type: codeType
+) => {
+  const currentCode = await CodeGenerator.findOne({ type, company: companyId });
+
   if (currentCode) {
     let num = parseInt(currentCode.sequence);
     num++;
     const incrementedNum = num
       .toString()
       .padStart(currentCode.sequence.length, "0");
+
     await CodeGenerator.updateOne(
       { _id: currentCode._id },
       { sequence: incrementedNum }

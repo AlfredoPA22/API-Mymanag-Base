@@ -1,11 +1,12 @@
-import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
-import { IRole } from "./role.interface";
+import { Types as MongooseTypes } from "mongoose";
+import { ICompany } from "./company.interface";
 
 export interface IWarehouse {
   _id: MongooseTypes.ObjectId;
   name: string;
   description: string;
   is_active: boolean;
+  company: ICompany;
 }
 
 export interface WarehouseInput {

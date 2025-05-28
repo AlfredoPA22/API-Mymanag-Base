@@ -16,27 +16,37 @@ import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 import { IUser } from "../../interfaces/user.interface";
 import { User } from "../user/user.model";
 
-export const findAll = async (): Promise<IClient[]> => {
-  return await Client.find();
+export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IClient[]> => {
+  return await Client.find({ company: companyId })
+    .populate("company")
+    .lean<IClient[]>();
 };
 
 export const findAllSaleOrderByClient = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   clientId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrderByClient> => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
 
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
 
-  const foundClient = await findById(clientId);
-  if (!foundClient) {
-    throw new Error("Cliente no encontrado");
+  const client = await Client.findOne({ _id: clientId, company: companyId });
+
+  if (!client) {
+    throw new Error("El cliente no existe");
   }
 
   const filter: any = {
     client: clientId,
+    company: companyId,
   };
 
   if (!foundUser.is_global) {
@@ -45,6 +55,7 @@ export const findAllSaleOrderByClient = async (
 
   const allSalesOrderByClient = await SaleOrder.find(filter)
     .populate("client")
+    .populate("company")
     .lean<ISaleOrder[]>();
 
   const total: number = allSalesOrderByClient
@@ -61,35 +72,34 @@ export const findAllSaleOrderByClient = async (
   return response;
 };
 
-export const findById = async (
-  clientId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
-): Promise<IClient> => {
-  const client = await Client.findById(clientId);
-  if (client) {
-    return client.toObject() as IClient;
-  } else {
-    throw new Error("El cliente no existe");
-  }
-};
-
-export const create = async (clientInput: ClientInput) => {
+export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  clientInput: ClientInput
+) => {
   const newClient = await Client.create({
-    code: await generate(codeType.CLIENT),
+    code: await generate(companyId, codeType.CLIENT),
     ...clientInput,
+    company: companyId,
   });
 
-  await increment(codeType.CLIENT);
+  await increment(companyId, codeType.CLIENT);
 
   return newClient;
 };
 
 export const deleteClient = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   clientId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  await findById(clientId);
+  const client = await Client.findOne({ _id: clientId, company: companyId });
+
+  if (!client) {
+    throw new Error("El cliente no existe");
+  }
 
   const saleOrderClient = await SaleOrder.find({
     client: clientId,
+    company: companyId,
   });
 
   if (saleOrderClient.length > 0) {
@@ -98,31 +108,30 @@ export const deleteClient = async (
 
   const deleted = await Client.deleteOne({
     _id: clientId,
+    company: companyId,
   });
 
-  if (deleted.deletedCount > 0) {
-    return {
-      success: true,
-    };
-  }
   return {
-    success: false,
+    success: deleted.deletedCount > 0,
   };
 };
 
 export const update = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   clientId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateClientInput: UpdateClientInput
 ) => {
-  const clientUpdated = await Client.findByIdAndUpdate(
-    clientId,
+  const client = await Client.findOne({ _id: clientId, company: companyId });
+
+  if (!client) {
+    throw new Error("El cliente no existe");
+  }
+
+  const clientUpdated = await Client.findOneAndUpdate(
+    { _id: clientId, company: companyId },
     { $set: updateClientInput },
     { new: true }
   );
-
-  if (!clientUpdated) {
-    throw new Error("El cliente no existe");
-  }
 
   return clientUpdated;
 };

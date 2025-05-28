@@ -24,7 +24,11 @@ export const ProductTransferResolver = {
       const permission = ["LIST_AND_CREATE_PURCHASE"];
       await hasPermission(roleName, permission);
 
-      return await create(context.user.id, args.productTransferInput);
+      return await create(
+        context.user.companyId,
+        context.user.id,
+        args.productTransferInput
+      );
     },
 
     async createProductTransferDetail(
@@ -36,7 +40,10 @@ export const ProductTransferResolver = {
       const permission = ["LIST_AND_CREATE_PURCHASE"];
       await hasPermission(roleName, permission);
 
-      return await createDetail(args.productTransferDetailInput);
+      return await createDetail(
+        context.user.companyId,
+        args.productTransferDetailInput
+      );
     },
   },
 };

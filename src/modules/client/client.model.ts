@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Schema as MongooseSchema } from "mongoose";
 
 const clientSchema = new mongoose.Schema(
   {
@@ -7,6 +7,11 @@ const clientSchema = new mongoose.Schema(
     phoneNumber: { type: String, default: "" },
     email: { type: String, default: "" },
     address: { type: String, default: "" },
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
   },
   { timestamps: true }
 );

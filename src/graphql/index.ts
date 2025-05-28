@@ -14,6 +14,9 @@ import { saleOrderResolver } from "../modules/sale_order/saleOrder.resolver";
 import { salePaymentResolver } from "../modules/sale_payment/salePayment.resolver";
 import { userResolver } from "../modules/user/user.resolver";
 import { warehouseResolver } from "../modules/warehouse/warehouse.resolver";
+import { companyResolver } from "../modules/company/company.resolver";
+import { userLandingResolver } from "../modules/user_landing/user_landing.resolver";
+import { paymentLandingResolver } from "../modules/payment_landing/payment_landing.resolver";
 
 const schemaTypes = readFileSync(
   path.join(__dirname, "./typeDefs/schema.graphql"),
@@ -41,6 +44,8 @@ export const resolvers = {
     ...permissionResolver.Query,
     ...warehouseResolver.Query,
     ...salePaymentResolver.Query,
+    ...companyResolver.Query,
+    ...paymentLandingResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,
@@ -56,5 +61,8 @@ export const resolvers = {
     ...warehouseResolver.Mutation,
     ...salePaymentResolver.Mutation,
     ...ProductTransferResolver.Mutation,
+    ...companyResolver.Mutation,
+    ...userLandingResolver.Mutation,
+    ...paymentLandingResolver.Mutation,
   },
 };

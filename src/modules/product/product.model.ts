@@ -23,6 +23,11 @@ const productSchema = new mongoose.Schema(
     },
     stock_type: { type: String, required: true },
     status: { type: String, default: productStatus.SIN_STOCK },
+    company: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "company",
+      required: true,
+    },
   },
   { timestamps: true }
 );

@@ -1,4 +1,5 @@
 import { Types as MongooseTypes } from "mongoose";
+import { ICompany } from "./company.interface";
 
 export interface IClient {
   _id: MongooseTypes.ObjectId;
@@ -6,6 +7,7 @@ export interface IClient {
   phoneNumber: string;
   email: string;
   address: string;
+  company: ICompany;
 }
 
 export interface ClientInput {

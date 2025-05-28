@@ -17,7 +17,7 @@ export const categoryResolver = {
       ];
       await hasPermission(roleName, permission);
 
-      return await findAll();
+      return await findAll(context.user.companyId);
     },
   },
   Mutation: {
@@ -28,19 +28,23 @@ export const categoryResolver = {
         "LIST_AND_CREATE_PRODUCT",
       ];
       await hasPermission(roleName, permission);
-      return await create(args.categoryInput);
+      return await create(context.user.companyId, args.categoryInput);
     },
     async deleteCategory(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_CATEGORY"];
       await hasPermission(roleName, permission);
-      return await deleteCategory(args.categoryId);
+      return await deleteCategory(context.user.companyId, args.categoryId);
     },
     async updateCategory(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_CATEGORY"];
       await hasPermission(roleName, permission);
-      return await update(args.categoryId, args.updateCategoryInput);
+      return await update(
+        context.user.companyId,
+        args.categoryId,
+        args.updateCategoryInput
+      );
     },
   },
 };

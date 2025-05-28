@@ -1,5 +1,6 @@
 import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
 import { IRole } from "./role.interface";
+import { ICompany } from "./company.interface";
 
 export interface IUser {
   _id: MongooseTypes.ObjectId;
@@ -8,6 +9,7 @@ export interface IUser {
   role: IRole;
   is_active: boolean;
   is_global: boolean;
+  company: ICompany;
 }
 
 export interface UserInput {

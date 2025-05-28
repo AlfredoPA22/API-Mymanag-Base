@@ -22,7 +22,7 @@ export const salePaymentResolver = {
       const permission = ["LIST_AND_CREATE_PAYMENT"];
       await hasPermission(roleName, permission);
 
-      return await findAll(context.user.id);
+      return await findAll(context.user.companyId, context.user.id);
     },
 
     async listSalePaymentBySaleOrder(
@@ -35,6 +35,7 @@ export const salePaymentResolver = {
       await hasPermission(roleName, permission);
 
       return await listSalePaymentBySaleOrder(
+        context.user.companyId,
         context.user.id,
         args.saleOrderId
       );
@@ -49,7 +50,10 @@ export const salePaymentResolver = {
       const permission = ["LIST_AND_CREATE_PAYMENT"];
       await hasPermission(roleName, permission);
 
-      return await detailSalePaymentBySaleOrder(args.saleOrderId);
+      return await detailSalePaymentBySaleOrder(
+        context.user.companyId,
+        args.saleOrderId
+      );
     },
   },
   Mutation: {
@@ -58,7 +62,11 @@ export const salePaymentResolver = {
       const permission = ["LIST_AND_CREATE_PAYMENT"];
       await hasPermission(roleName, permission);
 
-      return await createPayment(context.user.id, args.salePaymentInput);
+      return await createPayment(
+        context.user.companyId,
+        context.user.id,
+        args.salePaymentInput
+      );
     },
 
     async deleteSalePayment(_: any, args: Record<string, any>, context: any) {
@@ -66,7 +74,10 @@ export const salePaymentResolver = {
       const permission = ["DELETE_PAYMENT"];
       await hasPermission(roleName, permission);
 
-      return await deleteSalePayment(args.salePaymentId);
+      return await deleteSalePayment(
+        context.user.companyId,
+        args.salePaymentId
+      );
     },
   },
 };

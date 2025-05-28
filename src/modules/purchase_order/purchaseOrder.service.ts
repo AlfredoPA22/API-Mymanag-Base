@@ -32,34 +32,45 @@ import { PurchaseOrder } from "./purchase_order.model";
 import { PurchaseOrderDetail } from "./purchase_order_detail.model";
 
 export const findAll = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IPurchaseOrder[]> => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
 
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
 
-  const filter = foundUser.is_global ? {} : { created_by: userId };
+  const filter = foundUser.is_global
+    ? { company: companyId }
+    : { company: companyId, created_by: userId };
 
   return await PurchaseOrder.find(filter)
     .sort({ date: -1 })
     .populate("provider")
     .populate("created_by")
+    .populate("company")
     .lean<IPurchaseOrder[]>();
 };
 
 export const purchaseOrderReport = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   filterPurchaseOrderInput: FilterPurchaseOrderInput
 ): Promise<IPurchaseOrder[]> => {
-  const foundUser: IUser | null = await User.findById(userId);
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
 
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
 
-  const query: any = {};
+  const query: any = { company: companyId };
 
   if (!foundUser.is_global) {
     query.created_by = userId;
@@ -94,18 +105,22 @@ export const purchaseOrderReport = async (
 
   const purchaseOrders = await PurchaseOrder.find(query)
     .populate("provider")
+    .populate("company")
     .lean<IPurchaseOrder[]>();
 
   return purchaseOrders;
 };
 
 export const findDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IPurchaseOrderDetail[]> => {
   const listDetail = await PurchaseOrderDetail.find({
+    company: companyId,
     purchase_order: purchaseOrderId,
   })
     .populate("purchase_order")
+    .populate("company")
     .populate({
       path: "product",
       populate: {
@@ -118,25 +133,36 @@ export const findDetail = async (
 };
 
 export const findPurchaseOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IPurchaseOrder> => {
-  return await PurchaseOrder.findById(purchaseOrderId)
+  return await PurchaseOrder.findOne({
+    _id: purchaseOrderId,
+    company: companyId,
+  })
     .populate("provider")
+    .populate("company")
     .lean<IPurchaseOrder>();
 };
 
 export const findPurchaseOrderToPDF = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IPurchaseOrderToPDF> => {
-  const purchaseOrder: IPurchaseOrder =
-    await findPurchaseOrder(purchaseOrderId);
-  const purchaseOrderDetail: IPurchaseOrderDetail[] =
-    await findDetail(purchaseOrderId);
+  const purchaseOrder: IPurchaseOrder = await findPurchaseOrder(
+    companyId,
+    purchaseOrderId
+  );
+  const purchaseOrderDetail: IPurchaseOrderDetail[] = await findDetail(
+    companyId,
+    purchaseOrderId
+  );
 
   const purchaseOrderDetailToPDF: IPurchaseOrderDetailToPDF[] =
     await Promise.all(
       purchaseOrderDetail.map(async (detail: IPurchaseOrderDetail) => {
         const productSerials: IProductSerial[] = await ProductSerial.find({
+          company: companyId,
           purchase_order_detail: detail._id,
         }).lean<IProductSerial[]>();
 
@@ -155,33 +181,38 @@ export const findPurchaseOrderToPDF = async (
 };
 
 export const create = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createPurchaseOrderInput: PurchaseOrderInput
 ) => {
   const newPurchaseOrder = await (
     await PurchaseOrder.create({
-      code: await generate(codeType.PURCHASE_ORDER),
+      company: companyId,
+      code: await generate(companyId, codeType.PURCHASE_ORDER),
       date: createPurchaseOrderInput.date,
       provider: createPurchaseOrderInput.provider,
       created_by: userId,
     })
   ).populate("provider");
 
-  await increment(codeType.PURCHASE_ORDER);
+  await increment(companyId, codeType.PURCHASE_ORDER);
 
   return newPurchaseOrder;
 };
 
 export const createDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createPurchaseOrderDetailInput: PurchaseOrderDetailInput
 ) => {
   const foundDetail = await PurchaseOrderDetail.findOne({
+    company: companyId,
     purchase_order: createPurchaseOrderDetailInput.purchase_order,
     product: createPurchaseOrderDetailInput.product,
   });
 
   const foundOrder = await PurchaseOrder.findOne({
     _id: createPurchaseOrderDetailInput.purchase_order,
+    company: companyId,
   });
 
   if (foundDetail) {
@@ -196,9 +227,10 @@ export const createDetail = async (
     throw new Error("Ingrese una cantidad mayor a 0");
   }
 
-  const foundProduct = await Product.findById(
-    createPurchaseOrderDetailInput.product
-  );
+  const foundProduct = await Product.findOne({
+    _id: createPurchaseOrderDetailInput.product,
+    company: companyId,
+  });
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
     if (!createPurchaseOrderDetailInput.warehouse) {
@@ -216,6 +248,7 @@ export const createDetail = async (
   const newPurchaseOrderDetail: IPurchaseOrderDetail = await (
     await (
       await PurchaseOrderDetail.create({
+        company: companyId,
         ...createPurchaseOrderDetailInput,
         subtotal,
       })
@@ -224,8 +257,8 @@ export const createDetail = async (
 
   const updatedTotal = parseFloat((foundOrder.total + subtotal).toFixed(2));
 
-  await PurchaseOrder.findByIdAndUpdate(
-    createPurchaseOrderDetailInput.purchase_order,
+  await PurchaseOrder.findOneAndUpdate(
+    { _id: createPurchaseOrderDetailInput.purchase_order, company: companyId },
     {
       total: updatedTotal,
     },
@@ -234,6 +267,7 @@ export const createDetail = async (
 
   if (newPurchaseOrderDetail.product.stock_type === stockType.INDIVIDUAL) {
     await ProductInventory.create({
+      company: companyId,
       product: createPurchaseOrderDetailInput.product,
       warehouse: createPurchaseOrderDetailInput.warehouse,
       purchase_order_detail: newPurchaseOrderDetail._id,
@@ -244,7 +278,10 @@ export const createDetail = async (
 
   const foundPurchaseOrderDetail = await (
     await (
-      await PurchaseOrderDetail.findById(newPurchaseOrderDetail._id)
+      await PurchaseOrderDetail.findOne({
+        _id: newPurchaseOrderDetail._id,
+        company: companyId,
+      })
     ).populate("purchase_order")
   ).populate("product");
 
@@ -252,19 +289,22 @@ export const createDetail = async (
 };
 
 export const addSerialToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   addSerialToOrder: AddSerialToPurchaseOrderDetailInput
 ) => {
-  const foundPurchaseOrderDetail = await PurchaseOrderDetail.findById(
-    addSerialToOrder.purchase_order_detail
-  );
+  const foundPurchaseOrderDetail = await PurchaseOrderDetail.findOne({
+    _id: addSerialToOrder.purchase_order_detail,
+    company: companyId,
+  });
 
   if (!foundPurchaseOrderDetail) {
     throw new Error("No existe el detalle en la compra");
   }
 
-  const foundProduct: IProduct = await Product.findById(
-    foundPurchaseOrderDetail.product
-  );
+  const foundProduct: IProduct = await Product.findOne({
+    _id: foundPurchaseOrderDetail.product,
+    company: companyId,
+  });
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
     throw new Error("No se pueden agregar seriales a este producto");
@@ -274,22 +314,26 @@ export const addSerialToOrder = async (
     throw new Error("El detalle ya tiene asignado todos sus seriales");
   }
 
-  const newProductSerial = await createProductSerial({
+  const newProductSerial = await createProductSerial(companyId, {
     purchase_order_detail: addSerialToOrder.purchase_order_detail,
     warehouse: addSerialToOrder.warehouse,
     product: foundPurchaseOrderDetail.product._id,
     serial: addSerialToOrder.serial,
   });
 
-  await incrementSerials(addSerialToOrder.purchase_order_detail);
+  await incrementSerials(companyId, addSerialToOrder.purchase_order_detail);
 
   return newProductSerial;
 };
 
 export const deleteSerialToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productSerialId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundProductSerial = await ProductSerial.findById(productSerialId);
+  const foundProductSerial = await ProductSerial.findOne({
+    _id: productSerialId,
+    company: companyId,
+  });
 
   if (!foundProductSerial) {
     throw new Error("Serial no fue encontrado");
@@ -303,10 +347,14 @@ export const deleteSerialToOrder = async (
 
   const deleteProductSerial = await ProductSerial.deleteOne({
     _id: productSerialId,
+    company: companyId,
   });
 
   if (deleteProductSerial.deletedCount > 0) {
-    await decrementSerials(foundProductSerial.purchase_order_detail._id);
+    await decrementSerials(
+      companyId,
+      foundProductSerial.purchase_order_detail._id
+    );
     return {
       success: true,
     };
@@ -317,19 +365,22 @@ export const deleteSerialToOrder = async (
 };
 
 export const deleteProductToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundPurchaseOrderDetail = await PurchaseOrderDetail.findById(
-    purchaseOrderDetailId
-  );
+  const foundPurchaseOrderDetail = await PurchaseOrderDetail.findOne({
+    _id: purchaseOrderDetailId,
+    company: companyId,
+  });
 
   if (!foundPurchaseOrderDetail) {
     throw new Error("El detalle no fue encontrado");
   }
 
-  const foundPurchaseOrder = await PurchaseOrder.findById(
-    foundPurchaseOrderDetail.purchase_order._id
-  );
+  const foundPurchaseOrder = await PurchaseOrder.findOne({
+    _id: foundPurchaseOrderDetail.purchase_order._id,
+    company: companyId,
+  });
 
   if (!foundPurchaseOrder) {
     throw new Error("La orden no fue encontrada");
@@ -340,16 +391,19 @@ export const deleteProductToOrder = async (
   }
 
   await ProductSerial.deleteMany({
+    company: companyId,
     purchase_order_detail: purchaseOrderDetailId,
   });
 
   await ProductInventory.deleteOne({
+    company: companyId,
     purchase_order_detail: purchaseOrderDetailId,
   });
 
   const deleteProductToPurchaseOrderDetail =
     await PurchaseOrderDetail.deleteOne({
       _id: purchaseOrderDetailId,
+      company: companyId,
     });
 
   if (deleteProductToPurchaseOrderDetail.deletedCount > 0) {
@@ -358,7 +412,7 @@ export const deleteProductToOrder = async (
     );
 
     await PurchaseOrder.updateOne(
-      { _id: foundPurchaseOrder._id },
+      { _id: foundPurchaseOrder._id, company: companyId },
       {
         total: updatedTotal,
       }
@@ -374,20 +428,26 @@ export const deleteProductToOrder = async (
 };
 
 export const deletePurchaseOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundPurchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
+  const foundPurchaseOrder = await PurchaseOrder.findOne({
+    _id: purchaseOrderId,
+    company: companyId,
+  });
 
   if (!foundPurchaseOrder) {
     throw new Error("La compra no fue encontrada");
   }
 
   const foundPurchaseOrderDetails = await PurchaseOrderDetail.find({
+    company: companyId,
     purchase_order: purchaseOrderId,
   });
 
   if (foundPurchaseOrder.status === purchaseOrderStatus.APROBADO) {
     const soldOrReservedSerials = await ProductSerial.find({
+      company: companyId,
       purchase_order_detail: {
         $in: foundPurchaseOrderDetails.map((d) => d._id),
       },
@@ -397,6 +457,7 @@ export const deletePurchaseOrder = async (
     });
 
     const blockedInventory = await ProductInventory.find({
+      company: companyId,
       purchase_order_detail: {
         $in: foundPurchaseOrderDetails.map((d) => d._id),
       },
@@ -412,8 +473,8 @@ export const deletePurchaseOrder = async (
     await Promise.all(
       foundPurchaseOrderDetails.map(async (detail) => {
         // Actualizar el stock del producto
-        const productUpdate = await Product.findByIdAndUpdate(
-          detail.product._id,
+        const productUpdate = await Product.findOneAndUpdate(
+          { _id: detail.product._id, company: companyId },
           {
             $inc: { stock: -detail.quantity }, // Restar la cantidad comprada al stock
           },
@@ -425,30 +486,39 @@ export const deletePurchaseOrder = async (
           productUpdate.stock <= 0 &&
           productUpdate.status === productStatus.DISPONIBLE
         ) {
-          await Product.findByIdAndUpdate(detail.product._id, {
-            status: productStatus.SIN_STOCK,
-          });
+          await Product.findOneAndUpdate(
+            { _id: detail.product._id, company: companyId },
+            {
+              status: productStatus.SIN_STOCK,
+            }
+          );
         }
 
         // Actualizar los seriales del producto
         await ProductSerial.deleteMany({
+          company: companyId,
           purchase_order_detail: detail._id,
           product: detail.product._id,
         });
 
         await ProductInventory.deleteOne({
+          company: companyId,
           purchase_order_detail: detail._id,
           product: detail.product._id,
         });
 
         // Eliminar el detalle de la orden de venta
-        await PurchaseOrderDetail.deleteOne({ _id: detail._id });
+        await PurchaseOrderDetail.deleteOne({
+          _id: detail._id,
+          company: companyId,
+        });
       })
     );
 
     // Eliminar la orden de compra
     const deletePurchaseOrder = await PurchaseOrder.deleteOne({
       _id: purchaseOrderId,
+      company: companyId,
     });
     if (deletePurchaseOrder.deletedCount > 0) {
       return {
@@ -462,18 +532,23 @@ export const deletePurchaseOrder = async (
     await Promise.all(
       foundPurchaseOrderDetails.map(async (detail) => {
         await ProductSerial.deleteMany({
+          company: companyId,
           purchase_order_detail: detail._id,
           product: detail.product._id,
         });
 
         // Eliminar el detalle de la orden de compra
-        await PurchaseOrderDetail.deleteOne({ _id: detail._id });
+        await PurchaseOrderDetail.deleteOne({
+          _id: detail._id,
+          company: companyId,
+        });
       })
     );
 
     // Eliminar la orden de venta
     const deletePurchaseOrder = await PurchaseOrder.deleteOne({
       _id: purchaseOrderId,
+      company: companyId,
     });
 
     if (deletePurchaseOrder.deletedCount > 0) {
@@ -489,28 +564,35 @@ export const deletePurchaseOrder = async (
 };
 
 export const incrementSerials = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
   await PurchaseOrderDetail.updateOne(
-    { _id: purchaseOrderDetailId },
+    { _id: purchaseOrderDetailId, company: companyId },
     { $inc: { serials: 1 } }
   );
 };
 
 export const decrementSerials = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
   await PurchaseOrderDetail.updateOne(
-    { _id: purchaseOrderDetailId },
+    { _id: purchaseOrderDetailId, company: companyId },
     { $inc: { serials: -1 } }
   );
 };
 
 export const approve = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundOrder = await PurchaseOrder.findById(purchaseOrderId);
+  const foundOrder = await PurchaseOrder.findOne({
+    _id: purchaseOrderId,
+    company: companyId,
+  });
   const foundDetail: IPurchaseOrderDetail[] = await PurchaseOrderDetail.find({
+    company: companyId,
     purchase_order: purchaseOrderId,
   })
     .populate("product")
@@ -544,8 +626,8 @@ export const approve = async (
 
   await Promise.all(
     foundDetail.map(async (detail) => {
-      await Product.findByIdAndUpdate(
-        detail.product._id,
+      await Product.findOneAndUpdate(
+        { _id: detail.product._id, company: companyId },
         {
           $inc: { stock: detail.quantity },
           $set: {
@@ -558,6 +640,7 @@ export const approve = async (
 
       await ProductSerial.updateMany(
         {
+          company: companyId,
           purchase_order_detail: detail._id,
           product: detail.product._id,
         },
@@ -568,12 +651,13 @@ export const approve = async (
 
       await ProductInventory.updateOne(
         {
+          company: companyId,
           purchase_order_detail: detail._id,
           product: detail.product._id,
         },
         {
           status: productInventoryStatus.DISPONIBLE,
-          available: detail.quantity
+          available: detail.quantity,
         }
       );
     })
@@ -587,15 +671,20 @@ export const approve = async (
 };
 
 export const updatePurchaseOrderDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updatePurchaseOrderInput: UpdatePurchaseOrderDetailInput
 ) => {
-  const findPurchaseOrderDetail = await PurchaseOrderDetail.findById(
-    purchaseOrderDetailId
-  );
+  const findPurchaseOrderDetail = await PurchaseOrderDetail.findOne({
+    _id: purchaseOrderDetailId,
+    company: companyId,
+  });
 
   const findPurchaseOrderDetailLean: IPurchaseOrderDetail =
-    await PurchaseOrderDetail.findById(purchaseOrderDetailId)
+    await PurchaseOrderDetail.findOne({
+      _id: purchaseOrderDetailId,
+      company: companyId,
+    })
       .populate("product")
       .lean<IPurchaseOrderDetail>();
 
@@ -603,9 +692,11 @@ export const updatePurchaseOrderDetail = async (
     throw new Error("No se encontro el detalle");
   }
 
-  const findPurchaseOrder = await PurchaseOrder.findById(
-    findPurchaseOrderDetail.purchase_order
-  );
+  const findPurchaseOrder = await PurchaseOrder.findOne({
+    _id: findPurchaseOrderDetail.purchase_order,
+    company: companyId,
+  });
+
   if (!findPurchaseOrder) {
     throw new Error("No se encontro la orden");
   }
@@ -624,7 +715,7 @@ export const updatePurchaseOrderDetail = async (
 
   if (findPurchaseOrderDetailLean.product.stock_type === stockType.INDIVIDUAL) {
     await ProductInventory.findOneAndUpdate(
-      { purchase_order_detail: purchaseOrderDetailId },
+      { purchase_order_detail: purchaseOrderDetailId, company: companyId },
       { $set: { quantity: updatePurchaseOrderInput.quantity } }
     );
   }
@@ -641,6 +732,7 @@ export const updatePurchaseOrderDetail = async (
   await findPurchaseOrderDetail.save();
 
   const purchaseOrderDetails = await PurchaseOrderDetail.find({
+    company: companyId,
     purchase_order: findPurchaseOrder._id,
   });
   let newTotal = 0;
@@ -653,52 +745,52 @@ export const updatePurchaseOrderDetail = async (
   return findPurchaseOrderDetail;
 };
 
-export const reportPurhaseOrderByYear = async () => {
-  const currentYear = new Date().getFullYear();
+// export const reportPurhaseOrderByYear = async () => {
+//   const currentYear = new Date().getFullYear();
 
-  const purchaseByMonth = await PurchaseOrder.aggregate([
-    {
-      $match: {
-        status: purchaseOrderStatus.APROBADO,
-        date: {
-          $gte: new Date(`${currentYear}-01-01`),
-          $lt: new Date(`${currentYear + 1}-01-01`),
-        },
-      },
-    },
-    {
-      $group: {
-        _id: { $month: "$date" },
-        total: { $sum: "$total" },
-      },
-    },
-    {
-      $sort: { _id: 1 },
-    },
-  ]);
+//   const purchaseByMonth = await PurchaseOrder.aggregate([
+//     {
+//       $match: {
+//         status: purchaseOrderStatus.APROBADO,
+//         date: {
+//           $gte: new Date(`${currentYear}-01-01`),
+//           $lt: new Date(`${currentYear + 1}-01-01`),
+//         },
+//       },
+//     },
+//     {
+//       $group: {
+//         _id: { $month: "$date" },
+//         total: { $sum: "$total" },
+//       },
+//     },
+//     {
+//       $sort: { _id: 1 },
+//     },
+//   ]);
 
-  const monthsOfYear = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-  ];
+//   const monthsOfYear = [
+//     "Enero",
+//     "Febrero",
+//     "Marzo",
+//     "Abril",
+//     "Mayo",
+//     "Junio",
+//     "Julio",
+//     "Agosto",
+//     "Septiembre",
+//     "Octubre",
+//     "Noviembre",
+//     "Diciembre",
+//   ];
 
-  const report: IPurchaseOrderByYear[] = monthsOfYear.map((month, index) => {
-    const sale = purchaseByMonth.find((s) => s._id === index + 1);
-    return {
-      month: month || "Unknown",
-      total: sale ? sale.total : 0,
-    };
-  });
+//   const report: IPurchaseOrderByYear[] = monthsOfYear.map((month, index) => {
+//     const sale = purchaseByMonth.find((s) => s._id === index + 1);
+//     return {
+//       month: month || "Unknown",
+//       total: sale ? sale.total : 0,
+//     };
+//   });
 
-  return report;
-};
+//   return report;
+// };
