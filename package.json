@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
+    "copy-assets": "copyfiles -u 2 src/graphql/*.graphql build/graphql",
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "copyfiles -u 2 src/graphql/typeDefs/*.graphql build/graphql/typeDefs",
     "start": "node build/index.js",
     "dev": "nodemon src/index.ts"
   },

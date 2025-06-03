@@ -18,7 +18,7 @@ import { companyResolver } from "../modules/company/company.resolver";
 import { userLandingResolver } from "../modules/user_landing/user_landing.resolver";
 import { paymentLandingResolver } from "../modules/payment_landing/payment_landing.resolver";
 
-const schemaPath = path.join(__dirname, "./typeDefs/schema.graphql");
+const schemaPath = path.join(__dirname, "./schema.graphql");
 
 if (!existsSync(schemaPath)) {
   throw new Error(`Schema GraphQL no encontrado en ${schemaPath}`);
