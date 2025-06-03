@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2020",                  // Más compatible que ESNext para Node
-    "module": "CommonJS",                // Ideal para Node.js
-    "outDir": "build",                   // Asegura que tu build vaya a la carpeta correcta
-    "rootDir": "src",                    // Define claramente dónde están tus fuentes
-    "strict": true,                      // Mejores chequeos de tipos
-    "esModuleInterop": true,            // Para importar paquetes CommonJS sin drama
-    "forceConsistentCasingInFileNames": true,
+    "outDir": "build",
+    "rootDir": "src",
+    "target": "ES2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "strict": true,
     "skipLibCheck": true
   },
   "include": ["src"]
