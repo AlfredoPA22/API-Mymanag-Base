@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "copy-assets": "mkdir -p build/graphql/typeDefs && cp src/graphql/typeDefs/schema.graphql build/graphql/typeDefs/",
+    "build": "tsc && npm run copy-assets",
+    "copy-assets": "copyfiles -u 2 src/graphql/typeDefs/*.graphql build/graphql/typeDefs",
     "start": "node build/index.js",
     "dev": "nodemon src/index.ts"
   },
@@ -41,6 +41,7 @@
     "@flydotio/dockerfile": "^0.5.9",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
-    "@types/nodemailer": "^6.4.17"
+    "@types/nodemailer": "^6.4.17",
+    "copyfiles": "^2.4.1"
   }
 }
