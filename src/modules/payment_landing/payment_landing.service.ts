@@ -28,12 +28,11 @@ export const createPaymentLanding = async (
 
   const existing = await PaymentLanding.findOne({
     company: paymentLandingInput.company,
-    plan: paymentLandingInput.plan,
     status: paymentLandingStatus.REVIEW,
   });
 
   if (existing) {
-    throw new Error("Ya existe un pago pendiente para este plan");
+    throw new Error("Ya existe un pago en revision para la empresa");
   }
 
   const newPayment = await PaymentLanding.create({
@@ -258,6 +257,22 @@ export const updatePaymentLanding = async (
     payment.status !== paymentLandingStatus.REVIEW
   ) {
     throw new Error("Solo puedes actualizar pagos rechazados o pendientes");
+  }
+
+  const lastPayment = await PaymentLanding.findOne({
+    company: payment.company,
+  })
+    .sort({ paid_at: -1, createdAt: -1 })
+    .limit(1);
+
+  if (!lastPayment) {
+    throw new Error("No se pudo determinar el último pago realizado.");
+  }
+
+  if (lastPayment._id.toString() !== payment._id.toString()) {
+    throw new Error(
+      "Solo puedes actualizar el comprobante del último pago realizado."
+    );
   }
 
   payment.proof_url = proof_url;

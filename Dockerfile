@@ -15,6 +15,9 @@ ENV MONGODB_URI="mongodb+srv://alfredo:alfredo123@cluster0.eqdyu9u.mongodb.net/m
 ENV JWT_SECRET="ADMIN69040342"
 ENV USER_NAME_ADMIN="Admin"
 ENV PASSWORD_ADMIN="Admin123"
+ENV GOOGLE_CLIENT_ID="113141489679-r29qbjm43s033kdais56a091vurejn0r.apps.googleusercontent.com"
+ENV EMAIL_USER="inventasysbolivia@gmail.com"
+ENV EMAIL_PASS="ygydjzqvpdlejvtq"
 
 # Throw-away build stage to reduce size of final image
 FROM base as build

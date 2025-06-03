@@ -28,7 +28,7 @@ const corsOptions = {
   //     callback(new Error("No autorizado por CORS"));
   //   }
   // },
-  origin: "http://localhost:5173",
+  origin: "https://inventasys.vercel.app",
   credentials: true,
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: [
