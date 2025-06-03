@@ -136,13 +136,19 @@ export const findPurchaseOrder = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IPurchaseOrder> => {
-  return await PurchaseOrder.findOne({
+  const purchaseOrder = await PurchaseOrder.findOne({
     _id: purchaseOrderId,
     company: companyId,
   })
     .populate("provider")
     .populate("company")
-    .lean<IPurchaseOrder>();
+    .lean<IPurchaseOrder | null>();
+
+  if (!purchaseOrder) {
+    throw new Error("Orden de compra no encontrada");
+  }
+
+  return purchaseOrder;
 };
 
 export const findPurchaseOrderToPDF = async (
@@ -215,6 +221,10 @@ export const createDetail = async (
     company: companyId,
   });
 
+  if (!foundOrder) {
+    throw new Error("Orden no encontrada");
+  }
+
   if (foundDetail) {
     throw new Error("El producto ya existe en la compra");
   }
@@ -231,6 +241,10 @@ export const createDetail = async (
     _id: createPurchaseOrderDetailInput.product,
     company: companyId,
   });
+
+  if (!foundProduct) {
+    throw new Error("Producto no encontrado");
+  }
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
     if (!createPurchaseOrderDetailInput.warehouse) {
@@ -276,14 +290,17 @@ export const createDetail = async (
     });
   }
 
-  const foundPurchaseOrderDetail = await (
-    await (
-      await PurchaseOrderDetail.findOne({
-        _id: newPurchaseOrderDetail._id,
-        company: companyId,
-      })
-    ).populate("purchase_order")
-  ).populate("product");
+  const foundPurchaseOrderDetail = await PurchaseOrderDetail.findOne({
+    _id: newPurchaseOrderDetail._id,
+    company: companyId,
+  })
+    .populate("purchase_order")
+    .populate("product")
+    .lean<IPurchaseOrderDetail | null>();
+
+  if (!foundPurchaseOrderDetail) {
+    throw new Error("Detalle de orden no encontrado después de crear");
+  }
 
   return foundPurchaseOrderDetail;
 };
@@ -301,10 +318,14 @@ export const addSerialToOrder = async (
     throw new Error("No existe el detalle en la compra");
   }
 
-  const foundProduct: IProduct = await Product.findOne({
+  const foundProduct = await Product.findOne({
     _id: foundPurchaseOrderDetail.product,
     company: companyId,
   });
+
+  if (!foundProduct) {
+    throw new Error("Producto no encontrado");
+  }
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
     throw new Error("No se pueden agregar seriales a este producto");
@@ -480,6 +501,10 @@ export const deletePurchaseOrder = async (
           },
           { new: true }
         );
+
+        if (!productUpdate) {
+          throw new Error("No se puede actualizar.");
+        }
 
         // Si el producto estaba disponible y ahora no tiene stock, cambiar a "sin stcock"
         if (
@@ -680,13 +705,16 @@ export const updatePurchaseOrderDetail = async (
     company: companyId,
   });
 
-  const findPurchaseOrderDetailLean: IPurchaseOrderDetail =
-    await PurchaseOrderDetail.findOne({
-      _id: purchaseOrderDetailId,
-      company: companyId,
-    })
-      .populate("product")
-      .lean<IPurchaseOrderDetail>();
+  const findPurchaseOrderDetailLean = await PurchaseOrderDetail.findOne({
+    _id: purchaseOrderDetailId,
+    company: companyId,
+  })
+    .populate("product")
+    .lean<IPurchaseOrderDetail>();
+
+  if (!findPurchaseOrderDetailLean) {
+    throw new Error("No se encontro el detalle");
+  }
 
   if (!findPurchaseOrderDetail) {
     throw new Error("No se encontro el detalle");
@@ -744,53 +772,3 @@ export const updatePurchaseOrderDetail = async (
 
   return findPurchaseOrderDetail;
 };
-
-// export const reportPurhaseOrderByYear = async () => {
-//   const currentYear = new Date().getFullYear();
-
-//   const purchaseByMonth = await PurchaseOrder.aggregate([
-//     {
-//       $match: {
-//         status: purchaseOrderStatus.APROBADO,
-//         date: {
-//           $gte: new Date(`${currentYear}-01-01`),
-//           $lt: new Date(`${currentYear + 1}-01-01`),
-//         },
-//       },
-//     },
-//     {
-//       $group: {
-//         _id: { $month: "$date" },
-//         total: { $sum: "$total" },
-//       },
-//     },
-//     {
-//       $sort: { _id: 1 },
-//     },
-//   ]);
-
-//   const monthsOfYear = [
-//     "Enero",
-//     "Febrero",
-//     "Marzo",
-//     "Abril",
-//     "Mayo",
-//     "Junio",
-//     "Julio",
-//     "Agosto",
-//     "Septiembre",
-//     "Octubre",
-//     "Noviembre",
-//     "Diciembre",
-//   ];
-
-//   const report: IPurchaseOrderByYear[] = monthsOfYear.map((month, index) => {
-//     const sale = purchaseByMonth.find((s) => s._id === index + 1);
-//     return {
-//       month: month || "Unknown",
-//       total: sale ? sale.total : 0,
-//     };
-//   });
-
-//   return report;
-// };

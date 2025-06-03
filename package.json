@@ -27,6 +27,7 @@
     "graphql": "^16.8.1",
     "graphql-tools": "^9.0.0",
     "jsonwebtoken": "^9.0.2",
+    "lint": "^0.8.19",
     "mongoose": "^8.1.1",
     "node-cron": "^4.0.7",
     "nodemailer": "^7.0.3",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@flydotio/dockerfile": "^0.5.9",
     "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.7"
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/nodemailer": "^6.4.17"
   }
 }

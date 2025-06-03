@@ -54,8 +54,8 @@ export interface UpdateSaleOrderDetailInput {
 }
 
 export interface AddSerialToSaleOrderDetailInput {
-  sale_order_detail?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
-  serial?: string;
+  sale_order_detail: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  serial: string;
 }
 
 export interface ISaleOrderDetailToPDF {

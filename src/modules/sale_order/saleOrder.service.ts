@@ -134,10 +134,19 @@ export const findSaleOrder = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ISaleOrder> => {
-  return await SaleOrder.findOne({ _id: saleOrderId, company: companyId })
+  const saleOrder = await SaleOrder.findOne({
+    _id: saleOrderId,
+    company: companyId,
+  })
     .populate("client")
     .populate("company")
-    .lean<ISaleOrder>();
+    .lean<ISaleOrder | null>();
+
+  if (!saleOrder) {
+    throw new Error("Orden de venta no encontrada");
+  }
+
+  return saleOrder;
 };
 
 export const findSaleOrderToPDF = async (
@@ -213,6 +222,10 @@ export const createDetail = async (
     company: companyId,
   });
 
+  if (!foundOrder) {
+    throw new Error("Orden no encontrada");
+  }
+
   if (foundDetail) {
     throw new Error("El producto ya existe en la venta");
   }
@@ -229,6 +242,10 @@ export const createDetail = async (
     _id: createSaleOrderDetailInput.product,
     company: companyId,
   });
+
+  if (!foundProduct) {
+    throw new Error("Producto no encontrado");
+  }
 
   if (createSaleOrderDetailInput.quantity > foundProduct.stock) {
     throw new Error("No hay suficiente stock");
@@ -321,14 +338,17 @@ export const createDetail = async (
     { new: true }
   );
 
-  const foundSaleOrderDetail = await (
-    await (
-      await SaleOrderDetail.findOne({
-        _id: newSaleOrderDetail._id,
-        company: companyId,
-      })
-    ).populate("sale_order")
-  ).populate("product");
+  const foundSaleOrderDetail = await SaleOrderDetail.findOne({
+    _id: newSaleOrderDetail._id,
+    company: companyId,
+  })
+    .populate("sale_order")
+    .populate("product")
+    .lean<ISaleOrderDetail | null>();
+
+  if (!foundSaleOrderDetail) {
+    throw new Error("Detalle de venta no encontrado");
+  }
 
   return foundSaleOrderDetail;
 };
@@ -366,10 +386,14 @@ export const addSerialToOrder = async (
     throw new Error("No existe el detalle en la venta");
   }
 
-  const foundProduct: IProduct = await Product.findOne({
+  const foundProduct = await Product.findOne({
     _id: foundSaleOrderDetail.product,
     company: companyId,
   });
+
+  if (!foundProduct) {
+    throw new Error("Producto no encontrado");
+  }
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
     throw new Error("No se pueden agregar seriales a este producto");
@@ -476,7 +500,7 @@ export const deleteProductToOrder = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundSaleOrderDetail: ISaleOrderDetail = await SaleOrderDetail.findOne({
+  const foundSaleOrderDetail = await SaleOrderDetail.findOne({
     _id: saleOrderDetailId,
     company: companyId,
   })
@@ -511,8 +535,8 @@ export const deleteProductToOrder = async (
       });
 
       if (productInventory) {
-        productInventory.available += inventoryUsage.quantity;
-        productInventory.reserved -= inventoryUsage.quantity;
+        productInventory.available += inventoryUsage.quantity!;
+        productInventory.reserved -= inventoryUsage.quantity!;
         await productInventory.save();
       }
     }
@@ -595,6 +619,7 @@ export const deleteSaleOrder = async (
 
         // Si el producto estaba sin stock y ahora tiene stock, cambiar a "disponible"
         if (
+          productUpdate &&
           productUpdate.stock > 0 &&
           productUpdate.status === productStatus.SIN_STOCK
         ) {
@@ -787,7 +812,7 @@ export const approve = async (
       { new: true }
     );
 
-    if (product?.stock <= 0) {
+    if (product && product?.stock <= 0) {
       await Product.findOneAndUpdate(
         { _id: detail.product._id, company: companyId },
         { status: productStatus.SIN_STOCK },
@@ -876,6 +901,10 @@ export const updateSaleOrderDetail = async (
     company: companyId,
   });
 
+  if (!stockProduct) {
+    throw new Error("No hay stock.");
+  }
+
   if (updateSaleOrderInput.quantity > stockProduct.stock) {
     throw new Error("No hay stock suficiente.");
   }
@@ -895,8 +924,9 @@ export const updateSaleOrderDetail = async (
       });
 
       if (productInventory) {
-        productInventory.available += usage.quantity;
-        productInventory.reserved -= usage.quantity;
+        const quantity = usage.quantity ?? 0;
+        productInventory.available += quantity;
+        productInventory.reserved -= quantity;
         await productInventory.save();
       }
     }

@@ -23,7 +23,7 @@ export const listPermissionsByRole = async (
     company: companyId,
   }).lean<IRole>();
 
-  return role.permission || [];
+  return role?.permission || [];
 };
 
 export const create = async (

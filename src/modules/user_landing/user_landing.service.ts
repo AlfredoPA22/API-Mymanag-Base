@@ -4,15 +4,25 @@ import { UserLanding } from "./user_landing.model";
 import jwt from "jsonwebtoken";
 
 export const loginLanding = async (loginLandingInput: LoginLandingInput) => {
-  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const JWT_SECRET = process.env.JWT_SECRET;
+
+  if (!GOOGLE_CLIENT_ID || !JWT_SECRET) {
+    throw new Error("Faltan variables de entorno críticas para autenticación");
+  }
+
+  const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
   const ticket = await client.verifyIdToken({
     idToken: loginLandingInput.credential,
-    audience: process.env.GOOGLE_CLIENT_ID,
+    audience: GOOGLE_CLIENT_ID,
   });
 
   const payload = ticket.getPayload();
 
+  if (!payload || !payload.email || !payload.name) {
+    throw new Error("No se pudo obtener la información del perfil de Google");
+  }
   const userLanding = await UserLanding.findOne({
     email: payload.email,
   });
@@ -33,7 +43,7 @@ export const loginLanding = async (loginLandingInput: LoginLandingInput) => {
         type: newUser.user_type,
         access: true,
       },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       {
         expiresIn: "1d",
       }
@@ -53,7 +63,7 @@ export const loginLanding = async (loginLandingInput: LoginLandingInput) => {
       type: userLanding.user_type,
       access: true,
     },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     {
       expiresIn: "1d",
     }

@@ -80,6 +80,11 @@ export const login = async (loginInput: LoginInput) => {
     throw new Error("Credenciales invalidos");
   }
 
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET no está definido en el entorno");
+  }
+
   const token = jwt.sign(
     {
       id: user._id,
@@ -90,7 +95,7 @@ export const login = async (loginInput: LoginInput) => {
       permissions: user.role.permission,
       access: true,
     },
-    process.env.JWT_SECRET,
+    secret,
     {
       expiresIn: "1d",
     }

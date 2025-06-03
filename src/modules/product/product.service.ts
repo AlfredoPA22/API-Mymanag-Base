@@ -151,7 +151,7 @@ export const findProduct = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProduct> => {
-  const product: IProduct = await Product.findOne({
+  const product = await Product.findOne({
     _id: productId,
     company: companyId,
   })
@@ -263,14 +263,18 @@ export const searchProduct = async (
   );
 
   if (foundProductSerial) {
-    const product: IProduct = await Product.findOne({
+    const product = await Product.findOne({
       _id: foundProductSerial.product,
       company: companyId,
     })
       .populate("brand")
       .populate("category")
       .populate("company")
-      .lean<IProduct>();
+      .lean<IProduct | null>();
+
+    if (!product) {
+      throw new Error("Producto no encontrado");
+    }
 
     return product;
   }
@@ -547,7 +551,7 @@ export const update = async (
   productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   updateProductInput: UpdateProductInput
 ) => {
-  const existingProduct: IProduct = await Product.findOne({
+  const existingProduct = await Product.findOne({
     _id: productId,
     company: companyId,
   });

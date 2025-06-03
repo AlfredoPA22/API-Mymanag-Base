@@ -78,7 +78,7 @@ const bootstrapServer = async () => {
         }
 
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || '');
           return { user: decoded };
         } catch (error) {
           throw new Error("No autorizado: Token inválido.");

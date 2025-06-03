@@ -163,8 +163,8 @@ export const approvePaymentLanding = async (
     company.notified_before_expiration = false;
   } else {
     const today = new Date();
-    const baseDate =
-      (company.subscription_expires_at || today) > today
+    const baseDate: Date =
+      company.subscription_expires_at && company.subscription_expires_at > today
         ? company.subscription_expires_at
         : today;
 
@@ -182,6 +182,10 @@ export const approvePaymentLanding = async (
   const updatePayment = await PaymentLanding.findById(paymentId)
     .populate("company")
     .lean<IPaymentLanding>();
+
+  if (!updatePayment) {
+    throw new Error("Pago no encontrado");
+  }
 
   await sendPaymentApproveEmail({
     to: paymentCreator.email,
@@ -228,6 +232,10 @@ export const rejectPaymentLanding = async (
   const updatePayment = await PaymentLanding.findById(paymentId)
     .populate("company")
     .lean<IPaymentLanding>();
+
+  if (!updatePayment) {
+    throw new Error("Pago no encontrado");
+  }
 
   await sendPaymentRejectedEmail({
     to: paymentCreator.email,
@@ -280,7 +288,13 @@ export const updatePaymentLanding = async (
 
   await payment.save();
 
-  return await PaymentLanding.findById(paymentId)
+  const updatedPayment = await PaymentLanding.findById(paymentId)
     .populate("company")
-    .lean<IPaymentLanding>();
+    .lean<IPaymentLanding | null>();
+
+  if (!updatedPayment) {
+    throw new Error("Pago actualizado no encontrado");
+  }
+
+  return updatedPayment;
 };
