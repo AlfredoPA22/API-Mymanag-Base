@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
+    "copy-assets": "mkdir -p build/graphql/typeDefs && cp src/graphql/typeDefs/schema.graphql build/graphql/typeDefs/",
     "start": "node build/index.js",
     "dev": "nodemon src/index.ts"
   },
