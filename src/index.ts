@@ -5,29 +5,17 @@ import dotenv from "dotenv";
 import express from "express";
 import jwt from "jsonwebtoken";
 
-import { connectToMongoDB } from "./db";
-import { resolvers, typeDefs } from "./graphql";
 import {
   checkCompanyExpirations,
   initCompanyExpirationCron,
 } from "./cron/checkCompanyExpirations";
+import { connectToMongoDB } from "./db";
+import { resolvers, typeDefs } from "./graphql";
 
 dotenv.config();
 const app = express();
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://client-mymanag-base.vercel.app",
-  "http://localhost:5174",
-];
 
 const corsOptions = {
-  // origin: (origin, callback) => {
-  //   if (!origin || allowedOrigins.includes(origin)) {
-  //     callback(null, true);
-  //   } else {
-  //     callback(new Error("No autorizado por CORS"));
-  //   }
-  // },
   origin: "https://inventasys.vercel.app",
   credentials: true,
   methods: ["GET", "POST", "OPTIONS"],
