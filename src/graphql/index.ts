@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { brandResolver } from "../modules/brand/brand.resolver";
 import { categoryResolver } from "../modules/category/category.resolver";
@@ -18,12 +18,15 @@ import { companyResolver } from "../modules/company/company.resolver";
 import { userLandingResolver } from "../modules/user_landing/user_landing.resolver";
 import { paymentLandingResolver } from "../modules/payment_landing/payment_landing.resolver";
 
-const schemaTypes = readFileSync(
-  path.join(__dirname, "./typeDefs/schema.graphql"),
-  {
-    encoding: "utf-8",
-  }
-);
+const schemaPath = path.join(__dirname, "./typeDefs/schema.graphql");
+
+if (!existsSync(schemaPath)) {
+  throw new Error(`Schema GraphQL no encontrado en ${schemaPath}`);
+}
+
+const schemaTypes = readFileSync(schemaPath, {
+  encoding: "utf-8",
+});
 
 export const typeDefs = `
   ${schemaTypes}
