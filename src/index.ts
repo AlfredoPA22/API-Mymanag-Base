@@ -15,8 +15,17 @@ import { resolvers, typeDefs } from "./graphql";
 dotenv.config();
 const app = express();
 
+// const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
+const allowedOrigins = ["https://client-mymanag-base.vercel.app", "https://inventasys.vercel.app"];
+
 const corsOptions = {
-  origin: "https://inventasys.vercel.app",
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("No permitido por CORS"));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: [
@@ -78,7 +87,7 @@ const bootstrapServer = async () => {
         }
 
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || '');
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || "");
           return { user: decoded };
         } catch (error) {
           throw new Error("No autorizado: Token inválido.");

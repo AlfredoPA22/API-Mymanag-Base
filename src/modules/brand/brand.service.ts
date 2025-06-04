@@ -5,6 +5,9 @@ import {
 } from "../../interfaces/brand.interface";
 import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
 import { Brand } from "./brand.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -34,6 +37,19 @@ export const create = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   brandInput: BrandInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const brandCount = await Brand.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxBrand && brandCount >= planLimits.maxBrand) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxBrand} marcas`
+    );
+  }
+
   const brand = await Brand.findOne({
     name: brandInput.name,
     company: companyId,

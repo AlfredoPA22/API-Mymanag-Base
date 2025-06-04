@@ -10,6 +10,10 @@ import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { User } from "../user/user.model";
 import { SalePayment } from "./sale_payment.model";
+import { Company } from "../company/company.model";
+import dayjs from "dayjs";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -110,6 +114,29 @@ export const createPayment = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   salePaymentInput: SalePaymentInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const inputDate = dayjs(salePaymentInput.date);
+  const startOfMonth = inputDate.startOf("month").toDate();
+  const endOfMonth = inputDate.endOf("month").toDate();
+
+  const salePaymentCount = await SalePayment.countDocuments({
+    company: companyId,
+    date: { $gte: startOfMonth, $lte: endOfMonth },
+  });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (
+    planLimits.maxSalePayment &&
+    salePaymentCount >= planLimits.maxSalePayment
+  ) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxSalePayment} pagos por mes}`
+    );
+  }
+
   const foundSaleOrder = await SaleOrder.findOne({
     _id: salePaymentInput.sale_order,
     company: companyId,

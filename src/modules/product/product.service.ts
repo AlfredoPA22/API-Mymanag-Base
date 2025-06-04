@@ -32,6 +32,9 @@ import { User } from "../user/user.model";
 import { Product } from "./product.model";
 import { ProductInventory } from "./product_inventory.model";
 import { ProductSerial } from "./product_serial.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -441,6 +444,19 @@ export const createProduct = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createProductInput: ProductInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const productCount = await Product.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxProduct && productCount >= planLimits.maxProduct) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxProduct} productos`
+    );
+  }
+
   const productNameValidation = await Product.findOne({
     company: companyId,
     name: createProductInput.name,

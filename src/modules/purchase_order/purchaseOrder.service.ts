@@ -30,6 +30,10 @@ import { ProductSerial } from "../product/product_serial.model";
 import { User } from "../user/user.model";
 import { PurchaseOrder } from "./purchase_order.model";
 import { PurchaseOrderDetail } from "./purchase_order_detail.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import dayjs from "dayjs";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -191,6 +195,29 @@ export const create = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createPurchaseOrderInput: PurchaseOrderInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const inputDate = dayjs(createPurchaseOrderInput.date);
+  const startOfMonth = inputDate.startOf("month").toDate();
+  const endOfMonth = inputDate.endOf("month").toDate();
+
+  const purchaseOrderCount = await PurchaseOrder.countDocuments({
+    company: companyId,
+    date: { $gte: startOfMonth, $lte: endOfMonth },
+  });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (
+    planLimits.maxPurchaseOrder &&
+    purchaseOrderCount >= planLimits.maxPurchaseOrder
+  ) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxPurchaseOrder} órdenes de compra por mes}`
+    );
+  }
+
   const newPurchaseOrder = await (
     await PurchaseOrder.create({
       company: companyId,

@@ -11,6 +11,9 @@ import { User } from "./user.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { PurchaseOrder } from "../purchase_order/purchase_order.model";
 import { SalePayment } from "../sale_payment/sale_payment.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -27,6 +30,19 @@ export const create = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userInput: UserInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const userCount = await User.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxUser && userCount >= planLimits.maxUser) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxUser} usuarios`
+    );
+  }
+
   const user = await User.findOne({
     company: companyId,
     user_name: userInput.user_name,

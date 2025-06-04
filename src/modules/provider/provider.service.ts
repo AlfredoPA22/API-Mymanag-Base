@@ -8,6 +8,9 @@ import { codeType } from "../../utils/enums/orderType.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { PurchaseOrder } from "../purchase_order/purchase_order.model";
 import { Provider } from "./provider.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -23,6 +26,19 @@ export const create = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   providerInput: ProviderInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const providerCount = await Provider.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxProvider && providerCount >= planLimits.maxProvider) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxProvider} proveedores`
+    );
+  }
+
   const newProvider = await Provider.create({
     company: companyId,
     code: await generate(companyId, codeType.PROVIDER),

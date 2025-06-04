@@ -1,4 +1,7 @@
 import { IRole, RoleInput } from "../../interfaces/role.interface";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { Company } from "../company/company.model";
 import { User } from "../user/user.model";
 import { Role } from "./role.model";
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
@@ -30,6 +33,19 @@ export const create = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   roleInput: RoleInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const roleCount = await Role.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxRole && roleCount >= planLimits.maxRole) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxRole} roles`
+    );
+  }
+
   const role = await Role.findOne({
     company: companyId,
     name: roleInput.name,

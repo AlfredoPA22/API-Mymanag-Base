@@ -5,6 +5,9 @@ import {
 } from "../../interfaces/category.interface";
 import { Types as MongooseTypes, Schema as MongooseSchema } from "mongoose";
 import { Category } from "./category.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -34,6 +37,19 @@ export const create = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   categoryInput: CategoryInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const categoryCount = await Category.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxCategory && categoryCount >= planLimits.maxCategory) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxCategory} categorias`
+    );
+  }
+
   const category = await Category.findOne({
     name: categoryInput.name,
     company: companyId,

@@ -15,6 +15,9 @@ import {
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 import { IUser } from "../../interfaces/user.interface";
 import { User } from "../user/user.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -76,6 +79,19 @@ export const create = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   clientInput: ClientInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const clientCount = await Client.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxClient && clientCount >= planLimits.maxClient) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxClient} clientes`
+    );
+  }
+
   const newClient = await Client.create({
     code: await generate(companyId, codeType.CLIENT),
     ...clientInput,

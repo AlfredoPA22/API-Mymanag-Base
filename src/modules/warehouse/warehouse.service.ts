@@ -7,6 +7,9 @@ import {
 import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
 import { Warehouse } from "./warehouse.model";
+import { Company } from "../company/company.model";
+import { companyPlanLimits } from "../../utils/planLimits";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -22,6 +25,19 @@ export const create = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   warehouseInput: WarehouseInput
 ) => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const warehouseCount = await Warehouse.countDocuments({ company: companyId });
+
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (planLimits.maxWarehouse && warehouseCount >= planLimits.maxWarehouse) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxWarehouse} almacenes`
+    );
+  }
+
   const warehouse = await Warehouse.findOne({
     company: companyId,
     name: warehouseInput.name,
