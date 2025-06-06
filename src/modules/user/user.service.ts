@@ -133,6 +133,20 @@ export const update = async (
     throw new Error("El usuario no existe");
   }
 
+  if (
+    updateUserInput.user_name &&
+    updateUserInput.user_name !== user.user_name
+  ) {
+    const exists = await User.findOne({
+      username: updateUserInput.user_name,
+      _id: { $ne: userId },
+    });
+
+    if (exists) {
+      throw new Error("El nombre de usuario ya está en uso.");
+    }
+  }
+
   const userUpdated = await User.findOneAndUpdate(
     { _id: userId, company: companyId },
     { $set: updateUserInput },
