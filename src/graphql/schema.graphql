@@ -193,6 +193,8 @@ type Product {
   category: Category
   status: String
   stock_type: StockType
+  min_stock: Int
+  max_stock: Int
 }
 
 input ProductInput {
@@ -204,6 +206,8 @@ input ProductInput {
   category: String!
   brand: String!
   stock_type: StockType!
+  min_stock: Int!
+  max_stock: Int!
 }
 
 input UpdateProductInput {
@@ -215,6 +219,8 @@ input UpdateProductInput {
   category: String!
   brand: String!
   stock_type: StockType!
+  min_stock: Int!
+  max_stock: Int!
 }
 
 input FilterProductInput {
@@ -470,7 +476,7 @@ type ReportSaleOrderByCategory {
 
 type GeneralData {
   total_products_number: Int!
-  total_products_out: Int!
+  total_products_low: Int!
   stock: Int!
   best_product: Product
   best_product_sales_number: Int!
@@ -545,6 +551,7 @@ type Query {
   listWarehouse: [Warehouse]
 
   listProduct: [Product]
+  listLowStockProduct: [Product]
   listProductWithParams(
     categoryId: String
     brandId: String

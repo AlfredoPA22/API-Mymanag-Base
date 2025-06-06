@@ -12,6 +12,7 @@ import {
   findAllWithParams,
   listProductInventoryByProduct,
   productReport,
+  listLowStockProduct,
 } from "./product.service";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
@@ -37,6 +38,20 @@ export const productResolver = {
       await hasPermission(roleName, permission);
 
       return await findAll(context.user.companyId);
+    },
+
+    async listLowStockProduct(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IProduct[]> {
+      const roleName = context.user.role;
+      const permission = [
+        "LIST_AND_CREATE_PRODUCT",
+      ];
+      await hasPermission(roleName, permission);
+
+      return await listLowStockProduct(context.user.companyId);
     },
 
     async listProductWithParams(

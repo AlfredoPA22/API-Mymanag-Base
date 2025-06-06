@@ -48,6 +48,19 @@ export const findAll = async (
     .lean<IProduct[]>();
 };
 
+export const listLowStockProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IProduct[]> => {
+  return await Product.find({
+    company: companyId,
+    $expr: { $lt: ["$stock", "$min_stock"] },
+  })
+    .populate("category")
+    .populate("brand")
+    .populate("company")
+    .lean<IProduct[]>();
+};
+
 export const productReport = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   filterProductInput: FilterProductInput
@@ -319,9 +332,9 @@ export const generalData = async (
     company: companyId,
   });
 
-  const total_products_out: number = await Product.countDocuments({
+  const total_products_low: number = await Product.countDocuments({
     company: companyId,
-    status: productStatus.SIN_STOCK,
+    $expr: { $lt: ["$stock", "$min_stock"] },
   });
 
   const totalStock = await Product.aggregate([
@@ -431,7 +444,7 @@ export const generalData = async (
     best_product,
     stock,
     total_products_number,
-    total_products_out,
+    total_products_low,
     total_sales_number,
     total_sales_value,
     best_product_sales_number,
@@ -448,7 +461,6 @@ export const createProduct = async (
   if (!company) throw new Error("Empresa no encontrada");
 
   const productCount = await Product.countDocuments({ company: companyId });
-
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
   if (planLimits.maxProduct && productCount >= planLimits.maxProduct) {
@@ -466,6 +478,14 @@ export const createProduct = async (
     throw new Error("El producto ya existe");
   }
 
+  if (
+    createProductInput.min_stock !== undefined &&
+    createProductInput.max_stock !== undefined &&
+    createProductInput.min_stock > createProductInput.max_stock
+  ) {
+    throw new Error("El stock mínimo no puede ser mayor que el stock máximo");
+  }
+
   const customDataProduct: ProductInput = {
     code: createProductInput.code
       ? createProductInput.code
@@ -477,6 +497,8 @@ export const createProduct = async (
     category: createProductInput.category,
     brand: createProductInput.brand,
     stock_type: createProductInput.stock_type,
+    min_stock: createProductInput.min_stock,
+    max_stock: createProductInput.max_stock,
   };
 
   const newProduct = await (
@@ -622,6 +644,14 @@ export const update = async (
 
   if (!updateProductInput.image) {
     updateProductInput.image = existingProduct.image;
+  }
+
+  if (
+    updateProductInput.min_stock !== undefined &&
+    updateProductInput.max_stock !== undefined &&
+    updateProductInput.min_stock > updateProductInput.max_stock
+  ) {
+    throw new Error("El stock mínimo no puede ser mayor que el stock máximo.");
   }
 
   const brandChanged =

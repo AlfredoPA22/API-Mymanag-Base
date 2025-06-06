@@ -16,10 +16,18 @@ dotenv.config();
 const app = express();
 
 // const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
-const allowedOrigins = ["https://client-mymanag-base.vercel.app", "https://inventasys.vercel.app"];
+const allowedOrigins = [
+  "https://client-mymanag-base.vercel.app",
+  "https://inventasys.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
 
 const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {

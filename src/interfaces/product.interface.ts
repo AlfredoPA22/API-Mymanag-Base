@@ -19,6 +19,8 @@ export interface IProduct {
   category: ICategory;
   brand: IBrand;
   stock_type: stockType;
+  min_stock: number;
+  max_stock: number;
   status: purchaseOrderStatus;
   company: ICompany;
 }
@@ -32,6 +34,8 @@ export interface ProductInput {
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   brand: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   stock_type: stockType;
+  min_stock: number;
+  max_stock: number;
 }
 
 export interface UpdateProductInput {
@@ -43,6 +47,8 @@ export interface UpdateProductInput {
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   brand: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   stock_type: stockType;
+  min_stock: number;
+  max_stock: number;
 }
 
 export interface FilterProductInput {

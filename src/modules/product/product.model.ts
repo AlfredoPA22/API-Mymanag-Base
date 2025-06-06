@@ -22,6 +22,8 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
     stock_type: { type: String, required: true },
+    min_stock: { type: Number, required: true },
+    max_stock: { type: Number, required: true },
     status: { type: String, default: productStatus.SIN_STOCK },
     company: {
       type: MongooseSchema.Types.ObjectId,

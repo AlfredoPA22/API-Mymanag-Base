@@ -69,6 +69,10 @@ export const switchUserState = async (
     throw new Error("Usuario no encontrado");
   }
 
+  if (user.is_admin) {
+    throw new Error("No se puede desactivar este usuario");
+  }
+
   user.is_active = !user.is_active;
 
   const updatedUser = await user.save();
@@ -134,6 +138,14 @@ export const update = async (
   }
 
   if (
+    user.is_admin &&
+    updateUserInput.role &&
+    updateUserInput.role.toString() !== user.role.toString()
+  ) {
+    throw new Error("No se puede cambiar el rol de este usuario.");
+  }
+
+  if (
     updateUserInput.user_name &&
     updateUserInput.user_name !== user.user_name
   ) {
@@ -167,7 +179,7 @@ export const deleteUser = async (
   }
 
   if (user.is_admin) {
-    throw new Error("No se puede eliminar porque es administrador");
+    throw new Error("No se puede eliminar este usuario.");
   }
 
   const findPurchaseOrder = await PurchaseOrder.find({

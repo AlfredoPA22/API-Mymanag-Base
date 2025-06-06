@@ -2,7 +2,7 @@ import { IProduct } from "./product.interface";
 
 export interface IGeneralData {
   total_products_number: number;
-  total_products_out: number;
+  total_products_low: number;
   stock: number;
   best_product: IProduct | null;
   best_product_sales_number: number;

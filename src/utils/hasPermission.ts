@@ -15,7 +15,7 @@ export const hasPermission = async (
   );
 
   if (!hasPermission) {
-    throw new Error(`El rol ${roleName} no tiene permiso para esta accion`);
+    throw new Error(`No tienes permisos para esta accion`);
   }
 
   return hasPermission;

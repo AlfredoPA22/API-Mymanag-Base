@@ -1220,6 +1220,7 @@ export const reportSaleOrderByMonth = async (
   return await SaleOrder.find(filter)
     .sort({ date: -1 }) // Ordena por fecha de manera descendente (más recientes primero)
     .limit(10) // Limita a las últimas 10 ventas
-    .populate("client") // Llenar información del cliente
+    .populate("client")
+    .populate("created_by") // Llenar información del cliente
     .lean<ISaleOrder[]>();
 };
