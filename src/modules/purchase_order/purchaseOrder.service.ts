@@ -4,6 +4,7 @@ import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
   FilterPurchaseOrderInput,
   IPurchaseOrder,
+  IPurchaseOrderByProduct,
   IPurchaseOrderByYear,
   IPurchaseOrderToPDF,
   PurchaseOrderInput,
@@ -58,6 +59,62 @@ export const findAll = async (
     .populate("created_by")
     .populate("company")
     .lean<IPurchaseOrder[]>();
+};
+
+export const listPurchaseOrderByProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IPurchaseOrderByProduct[]> => {
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const details: IPurchaseOrderDetail[] = await PurchaseOrderDetail.find({
+    company: companyId,
+    product: productId,
+  });
+
+  if (!details.length) return [];
+
+  const purchaseOrderIds = details.map((d) => d.purchase_order);
+
+  const purchaseOrders: IPurchaseOrder[] = await PurchaseOrder.find({
+    _id: { $in: purchaseOrderIds },
+    company: companyId,
+    ...(foundUser.is_global ? {} : { created_by: userId }),
+  })
+    .populate("provider")
+    .populate("created_by")
+    .lean<IPurchaseOrder[]>();
+
+  const allowedOrderIds = new Set(
+    purchaseOrders.map((so) => so._id.toString())
+  );
+
+  const result: IPurchaseOrderByProduct[] = details
+    .filter((detail) => allowedOrderIds.has(detail.purchase_order.toString()))
+    .map((detail) => {
+      const order = purchaseOrders.find(
+        (so) => so._id.toString() === detail.purchase_order.toString()
+      );
+      return {
+        purchaseOrder: order!,
+        purchaseOrderDetail: detail,
+      };
+    });
+
+  return result.sort((a, b) => {
+    return (
+      new Date(b.purchaseOrder.date).getTime() -
+      new Date(a.purchaseOrder.date).getTime()
+    );
+  });
 };
 
 export const purchaseOrderReport = async (

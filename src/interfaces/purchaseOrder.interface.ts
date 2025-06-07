@@ -1,6 +1,9 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { purchaseOrderStatus } from "../utils/enums/purchaseOrderStatus.enum";
-import { IPurchaseOrderDetailToPDF } from "./purchaseOrderDetail.interface";
+import {
+  IPurchaseOrderDetail,
+  IPurchaseOrderDetailToPDF,
+} from "./purchaseOrderDetail.interface";
 import { IProvider } from "./provider.interface";
 import { IUser } from "./user.interface";
 import { ICompany } from "./company.interface";
@@ -14,6 +17,11 @@ export interface IPurchaseOrder {
   status: purchaseOrderStatus;
   created_by: IUser;
   company: ICompany;
+}
+
+export interface IPurchaseOrderByProduct {
+  purchaseOrder: IPurchaseOrder;
+  purchaseOrderDetail: IPurchaseOrderDetail;
 }
 
 export interface PurchaseOrderInput {

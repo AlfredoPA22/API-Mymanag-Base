@@ -1,5 +1,6 @@
 import {
   IPurchaseOrder,
+  IPurchaseOrderByProduct,
   IPurchaseOrderToPDF,
 } from "../../interfaces/purchaseOrder.interface";
 import { IPurchaseOrderDetail } from "../../interfaces/purchaseOrderDetail.interface";
@@ -16,6 +17,7 @@ import {
   findDetail,
   findPurchaseOrder,
   findPurchaseOrderToPDF,
+  listPurchaseOrderByProduct,
   purchaseOrderReport,
   updatePurchaseOrderDetail,
 } from "./purchaseOrder.service";
@@ -32,6 +34,22 @@ export const purchaseOrderResolver = {
       await hasPermission(roleName, permission);
 
       return await findAll(context.user.companyId, context.user.id);
+    },
+
+    async listPurchaseOrderByProduct(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IPurchaseOrderByProduct[]> {
+      // const roleName = context.user.role;
+      // const permission = ["LIST_AND_CREATE_SALE"];
+      // await hasPermission(roleName, permission);
+
+      return await listPurchaseOrderByProduct(
+        context.user.companyId,
+        context.user.id,
+        args.productId
+      );
     },
 
     async listPurchaseOrderDetail(

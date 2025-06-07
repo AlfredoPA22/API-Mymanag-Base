@@ -1,5 +1,6 @@
 import {
   ISaleOrder,
+  ISaleOrderByProduct,
   ISaleOrderToPDF,
   ISalesReportByCategory,
   ISalesReportByClient,
@@ -18,6 +19,7 @@ import {
   findDetail,
   findSaleOrder,
   findSaleOrderToPDF,
+  listSaleOrderByProduct,
   reportSaleOrderByCategory,
   reportSaleOrderByClient,
   reportSaleOrderByMonth,
@@ -37,6 +39,21 @@ export const saleOrderResolver = {
       await hasPermission(roleName, permission);
 
       return await findAll(context.user.companyId, context.user.id);
+    },
+    async listSaleOrderByProduct(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISaleOrderByProduct[]> {
+      // const roleName = context.user.role;
+      // const permission = ["LIST_AND_CREATE_SALE"];
+      // await hasPermission(roleName, permission);
+
+      return await listSaleOrderByProduct(
+        context.user.companyId,
+        context.user.id,
+        args.productId
+      );
     },
     async findSaleOrder(
       _: any,

@@ -13,6 +13,8 @@ import {
   listProductInventoryByProduct,
   productReport,
   listLowStockProduct,
+  previewImportProducts,
+  saveImportProducts,
 } from "./product.service";
 import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
@@ -46,9 +48,7 @@ export const productResolver = {
       context: any
     ): Promise<IProduct[]> {
       const roleName = context.user.role;
-      const permission = [
-        "LIST_AND_CREATE_PRODUCT",
-      ];
+      const permission = ["LIST_AND_CREATE_PRODUCT"];
       await hasPermission(roleName, permission);
 
       return await listLowStockProduct(context.user.companyId);
@@ -215,6 +215,17 @@ export const productResolver = {
         context.user.companyId,
         args.productId,
         args.updateProductInput
+      );
+    },
+
+    async saveImportProducts(_: any, args: Record<string, any>, context: any) {
+      const roleName = context.user.role;
+      const permission = ["LIST_AND_CREATE_PRODUCT"];
+      await hasPermission(roleName, permission);
+
+      return await saveImportProducts(
+        context.user.companyId,
+        args.importProducts
       );
     },
   },

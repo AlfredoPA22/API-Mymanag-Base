@@ -2,6 +2,7 @@ import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { IGeneralData } from "../../interfaces/home.interface";
 import {
   FilterProductInput,
+  IPreviewProductImport,
   IProduct,
   ProductInput,
   UpdateProductInput,
@@ -35,6 +36,10 @@ import { ProductSerial } from "./product_serial.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import * as XLSX from "xlsx";
+import { stockType } from "../../utils/enums/stockType.enum";
+import { Brand } from "../brand/brand.model";
+import { Category } from "../category/category.model";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -687,4 +692,211 @@ export const update = async (
   }
 
   return productUpdated;
+};
+
+export const previewImportProducts = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  file: File
+): Promise<IPreviewProductImport[]> => {
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "buffer" });
+  if (!workbook.SheetNames.length) {
+    throw new Error("El archivo Excel no contiene ninguna hoja.");
+  }
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("El archivo está vacío o no contiene datos válidos.");
+  }
+
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const productCount = await Product.countDocuments({ company: companyId });
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+
+  if (
+    planLimits.maxProduct &&
+    productCount + data.length > planLimits.maxProduct
+  ) {
+    throw new Error(
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxProduct} productos. Ya tienes ${productCount} y estás intentando importar ${data.length}.`
+    );
+  }
+
+  const existingProducts = await Product.find(
+    { company: companyId },
+    { code: 1, name: 1 }
+  ).lean();
+
+  const existingCodes = new Set(
+    existingProducts.map((p) => p.code.toLowerCase())
+  );
+  const existingNames = new Set(
+    existingProducts.map((p) => p.name.toLowerCase())
+  );
+
+  const seenCodes = new Set<string>();
+  const seenNames = new Set<string>();
+
+  const preview: IPreviewProductImport[] = data.map(
+    (row: any, index: number) => {
+      const errors: string[] = [];
+
+      const code = (row.code || "").trim();
+      const name = (row.name || "").trim();
+
+      if (code) {
+        if (typeof code !== "string") {
+          errors.push("Código inválido");
+        } else {
+          const lowerCode = code.toLowerCase();
+          if (existingCodes.has(lowerCode)) {
+            errors.push("El código ya existe");
+          }
+          if (seenCodes.has(lowerCode)) {
+            errors.push("Código duplicado en la lista");
+          } else {
+            seenCodes.add(lowerCode);
+          }
+        }
+      }
+
+      if (!name || typeof name !== "string") {
+        errors.push("Nombre inválido");
+      } else {
+        const lowerName = name.toLowerCase();
+        if (existingNames.has(lowerName)) {
+          errors.push("El nombre ya existe");
+        }
+        if (seenNames.has(lowerName)) {
+          errors.push("Nombre duplicado en la lista");
+        } else {
+          seenNames.add(lowerName);
+        }
+      }
+
+      if (!row.description || typeof row.description !== "string") {
+        errors.push("Descripción inválida");
+      }
+
+      if (isNaN(Number(row.sale_price)) || Number(row.sale_price) < 0) {
+        errors.push("Precio de venta inválido");
+      }
+
+      if (!row.brand || typeof row.brand !== "string") {
+        errors.push("Marca inválida");
+      }
+
+      if (!row.category || typeof row.category !== "string") {
+        errors.push("Categoría inválida");
+      }
+
+      if (
+        ![stockType.INDIVIDUAL, stockType.SERIALIZADO].includes(row.stock_type)
+      ) {
+        errors.push("Tipo de stock inválido");
+      }
+
+      const min_stock = Number(row.min_stock);
+      const max_stock = Number(row.max_stock);
+
+      if (isNaN(min_stock) || min_stock < 0 || !Number.isInteger(min_stock)) {
+        errors.push("Stock mínimo debe ser un número entero igual o mayor a 0");
+      }
+
+      if (isNaN(max_stock) || max_stock < 1 || !Number.isInteger(max_stock)) {
+        errors.push("Stock máximo debe ser un número entero mayor a 0");
+      }
+
+      if (!isNaN(min_stock) && !isNaN(max_stock) && min_stock > max_stock) {
+        errors.push("El stock mínimo no puede ser mayor que el stock máximo");
+      }
+
+      return {
+        row: index + 1, // índice + encabezado
+        code,
+        name,
+        description: row.description || "",
+        sale_price: Number(row.sale_price) || 0,
+        brand: row.brand || "",
+        category: row.category || "",
+        stock_type: row.stock_type || "",
+        min_stock: min_stock || 0,
+        max_stock: max_stock || 0,
+        isValid: errors.length === 0,
+        errors,
+      };
+    }
+  );
+
+  return preview;
+};
+
+export const saveImportProducts = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  dataProducts: IPreviewProductImport[]
+) => {
+  if (!dataProducts.length) {
+    throw new Error("No hay productos para guardar.");
+  }
+
+  const allValid = dataProducts.every((p) => p.isValid);
+  if (!allValid) {
+    throw new Error("Algunos productos no son válidos. No se puede guardar.");
+  }
+
+  const createdProducts = [];
+
+  for (const product of dataProducts) {
+    const {
+      code,
+      name,
+      description,
+      brand: brandName,
+      category: categoryName,
+      sale_price,
+      stock_type,
+      min_stock,
+      max_stock,
+    } = product;
+
+    let brand = await Brand.findOne({
+      name: brandName,
+      company: companyId,
+    });
+    if (!brand) {
+      brand = await Brand.create({
+        name: brandName,
+        company: companyId,
+      });
+    }
+
+    let category = await Category.findOne({
+      name: categoryName,
+      company: companyId,
+    });
+    if (!category) {
+      category = await Category.create({
+        name: categoryName,
+        company: companyId,
+      });
+    }
+
+    const created = await createProduct(companyId, {
+      code,
+      name,
+      description,
+      brand: brand._id,
+      category: category._id,
+      sale_price,
+      stock_type: stock_type as stockType,
+      min_stock,
+      max_stock,
+    });
+
+    createdProducts.push(created);
+  }
+
+  return createdProducts;
 };

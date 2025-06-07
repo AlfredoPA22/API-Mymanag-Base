@@ -4,6 +4,7 @@ import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
   FilterSaleOrderInput,
   ISaleOrder,
+  ISaleOrderByProduct,
   ISaleOrderToPDF,
   ISalesReportByCategory,
   ISalesReportByClient,
@@ -59,6 +60,60 @@ export const findAll = async (
     .populate("client")
     .populate("created_by")
     .lean<ISaleOrder[]>();
+};
+
+export const listSaleOrderByProduct = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  productId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<ISaleOrderByProduct[]> => {
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const details: ISaleOrderDetail[] = await SaleOrderDetail.find({
+    company: companyId,
+    product: productId,
+  });
+
+  if (!details.length) return [];
+
+  const saleOrderIds = details.map((d) => d.sale_order);
+
+  const saleOrders: ISaleOrder[] = await SaleOrder.find({
+    _id: { $in: saleOrderIds },
+    company: companyId,
+    ...(foundUser.is_global ? {} : { created_by: userId }),
+  })
+    .populate("client")
+    .populate("created_by")
+    .lean<ISaleOrder[]>();
+
+  const allowedOrderIds = new Set(saleOrders.map((so) => so._id.toString()));
+
+  const result: ISaleOrderByProduct[] = details
+    .filter((detail) => allowedOrderIds.has(detail.sale_order.toString()))
+    .map((detail) => {
+      const order = saleOrders.find(
+        (so) => so._id.toString() === detail.sale_order.toString()
+      );
+      return {
+        saleOrder: order!,
+        saleOrderDetail: detail,
+      };
+    });
+
+  return result.sort((a, b) => {
+    return (
+      new Date(b.saleOrder.date).getTime() -
+      new Date(a.saleOrder.date).getTime()
+    );
+  });
 };
 
 export const saleOrderReport = async (

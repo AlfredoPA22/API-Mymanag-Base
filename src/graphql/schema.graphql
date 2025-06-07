@@ -1,4 +1,5 @@
 scalar Date
+scalar Upload
 
 input LoginLandingInput {
   clientId: String!
@@ -474,6 +475,16 @@ type ReportSaleOrderByCategory {
   total: Float!
 }
 
+type SaleOrderByProduct {
+  saleOrder: SaleOrder
+  saleOrderDetail: SaleOrderDetail
+}
+
+type PurchaseOrderByProduct {
+  purchaseOrder: PurchaseOrder
+  purchaseOrderDetail: PurchaseOrderDetail
+}
+
 type GeneralData {
   total_products_number: Int!
   total_products_low: Int!
@@ -533,6 +544,21 @@ type CompanyWithPayment {
   latest_payment: PaymentLanding
 }
 
+input PreviewProductImport {
+  row: Int!
+  code: String!
+  name: String!
+  description: String!
+  sale_price: Float!
+  brand: String!
+  category: String!
+  stock_type: String!
+  min_stock: Float!
+  max_stock: Float!
+  isValid: Boolean!
+  errors: [String!]!
+}
+
 type Query {
   listCompany: [CompanyWithPayment]
   listCompanyAdmin: [CompanyWithPayment]
@@ -578,6 +604,7 @@ type Query {
   reportSaleOrderByCategory: [ReportSaleOrderByCategory]
   reportSaleOrderByMonth: [SaleOrder]
   generalData: GeneralData
+  listSaleOrderByProduct(productId: ID!): [SaleOrderByProduct]
 
   listSalePayment: [SalePayment]
   listSalePaymentBySaleOrder(saleOrderId: String!): [SalePayment]
@@ -593,6 +620,7 @@ type Query {
   ): [PurchaseOrder]
   findPurchaseOrder(purchaseOrderId: String!): PurchaseOrder
   findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
+  listPurchaseOrderByProduct(productId: ID!): [PurchaseOrderByProduct]
 
   generateCode(type: String!): String
 
@@ -701,4 +729,6 @@ type Mutation {
   approvePaymentLanding(paymentId: String!): PaymentLanding
   rejectPaymentLanding(paymentId: String!): PaymentLanding
   updatePaymentLanding(paymentId: String!, proof_url: String!): PaymentLanding
+
+  saveImportProducts(importProducts: [PreviewProductImport!]!): [Product]
 }
