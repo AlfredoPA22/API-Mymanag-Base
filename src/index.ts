@@ -6,9 +6,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import { Types as MongooseTypes } from "mongoose";
 import multer from "multer";
-import {
-  initCompanyExpirationCron
-} from "./cron/checkCompanyExpirations";
+import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
 import { previewImportProducts } from "./modules/product/product.service";
@@ -18,7 +16,7 @@ const app = express();
 
 // const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 const allowedOrigins = [
-  "https://client-mymanag-base.vercel.app",
+  "https://mymanag.vercel.app",
   "https://inventasys.vercel.app",
   "http://localhost:5173",
   "http://localhost:5174",
@@ -142,7 +140,7 @@ const bootstrapServer = async () => {
       const preview = await previewImportProducts(companyId, fileLike);
 
       return res.json(preview);
-    } catch (error:any) {
+    } catch (error: any) {
       return res.status(401).json({ message: error.message });
     }
   });
