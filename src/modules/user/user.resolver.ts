@@ -1,6 +1,7 @@
 import { IUser } from "../../interfaces/user.interface";
 import { hasPermission } from "../../utils/hasPermission";
 import {
+  changePassword,
   create,
   deleteUser,
   findAll,
@@ -46,6 +47,17 @@ export const userResolver = {
         context.user.companyId,
         args.userId,
         args.updateUserInput
+      );
+    },
+    async changePassword(_: any, args: Record<string, any>, context: any) {
+      const roleName = context.user.role;
+      const permission = ["USER_AND_ROLE"];
+      await hasPermission(roleName, permission);
+
+      return await changePassword(
+        context.user.companyId,
+        args.userId,
+        args.changePasswordInput
       );
     },
     async deleteUser(_: any, args: Record<string, any>, context: any) {

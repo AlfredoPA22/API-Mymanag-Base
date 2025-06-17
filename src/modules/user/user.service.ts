@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import {
+  changePasswordInput,
   IUser,
   LoginInput,
   UpdateUserInput,
@@ -112,6 +113,7 @@ export const login = async (loginInput: LoginInput) => {
       role: user.role.name,
       company: user.company.name,
       companyId: user.company._id,
+      currency: user.company.currency,
       permissions: user.role.permission,
       access: true,
     },
@@ -213,4 +215,45 @@ export const deleteUser = async (
   return {
     success: deleted.deletedCount > 0,
   };
+};
+
+export const changePassword = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  changePasswordInput: changePasswordInput
+) => {
+  const user = await User.findOne({ _id: userId, company: companyId });
+
+  if (!user) {
+    throw new Error("El usuario no existe");
+  }
+
+  const isMatch = await bcrypt.compare(
+    changePasswordInput.currentPassword,
+    user.password
+  );
+
+  if (!isMatch) {
+    throw new Error("La contraseña actual es incorrecta");
+  }
+
+  console.log(changePasswordInput);
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(
+    changePasswordInput.newPassword,
+    salt
+  );
+
+  const userUpdated = await User.findOneAndUpdate(
+    { _id: userId, company: companyId },
+    {
+      $set: {
+        password: hashedPassword,
+      },
+    },
+    { new: true }
+  );
+
+  return userUpdated;
 };

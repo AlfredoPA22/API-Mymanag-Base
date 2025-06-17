@@ -42,6 +42,7 @@ input CompanyInput {
   address: String
   country: String
   plan: String!
+  currency: String!
 }
 
 type Warehouse {
@@ -113,6 +114,11 @@ input UpdateUserInput {
   user_name: String!
   role: String!
   is_global: Boolean!
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
 }
 
 input LoginInput {
@@ -640,6 +646,10 @@ type Mutation {
   deleteUser(userId: String!): DeleteResponse
   login(loginInput: LoginInput!): String
   switchUserState(userId: String!): User
+  changePassword(
+    userId: String!
+    changePasswordInput: ChangePasswordInput!
+  ): User
 
   loginLanding(loginLandingInput: LoginLandingInput!): String
 

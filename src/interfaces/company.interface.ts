@@ -33,4 +33,5 @@ export interface CompanyInput {
   address?: string;
   country?: string;
   plan?: string;
+  currency: string;
 }

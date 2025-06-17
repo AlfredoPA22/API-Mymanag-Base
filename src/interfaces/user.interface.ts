@@ -29,3 +29,8 @@ export interface UpdateUserInput {
   role: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   is_global: boolean;
 }
+
+export interface changePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
