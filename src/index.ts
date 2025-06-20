@@ -17,7 +17,7 @@ const app = express();
 // const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 const allowedOrigins = [
   "https://mymanag.vercel.app",
-  "https://inventasys.site",
+  "https://www.inventasys.site",
   "http://localhost:5173",
   "http://localhost:5174",
 ];
