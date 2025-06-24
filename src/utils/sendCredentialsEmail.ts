@@ -30,7 +30,7 @@ export const sendCredentialsEmail = async ({
         <li><strong>Contraseña:</strong> ${password}</li>
       </ul>
       <p>Puedes cambiar tu contraseña luego de iniciar sesión.</p>
-      <a href="https://app.inventasys.com/login" style="display:inline-block;padding:10px 20px;background:#1d4ed8;color:#fff;border-radius:5px;text-decoration:none;">Iniciar sesión</a>
+      <a href="https://mymanag.vercel.app" style="display:inline-block;padding:10px 20px;background:#1d4ed8;color:#fff;border-radius:5px;text-decoration:none;">Iniciar sesión</a>
       <p style="font-size: 12px; color: #888; margin-top: 20px;">Este correo fue generado automáticamente. No respondas a este mensaje.</p>
     </div>
   `;
