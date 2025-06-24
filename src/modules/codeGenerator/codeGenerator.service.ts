@@ -11,7 +11,7 @@ export const generate = async (
     const defaultPrefixes = {
       [codeType.PURCHASE_ORDER]: "COMP_",
       [codeType.SALE_ORDER]: "VENT_",
-      [codeType.PRODUCT]: "PROD_",
+      [codeType.PRODUCT]: "SKU_",
       [codeType.CLIENT]: "CLIE_",
       [codeType.PROVIDER]: "PROV_",
       [codeType.PRODUCT_TRANSFER]: "TRAN_",
