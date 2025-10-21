@@ -2,7 +2,12 @@ import {
   ICompany,
   ICompanyWithPayment,
 } from "../../interfaces/company.interface";
-import { create, findAll, findAllAdmin } from "./company.service";
+import {
+  create,
+  detailCompany,
+  findAll,
+  findAllAdmin,
+} from "./company.service";
 
 export const companyResolver = {
   Query: {
@@ -20,6 +25,14 @@ export const companyResolver = {
       context: any
     ): Promise<ICompany[]> {
       return await findAllAdmin(context.user.id);
+    },
+
+    async detailCompany(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ICompany> {
+      return await detailCompany(context.user.companyId);
     },
   },
   Mutation: {

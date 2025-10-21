@@ -181,3 +181,17 @@ export const generatePassword = (): string => {
     () => chars[Math.floor(Math.random() * chars.length)]
   ).join("");
 };
+
+export const detailCompany = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<ICompany> => {
+  const company = await Company.findOne({
+    _id: companyId,
+  }).lean<ICompany>();
+
+  if (!company) {
+    throw new Error("No existe la empresa");
+  }
+
+  return company;
+};

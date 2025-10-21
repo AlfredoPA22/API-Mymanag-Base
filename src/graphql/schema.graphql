@@ -568,6 +568,7 @@ input PreviewProductImport {
 type Query {
   listCompany: [CompanyWithPayment]
   listCompanyAdmin: [CompanyWithPayment]
+  detailCompany: CompanyWithPayment
 
   listUser: [User]
 
