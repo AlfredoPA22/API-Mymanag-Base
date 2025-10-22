@@ -142,12 +142,12 @@ export const create = async (
       is_admin: true,
     });
 
-    // await sendCredentialsEmail({
-    //   to: userInfo.email,
-    //   user_name,
-    //   password,
-    //   company_name: newCompany.name,
-    // });
+    await sendCredentialsEmail({
+      to: userInfo.email,
+      user_name,
+      password,
+      company_name: newCompany.name,
+    });
 
     return {
       company: newCompany,
