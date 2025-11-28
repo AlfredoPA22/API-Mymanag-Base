@@ -124,11 +124,20 @@ export const create = async (
   });
 
   // Enviar correo de bienvenida al crear cualquier empresa
-  await sendWelcomeEmail({
-    to: userInfo.email,
-    company_name: newCompany.name,
-    plan: newCompany.plan,
-  });
+  // No fallar la creación si el correo falla, pero sí registrar el error
+  try {
+    await sendWelcomeEmail({
+      to: userInfo.email,
+      company_name: newCompany.name,
+      plan: newCompany.plan,
+    });
+  } catch (error) {
+    console.error(
+      "⚠️ No se pudo enviar el correo de bienvenida, pero la empresa se creó correctamente:",
+      error
+    );
+    // Continuar con el flujo aunque falle el correo
+  }
 
   if (isFreePlan) {
     const newRole = await Role.create({
@@ -150,12 +159,21 @@ export const create = async (
       is_admin: true,
     });
 
-    await sendCredentialsEmail({
-      to: userInfo.email,
-      user_name,
-      password,
-      company_name: newCompany.name,
-    });
+    // Enviar credenciales por correo
+    try {
+      await sendCredentialsEmail({
+        to: userInfo.email,
+        user_name,
+        password,
+        company_name: newCompany.name,
+      });
+    } catch (error) {
+      console.error(
+        "⚠️ No se pudo enviar el correo con credenciales, pero el usuario se creó correctamente:",
+        error
+      );
+      // Continuar con el flujo aunque falle el correo
+    }
 
     return {
       company: newCompany,

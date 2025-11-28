@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { getEmailTransporter } from "./emailTransporter";
 
 interface SendWelcomeEmailParams {
   to: string;
@@ -11,15 +11,10 @@ export const sendWelcomeEmail = async ({
   company_name,
   plan,
 }: SendWelcomeEmailParams) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    const transporter = getEmailTransporter();
 
-  const htmlContent = `
+    const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
       <h2 style="color: #1d4ed8;">¡Bienvenido a Inventasys!</h2>
       <p>Hola,</p>
@@ -36,11 +31,30 @@ export const sendWelcomeEmail = async ({
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `Inventasys <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "¡Bienvenido a Inventasys!",
-    html: htmlContent,
-  });
+    const info = await transporter.sendMail({
+      from: `Inventasys <${process.env.EMAIL_USER}>`,
+      to,
+      subject: "¡Bienvenido a Inventasys!",
+      html: htmlContent,
+    });
+
+    console.log("✅ Correo de bienvenida enviado:", {
+      to,
+      messageId: info.messageId,
+      company_name,
+    });
+
+    return info;
+  } catch (error) {
+    console.error("❌ Error al enviar correo de bienvenida:", {
+      to,
+      company_name,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // No lanzar el error para que no rompa el flujo de creación de empresa
+    // pero sí registrarlo para debugging
+    throw error;
+  }
 };
 

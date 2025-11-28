@@ -149,12 +149,21 @@ export const approvePaymentLanding = async (
       is_admin: true,
     });
 
-    await sendCredentialsEmail({
-      to: companyCreator.email,
-      user_name,
-      password,
-      company_name: company.name,
-    });
+    // Enviar credenciales por correo
+    try {
+      await sendCredentialsEmail({
+        to: companyCreator.email,
+        user_name,
+        password,
+        company_name: company.name,
+      });
+    } catch (error) {
+      console.error(
+        "⚠️ No se pudo enviar el correo con credenciales, pero el usuario se creó correctamente:",
+        error
+      );
+      // Continuar con el flujo aunque falle el correo
+    }
 
     company.status = companyStatus.ACTIVE;
     company.plan = payment.plan;
@@ -187,11 +196,20 @@ export const approvePaymentLanding = async (
     throw new Error("Pago no encontrado");
   }
 
-  await sendPaymentApproveEmail({
-    to: paymentCreator.email,
-    user_name: paymentCreator.fullName,
-    payment: updatePayment,
-  });
+  // Enviar correo de aprobación de pago
+  try {
+    await sendPaymentApproveEmail({
+      to: paymentCreator.email,
+      user_name: paymentCreator.fullName,
+      payment: updatePayment,
+    });
+  } catch (error) {
+    console.error(
+      "⚠️ No se pudo enviar el correo de aprobación de pago, pero el pago se aprobó correctamente:",
+      error
+    );
+    // Continuar con el flujo aunque falle el correo
+  }
 
   return updatePayment;
 };

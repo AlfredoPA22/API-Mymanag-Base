@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { getEmailTransporter } from "./emailTransporter";
 
 interface SendCredentialsParams {
   to: string;
@@ -13,15 +13,10 @@ export const sendCredentialsEmail = async ({
   password,
   company_name,
 }: SendCredentialsParams) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    const transporter = getEmailTransporter();
 
-  const htmlContent = `
+    const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
       <h2 style="color: #1d4ed8;">Bienvenido ${company_name}</h2>
       <p>Gracias por registrarte en nuestro sistema. Estas son tus credenciales para iniciar sesión:</p>
@@ -35,10 +30,30 @@ export const sendCredentialsEmail = async ({
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `Inventasys <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "Tus credenciales de acceso - Inventasys",
-    html: htmlContent,
-  });
+    const info = await transporter.sendMail({
+      from: `Inventasys <${process.env.EMAIL_USER}>`,
+      to,
+      subject: "Tus credenciales de acceso - Inventasys",
+      html: htmlContent,
+    });
+
+    console.log("✅ Correo de credenciales enviado:", {
+      to,
+      messageId: info.messageId,
+      company_name,
+      user_name,
+    });
+
+    return info;
+  } catch (error) {
+    console.error("❌ Error al enviar correo de credenciales:", {
+      to,
+      company_name,
+      user_name,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // Lanzar el error para que se maneje en el servicio
+    throw error;
+  }
 };

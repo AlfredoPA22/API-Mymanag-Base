@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { getEmailTransporter } from "./emailTransporter";
 import { format } from "date-fns";
 
 export const sendExpirationWarningEmail = async (
@@ -6,15 +6,9 @@ export const sendExpirationWarningEmail = async (
   companyName: string,
   expirationDate: Date
 ) => {
-  const formattedDate = format(expirationDate, "dd/MM/yyyy");
-
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    const formattedDate = format(expirationDate, "dd/MM/yyyy");
+    const transporter = getEmailTransporter();
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -32,10 +26,28 @@ export const sendExpirationWarningEmail = async (
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `Inventasys <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "⚠️ Tu plan vence pronto - Inventasys",
-    html: htmlContent,
-  });
+    const info = await transporter.sendMail({
+      from: `Inventasys <${process.env.EMAIL_USER}>`,
+      to,
+      subject: "⚠️ Tu plan vence pronto - Inventasys",
+      html: htmlContent,
+    });
+
+    console.log("✅ Correo de advertencia de expiración enviado:", {
+      to,
+      messageId: info.messageId,
+      companyName,
+      expirationDate: formattedDate,
+    });
+
+    return info;
+  } catch (error) {
+    console.error("❌ Error al enviar correo de advertencia de expiración:", {
+      to,
+      companyName,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 };

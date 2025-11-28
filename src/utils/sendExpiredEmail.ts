@@ -1,16 +1,10 @@
-import nodemailer from "nodemailer";
+import { getEmailTransporter } from "./emailTransporter";
 import { format } from "date-fns";
 
 export const sendExpiredEmail = async (to: string, companyName: string) => {
-  const todayFormatted = format(new Date(), "dd/MM/yyyy");
-
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    const todayFormatted = format(new Date(), "dd/MM/yyyy");
+    const transporter = getEmailTransporter();
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -28,10 +22,27 @@ export const sendExpiredEmail = async (to: string, companyName: string) => {
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `Inventasys <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "❌ Plan expirado - Inventasys",
-    html: htmlContent,
-  });
+    const info = await transporter.sendMail({
+      from: `Inventasys <${process.env.EMAIL_USER}>`,
+      to,
+      subject: "❌ Plan expirado - Inventasys",
+      html: htmlContent,
+    });
+
+    console.log("✅ Correo de plan expirado enviado:", {
+      to,
+      messageId: info.messageId,
+      companyName,
+    });
+
+    return info;
+  } catch (error) {
+    console.error("❌ Error al enviar correo de plan expirado:", {
+      to,
+      companyName,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 };

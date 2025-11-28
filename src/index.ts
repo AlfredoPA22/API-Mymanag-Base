@@ -10,6 +10,7 @@ import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
 import { previewImportProducts } from "./modules/product/product.service";
+import { verifyEmailConnection } from "./utils/emailTransporter";
 
 dotenv.config();
 const app = express();
@@ -49,6 +50,12 @@ const port = process.env.PORT || 3000;
 
 const bootstrapServer = async () => {
   connectToMongoDB();
+  
+  // Verificar conexión de correo al iniciar (no bloquea el inicio si falla)
+  verifyEmailConnection().catch((error) => {
+    console.warn("⚠️ Advertencia: No se pudo verificar la conexión de correo al iniciar:", error);
+  });
+  
   initCompanyExpirationCron();
   const server = new ApolloServer({
     typeDefs,
