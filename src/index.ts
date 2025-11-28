@@ -10,7 +10,7 @@ import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
 import { previewImportProducts } from "./modules/product/product.service";
-import { verifyEmailConnection } from "./utils/emailTransporter";
+import { verifyEmailConnection, sendEmailWithRetry } from "./utils/emailTransporter";
 
 dotenv.config();
 const app = express();
@@ -113,6 +113,7 @@ const bootstrapServer = async () => {
   app.get("/", (req, res) => {
     res.send("hello world!");
   });
+
   const upload = multer({ storage: multer.memoryStorage() });
 
   app.post("/upload-preview", upload.single("file"), async (req, res) => {

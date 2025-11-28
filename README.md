@@ -22,17 +22,29 @@ Este proyecto usa **Resend** para el envío de correos electrónicos. Resend es 
    RESEND_API_KEY=re_xxxxxxxxxxxxx
    ```
 
-   **Opcional (para personalizar el remitente):**
+   **IMPORTANTE - Requerido para producción:**
    ```env
    EMAIL_FROM=Inventasys <noreply@tudominio.com>
    ```
    
-   Si no configuras `EMAIL_FROM`, se usará el dominio de prueba de Resend: `onboarding@resend.dev`
+   ⚠️ **Nota sobre el dominio de prueba:**
+   - Si usas `onboarding@resend.dev` (dominio de prueba), solo podrás enviar correos a la dirección de correo asociada con tu cuenta de Resend
+   - Para enviar a cualquier destinatario, **debes verificar un dominio** en Resend
 
-4. **Configura un dominio (opcional pero recomendado)**
-   - En el dashboard de Resend, puedes configurar tu propio dominio
-   - Esto mejora la deliverability de los correos
-   - Una vez configurado, actualiza `EMAIL_FROM` con tu dominio
+4. **Configura un dominio (REQUERIDO para producción)**
+   
+   **Pasos:**
+   1. Ve a [resend.com/domains](https://resend.com/domains)
+   2. Agrega y verifica tu dominio (sigue las instrucciones de DNS)
+   3. Una vez verificado, configura la variable de entorno:
+      ```env
+      EMAIL_FROM=Inventasys <noreply@tudominio.com>
+      ```
+   
+   **¿Por qué es necesario?**
+   - El dominio de prueba (`onboarding@resend.dev`) solo permite enviar a tu propia dirección
+   - Con un dominio verificado puedes enviar a cualquier destinatario
+   - Mejora la deliverability y la reputación de tus correos
 
 ### Notas importantes:
 

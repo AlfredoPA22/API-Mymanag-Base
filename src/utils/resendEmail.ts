@@ -28,8 +28,18 @@ export const sendEmailWithResend = async (
     throw new Error("RESEND_API_KEY no está configurada");
   }
 
-  // Usar el dominio de prueba de Resend por defecto, o el configurado
+  // Usar el dominio configurado o el de prueba (solo para desarrollo)
   const fromEmail = from || process.env.EMAIL_FROM || "onboarding@resend.dev";
+  
+  // Advertencia si se usa el dominio de prueba en producción
+  if (!process.env.EMAIL_FROM && !from && (process.env.RENDER || process.env.VERCEL || process.env.FLY)) {
+    console.warn(
+      "⚠️ Estás usando el dominio de prueba de Resend. Solo podrás enviar a tu propia dirección de correo."
+    );
+    console.warn(
+      "💡 Para enviar a cualquier destinatario, verifica un dominio en https://resend.com/domains y configura EMAIL_FROM"
+    );
+  }
 
   const { data, error } = await resend.emails.send({
     from: fromEmail,
@@ -39,7 +49,15 @@ export const sendEmailWithResend = async (
   });
 
   if (error) {
-    throw new Error(`Error al enviar correo con Resend: ${error.message}`);
+    // Mensaje de error más descriptivo
+    let errorMessage = `Error al enviar correo con Resend: ${error.message}`;
+    
+    // Si el error es sobre dominio no verificado, dar instrucciones
+    if (error.message.includes("testing emails") || error.message.includes("verify a domain")) {
+      errorMessage += "\n\n💡 Solución: Verifica un dominio en https://resend.com/domains y configura EMAIL_FROM con ese dominio.";
+    }
+    
+    throw new Error(errorMessage);
   }
 
   if (!data?.id) {
