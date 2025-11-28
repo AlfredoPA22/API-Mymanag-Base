@@ -32,9 +32,10 @@ export const sendExpirationWarningEmail = async (
       html: htmlContent,
     });
 
+    const messageId = "messageId" in info ? info.messageId : info.id;
     console.log("✅ Correo de advertencia de expiración enviado:", {
       to,
-      messageId: info.messageId,
+      messageId,
       companyName,
       expirationDate: formattedDate,
     });

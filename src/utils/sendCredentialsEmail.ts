@@ -35,9 +35,10 @@ export const sendCredentialsEmail = async ({
       html: htmlContent,
     });
 
+    const messageId = "messageId" in info ? info.messageId : info.id;
     console.log("✅ Correo de credenciales enviado:", {
       to,
-      messageId: info.messageId,
+      messageId,
       company_name,
       user_name,
     });

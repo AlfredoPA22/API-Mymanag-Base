@@ -1,13 +1,59 @@
 import nodemailer from "nodemailer";
 import { Transporter, SentMessageInfo } from "nodemailer";
+import { getResendInstance, sendEmailWithResend } from "./resendEmail";
 
 let transporterInstance: Transporter | null = null;
 
+// Determinar qué servicio de correo usar
+const shouldUseResend = (): boolean => {
+  // Usar Resend si está configurado y estamos en un entorno serverless
+  const isServerless = !!(process.env.VERCEL || process.env.RENDER || process.env.FLY);
+  return !!(process.env.RESEND_API_KEY && isServerless);
+};
+
+// Tipo de retorno unificado para ambos servicios
+type EmailResult = SentMessageInfo | { id: string; messageId?: string };
+
 // Función helper para enviar correos con reintentos
+// Usa Resend si está configurado, sino usa Gmail con nodemailer
 export const sendEmailWithRetry = async (
   mailOptions: nodemailer.SendMailOptions,
   maxRetries: number = 2
-): Promise<SentMessageInfo> => {
+): Promise<EmailResult> => {
+  // Si Resend está configurado, usarlo directamente (no necesita reintentos)
+  if (shouldUseResend()) {
+    try {
+      // Extraer dirección de correo del formato de nodemailer
+      let toEmail = "";
+      if (typeof mailOptions.to === "string") {
+        toEmail = mailOptions.to;
+      } else if (Array.isArray(mailOptions.to) && mailOptions.to.length > 0) {
+        const firstTo = mailOptions.to[0];
+        toEmail = typeof firstTo === "string" ? firstTo : firstTo.address || "";
+      } else if (mailOptions.to && typeof mailOptions.to === "object" && "address" in mailOptions.to) {
+        toEmail = mailOptions.to.address;
+      }
+      
+      if (!toEmail) {
+        throw new Error("Dirección de correo no proporcionada");
+      }
+
+      const result = await sendEmailWithResend(
+        toEmail,
+        mailOptions.subject || "",
+        (typeof mailOptions.html === "string" ? mailOptions.html : "") || "",
+        typeof mailOptions.from === "string" ? mailOptions.from : undefined
+      );
+
+      console.log("✅ Correo enviado con Resend:", { to: toEmail, id: result.id });
+      return result;
+    } catch (error) {
+      console.error("❌ Error al enviar correo con Resend:", error);
+      throw error;
+    }
+  }
+
+  // Si no está Resend, usar Gmail con nodemailer y reintentos
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -31,7 +77,7 @@ export const sendEmailWithRetry = async (
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       console.warn(
-        `⚠️ Intento ${attempt}/${maxRetries} falló al enviar correo:`,
+        `⚠️ Intento ${attempt}/${maxRetries} falló al enviar correo con Gmail:`,
         lastError.message
       );
 
@@ -109,6 +155,19 @@ export const getEmailTransporter = (): Transporter => {
 
 // Función para verificar la conexión con reintentos
 export const verifyEmailConnection = async (): Promise<boolean> => {
+  // Si Resend está configurado, solo verificar que la API key existe
+  if (shouldUseResend()) {
+    const resend = getResendInstance();
+    if (resend) {
+      console.log("✅ Resend configurado correctamente");
+      return true;
+    } else {
+      console.error("❌ RESEND_API_KEY no está configurada");
+      return false;
+    }
+  }
+
+  // Si no está Resend, verificar conexión Gmail
   const maxRetries = 2;
   let lastError: Error | null = null;
 
@@ -126,7 +185,7 @@ export const verifyEmailConnection = async (): Promise<boolean> => {
         ),
       ]);
 
-      console.log("✅ Conexión con el servidor de correo verificada");
+      console.log("✅ Conexión con el servidor de correo Gmail verificada");
       return true;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -144,7 +203,7 @@ export const verifyEmailConnection = async (): Promise<boolean> => {
 
   console.error("❌ Error al verificar conexión de correo después de todos los intentos:", lastError);
   console.warn(
-    "⚠️ Los correos pueden no enviarse. Verifica que los puertos SMTP no estén bloqueados en tu plataforma de hosting."
+    "⚠️ Los correos pueden no enviarse. Considera usar Resend (RESEND_API_KEY) para entornos serverless."
   );
   return false;
 };

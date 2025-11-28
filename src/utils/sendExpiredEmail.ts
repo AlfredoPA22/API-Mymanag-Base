@@ -28,9 +28,10 @@ export const sendExpiredEmail = async (to: string, companyName: string) => {
       html: htmlContent,
     });
 
+    const messageId = "messageId" in info ? info.messageId : info.id;
     console.log("✅ Correo de plan expirado enviado:", {
       to,
-      messageId: info.messageId,
+      messageId,
       companyName,
     });
 

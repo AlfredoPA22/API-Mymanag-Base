@@ -36,9 +36,10 @@ export const sendWelcomeEmail = async ({
       html: htmlContent,
     });
 
+    const messageId = "messageId" in info ? info.messageId : info.id;
     console.log("✅ Correo de bienvenida enviado:", {
       to,
-      messageId: info.messageId,
+      messageId,
       company_name,
     });
 

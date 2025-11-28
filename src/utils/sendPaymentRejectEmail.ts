@@ -56,9 +56,10 @@ export const sendPaymentRejectedEmail = async ({
       html: htmlContent,
     });
 
+    const messageId = "messageId" in info ? info.messageId : info.id;
     console.log("✅ Correo de rechazo de pago enviado:", {
       to,
-      messageId: info.messageId,
+      messageId,
       paymentId: payment._id,
       company_name: payment.company.name,
     });
