@@ -3,37 +3,39 @@ Proyecto de administracion con seriales
 
 ## Configuración de Correo Electrónico
 
-Este proyecto soporta dos métodos para enviar correos electrónicos:
+Este proyecto usa **Resend** para el envío de correos electrónicos. Resend es ideal para entornos serverless como Render, Vercel o Fly.io ya que no requiere conexiones SMTP.
 
-### Opción 1: Resend (Recomendado para producción/serverless)
+### Pasos para configurar:
 
-Resend es ideal para entornos serverless como Render, Vercel o Fly.io ya que no requiere conexiones SMTP.
+1. **Crea una cuenta en [Resend](https://resend.com)**
+   - Plan gratuito: 3,000 correos/mes
+   - Sin necesidad de configurar SMTP
 
-**Pasos para configurar:**
+2. **Obtén tu API Key**
+   - Ve al dashboard de Resend
+   - Copia tu API Key (empieza con `re_`)
 
-1. Crea una cuenta en [Resend](https://resend.com) (gratis hasta 3,000 correos/mes)
-2. Obtén tu API Key desde el dashboard
-3. Configura un dominio (o usa el dominio de prueba)
-4. Agrega las siguientes variables de entorno:
+3. **Configura las variables de entorno**
 
-```env
-RESEND_API_KEY=re_xxxxxxxxxxxxx
-EMAIL_FROM=Inventasys <noreply@tudominio.com>  # Opcional, usa el dominio configurado
-```
+   **Requerido:**
+   ```env
+   RESEND_API_KEY=re_xxxxxxxxxxxxx
+   ```
 
-**Nota:** El sistema detectará automáticamente si estás en un entorno serverless (Render/Vercel/Fly) y usará Resend si `RESEND_API_KEY` está configurada.
+   **Opcional (para personalizar el remitente):**
+   ```env
+   EMAIL_FROM=Inventasys <noreply@tudominio.com>
+   ```
+   
+   Si no configuras `EMAIL_FROM`, se usará el dominio de prueba de Resend: `onboarding@resend.dev`
 
-### Opción 2: Gmail SMTP (Para desarrollo local)
+4. **Configura un dominio (opcional pero recomendado)**
+   - En el dashboard de Resend, puedes configurar tu propio dominio
+   - Esto mejora la deliverability de los correos
+   - Una vez configurado, actualiza `EMAIL_FROM` con tu dominio
 
-Para desarrollo local, puedes usar Gmail con SMTP:
+### Notas importantes:
 
-1. Habilita la verificación en 2 pasos en tu cuenta de Google
-2. Genera una "Contraseña de aplicación" desde [Google Account Security](https://myaccount.google.com/apppasswords)
-3. Agrega las siguientes variables de entorno:
-
-```env
-EMAIL_USER=tu-email@gmail.com
-EMAIL_PASS=tu-contraseña-de-aplicación
-```
-
-**Importante:** Render bloquea los puertos SMTP en su plan gratuito, por lo que Gmail SMTP no funcionará en producción en Render. Usa Resend para producción.
+- **Render/Vercel/Fly.io**: Resend funciona perfectamente en estos entornos sin problemas de puertos bloqueados
+- **Desarrollo local**: Resend también funciona en local, solo necesitas la API Key
+- **Dominio de prueba**: Puedes usar `onboarding@resend.dev` para pruebas sin configurar un dominio propio

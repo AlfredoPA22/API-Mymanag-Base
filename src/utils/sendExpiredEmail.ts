@@ -22,7 +22,6 @@ export const sendExpiredEmail = async (to: string, companyName: string) => {
   `;
 
     const info = await sendEmailWithRetry({
-      from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "❌ Plan expirado - Inventasys",
       html: htmlContent,

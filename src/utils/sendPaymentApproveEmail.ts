@@ -48,7 +48,6 @@ export const sendPaymentApproveEmail = async ({
   `;
 
     const info = await sendEmailWithRetry({
-      from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "✅ Confirmación de pago aprobado - Inventasys",
       html: htmlContent,

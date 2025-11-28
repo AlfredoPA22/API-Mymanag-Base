@@ -50,7 +50,6 @@ export const sendPaymentRejectedEmail = async ({
 `;
 
     const info = await sendEmailWithRetry({
-      from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "❌ Pago rechazado - Inventasys",
       html: htmlContent,

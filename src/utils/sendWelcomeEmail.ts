@@ -30,7 +30,6 @@ export const sendWelcomeEmail = async ({
   `;
 
     const info = await sendEmailWithRetry({
-      from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "¡Bienvenido a Inventasys!",
       html: htmlContent,

@@ -28,7 +28,8 @@ export const sendEmailWithResend = async (
     throw new Error("RESEND_API_KEY no está configurada");
   }
 
-  const fromEmail = from || process.env.EMAIL_FROM || `Inventasys <noreply@${process.env.RESEND_DOMAIN || "inventasys.com"}>`;
+  // Usar el dominio de prueba de Resend por defecto, o el configurado
+  const fromEmail = from || process.env.EMAIL_FROM || "onboarding@resend.dev";
 
   const { data, error } = await resend.emails.send({
     from: fromEmail,

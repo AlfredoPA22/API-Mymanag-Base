@@ -26,7 +26,6 @@ export const sendExpirationWarningEmail = async (
   `;
 
     const info = await sendEmailWithRetry({
-      from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "⚠️ Tu plan vence pronto - Inventasys",
       html: htmlContent,

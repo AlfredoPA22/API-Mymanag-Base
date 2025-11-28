@@ -29,7 +29,6 @@ export const sendCredentialsEmail = async ({
   `;
 
     const info = await sendEmailWithRetry({
-      from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "Tus credenciales de acceso - Inventasys",
       html: htmlContent,
