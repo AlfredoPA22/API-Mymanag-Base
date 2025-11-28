@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { getEmailTransporter } from "./emailTransporter";
+import { sendEmailWithRetry } from "./emailTransporter";
 import { IPaymentLanding } from "../interfaces/paymentLanding.interface";
 
 interface SendPaymentRejectedParams {
@@ -16,7 +16,6 @@ export const sendPaymentRejectedEmail = async ({
   reason,
 }: SendPaymentRejectedParams) => {
   try {
-    const transporter = getEmailTransporter();
 
   const formattedDate = format(new Date(payment.paid_at), "dd/MM/yyyy");
 
@@ -50,7 +49,7 @@ export const sendPaymentRejectedEmail = async ({
   </div>
 `;
 
-    const info = await transporter.sendMail({
+    const info = await sendEmailWithRetry({
       from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "❌ Pago rechazado - Inventasys",

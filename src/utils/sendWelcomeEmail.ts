@@ -1,4 +1,4 @@
-import { getEmailTransporter } from "./emailTransporter";
+import { sendEmailWithRetry } from "./emailTransporter";
 
 interface SendWelcomeEmailParams {
   to: string;
@@ -12,8 +12,6 @@ export const sendWelcomeEmail = async ({
   plan,
 }: SendWelcomeEmailParams) => {
   try {
-    const transporter = getEmailTransporter();
-
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
       <h2 style="color: #1d4ed8;">¡Bienvenido a Inventasys!</h2>
@@ -31,7 +29,7 @@ export const sendWelcomeEmail = async ({
     </div>
   `;
 
-    const info = await transporter.sendMail({
+    const info = await sendEmailWithRetry({
       from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "¡Bienvenido a Inventasys!",

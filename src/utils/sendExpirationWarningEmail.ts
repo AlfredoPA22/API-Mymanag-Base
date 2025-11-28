@@ -1,4 +1,4 @@
-import { getEmailTransporter } from "./emailTransporter";
+import { sendEmailWithRetry } from "./emailTransporter";
 import { format } from "date-fns";
 
 export const sendExpirationWarningEmail = async (
@@ -8,7 +8,6 @@ export const sendExpirationWarningEmail = async (
 ) => {
   try {
     const formattedDate = format(expirationDate, "dd/MM/yyyy");
-    const transporter = getEmailTransporter();
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -26,7 +25,7 @@ export const sendExpirationWarningEmail = async (
     </div>
   `;
 
-    const info = await transporter.sendMail({
+    const info = await sendEmailWithRetry({
       from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "⚠️ Tu plan vence pronto - Inventasys",

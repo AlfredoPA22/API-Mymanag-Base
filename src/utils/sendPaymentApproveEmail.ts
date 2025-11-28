@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { getEmailTransporter } from "./emailTransporter";
+import { sendEmailWithRetry } from "./emailTransporter";
 import { IPaymentLanding } from "../interfaces/paymentLanding.interface";
 
 interface SendPaymentApproveParams {
@@ -14,7 +14,6 @@ export const sendPaymentApproveEmail = async ({
   payment,
 }: SendPaymentApproveParams) => {
   try {
-    const transporter = getEmailTransporter();
 
   const formattedDate = format(new Date(payment.paid_at), "dd/MM/yyyy");
 
@@ -48,7 +47,7 @@ export const sendPaymentApproveEmail = async ({
     </div>
   `;
 
-    const info = await transporter.sendMail({
+    const info = await sendEmailWithRetry({
       from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "✅ Confirmación de pago aprobado - Inventasys",

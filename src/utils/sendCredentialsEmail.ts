@@ -1,4 +1,4 @@
-import { getEmailTransporter } from "./emailTransporter";
+import { sendEmailWithRetry } from "./emailTransporter";
 
 interface SendCredentialsParams {
   to: string;
@@ -14,8 +14,6 @@ export const sendCredentialsEmail = async ({
   company_name,
 }: SendCredentialsParams) => {
   try {
-    const transporter = getEmailTransporter();
-
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
       <h2 style="color: #1d4ed8;">Bienvenido ${company_name}</h2>
@@ -30,7 +28,7 @@ export const sendCredentialsEmail = async ({
     </div>
   `;
 
-    const info = await transporter.sendMail({
+    const info = await sendEmailWithRetry({
       from: `Inventasys <${process.env.EMAIL_USER}>`,
       to,
       subject: "Tus credenciales de acceso - Inventasys",
