@@ -12,6 +12,7 @@ import { Role } from "../role/role.model";
 import { PERMISSIONS_MOCK } from "../permission/utils/permissionsMock";
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { sendCredentialsEmail } from "../../utils/sendCredentialsEmail";
+import { sendWelcomeEmail } from "../../utils/sendWelcomeEmail";
 import { UserLanding } from "../user_landing/user_landing.model";
 import { userLandingType } from "../../utils/enums/userLandingType.enum";
 
@@ -120,6 +121,13 @@ export const create = async (
     status,
     trial_expires_at,
     created_by: userId,
+  });
+
+  // Enviar correo de bienvenida al crear cualquier empresa
+  await sendWelcomeEmail({
+    to: userInfo.email,
+    company_name: newCompany.name,
+    plan: newCompany.plan,
   });
 
   if (isFreePlan) {
