@@ -4,7 +4,7 @@ const productTransferDetailSchema = new mongoose.Schema(
   {
     product_transfer: {
       type: MongooseSchema.Types.ObjectId,
-      ref: "transfer_order",
+      ref: "product_transfer",
       required: true,
     },
     product: {

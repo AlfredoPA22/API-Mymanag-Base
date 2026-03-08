@@ -15,7 +15,7 @@ export const providerResolver = {
         "LIST_AND_CREATE_PURCHASE",
         "PURCHASE_ORDER_REPORT",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId);
     },
@@ -27,21 +27,21 @@ export const providerResolver = {
         "LIST_AND_CREATE_PROVIDER",
         "LIST_AND_CREATE_PURCHASE",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await create(context.user.companyId, args.providerInput);
     },
     async deleteProvider(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_PROVIDER"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteProvider(context.user.companyId, args.providerId);
     },
     async updateProvider(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_PROVIDER"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await update(
         context.user.companyId,

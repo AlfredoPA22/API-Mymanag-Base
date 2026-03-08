@@ -15,7 +15,7 @@ export const brandResolver = {
         "LIST_AND_CREATE_PRODUCT",
         "PRODUCT_REPORT",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId);
     },
@@ -24,21 +24,21 @@ export const brandResolver = {
     async createBrand(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_BRAND", "LIST_AND_CREATE_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await create(context.user.companyId, args.brandInput);
     },
     async deleteBrand(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_BRAND"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteBrand(context.user.companyId, args.brandId);
     },
     async updateBrand(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_BRAND"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await update(
         context.user.companyId,

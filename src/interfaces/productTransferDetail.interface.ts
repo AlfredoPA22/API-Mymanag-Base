@@ -14,5 +14,9 @@ export interface ProductTransferDetailInput {
   product_transfer: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   product: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   quantity: number;
-  serials: string[];
+}
+
+export interface AddSerialToTransferDetailInput {
+  product_transfer_detail: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  serial: string;
 }

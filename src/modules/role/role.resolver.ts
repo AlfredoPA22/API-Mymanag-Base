@@ -5,6 +5,7 @@ import {
   deleteRole,
   findAll,
   listPermissionsByRole,
+  updateRolePermissions,
 } from "./role.service";
 
 export const roleResolver = {
@@ -16,7 +17,7 @@ export const roleResolver = {
     ): Promise<IRole[]> {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId);
     },
@@ -28,7 +29,7 @@ export const roleResolver = {
     ): Promise<[]> {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await listPermissionsByRole(context.user.companyId, args.roleId);
     },
@@ -37,14 +38,29 @@ export const roleResolver = {
     async createRole(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await create(context.user.companyId, args.roleInput);
+    },
+    async updateRolePermissions(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IRole> {
+      const roleName = context.user.role;
+      const permission = ["USER_AND_ROLE"];
+      await hasPermission(roleName, permission, context.user.companyId);
+
+      return await updateRolePermissions(
+        context.user.companyId,
+        args.roleId,
+        args.permissions
+      );
     },
     async deleteRole(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteRole(context.user.companyId, args.roleId);
     },

@@ -37,7 +37,7 @@ export const productResolver = {
         "EDIT_SALE",
         "EDIT_PURCHASE",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId);
     },
@@ -49,7 +49,7 @@ export const productResolver = {
     ): Promise<IProduct[]> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await listLowStockProduct(context.user.companyId);
     },
@@ -66,7 +66,7 @@ export const productResolver = {
         "LIST_AND_CREATE_CATEGORY",
         "LIST_AND_CREATE_WAREHOUSE",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAllWithParams(
         context.user.companyId,
@@ -83,7 +83,7 @@ export const productResolver = {
     ): Promise<IProduct> {
       const roleName = context.user.role;
       const permission = ["FIND_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findProduct(context.user.companyId, args.productId);
     },
@@ -99,7 +99,7 @@ export const productResolver = {
         "EDIT_PURCHASE",
         "DETAIL_PURCHASE",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await listProductSerialByPurchaseOrder(
         context.user.companyId,
@@ -114,7 +114,7 @@ export const productResolver = {
     ): Promise<IProductSerial[]> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE", "DETAIL_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await listProductSerialBySaleOrder(
         context.user.companyId,
@@ -129,7 +129,7 @@ export const productResolver = {
     ): Promise<IProductSerial[]> {
       const roleName = context.user.role;
       const permission = ["LIST_PRODUCT_SERIAL_BY_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await listProductSerialByProduct(
         context.user.companyId,
@@ -144,7 +144,7 @@ export const productResolver = {
     ): Promise<IProductInventory[]> {
       const roleName = context.user.role;
       const permission = ["LIST_PRODUCT_INVENTORY_BY_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await listProductInventoryByProduct(
         context.user.companyId,
@@ -159,7 +159,7 @@ export const productResolver = {
     ): Promise<IProduct> {
       const roleName = context.user.role;
       const permission = ["SEARCH_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await searchProduct(context.user.companyId, args.serial);
     },
@@ -171,7 +171,7 @@ export const productResolver = {
     ): Promise<IGeneralData> {
       const roleName = context.user.role;
       const permission = ["GENERAL_DATA"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await generalData(context.user.companyId, context.user.id);
     },
@@ -183,7 +183,7 @@ export const productResolver = {
     ): Promise<IProduct[]> {
       const roleName = context.user.role;
       const permission = ["PRODUCT_REPORT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await productReport(
         context.user.companyId,
@@ -195,21 +195,21 @@ export const productResolver = {
     async createProduct(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await createProduct(context.user.companyId, args.productInput);
     },
     async deleteProduct(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteProduct(context.user.companyId, args.productId);
     },
     async updateProduct(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await update(
         context.user.companyId,
@@ -221,7 +221,7 @@ export const productResolver = {
     async saveImportProducts(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_PRODUCT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await saveImportProducts(
         context.user.companyId,

@@ -19,7 +19,7 @@ export const userResolver = {
     ): Promise<IUser[]> {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId);
     },
@@ -34,14 +34,14 @@ export const userResolver = {
     async switchUserState(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await switchUserState(context.user.companyId, args.userId);
     },
     async updateUser(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await update(
         context.user.companyId,
@@ -52,7 +52,7 @@ export const userResolver = {
     async changePassword(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await changePassword(
         context.user.companyId,
@@ -63,7 +63,7 @@ export const userResolver = {
     async deleteUser(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteUser(context.user.companyId, args.userId);
     },

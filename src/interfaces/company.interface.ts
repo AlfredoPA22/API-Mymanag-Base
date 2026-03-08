@@ -35,3 +35,14 @@ export interface CompanyInput {
   plan?: string;
   currency: string;
 }
+
+export interface UpdateCompanyInput {
+  legal_name?: string;
+  nit?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  country?: string;
+  image?: string;
+  currency?: string;
+}

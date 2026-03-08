@@ -3,6 +3,7 @@ import {
   CompanyInput,
   ICompany,
   ICompanyWithPayment,
+  UpdateCompanyInput,
 } from "../../interfaces/company.interface";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { companyStatus } from "../../utils/enums/companyStatus.enum";
@@ -220,4 +221,31 @@ export const detailCompany = async (
   }
 
   return company;
+};
+
+export const update = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  updateCompanyInput: UpdateCompanyInput
+): Promise<ICompany> => {
+  const company = await Company.findById(companyId);
+
+  if (!company) {
+    throw new Error("No existe la empresa");
+  }
+
+  // Filter out null/undefined but keep empty string "" so fields like image can be cleared
+  const updateData: Partial<UpdateCompanyInput> = {};
+  for (const [key, value] of Object.entries(updateCompanyInput)) {
+    if (value !== null && value !== undefined) {
+      (updateData as any)[key] = value;
+    }
+  }
+
+  const updated = await Company.findByIdAndUpdate(
+    companyId,
+    { $set: updateData },
+    { new: true }
+  ).lean<ICompany>();
+
+  return updated!;
 };

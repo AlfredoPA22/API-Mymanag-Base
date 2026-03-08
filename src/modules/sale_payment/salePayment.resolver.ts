@@ -20,7 +20,7 @@ export const salePaymentResolver = {
     ): Promise<ISalePayment[]> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_PAYMENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId, context.user.id);
     },
@@ -32,7 +32,7 @@ export const salePaymentResolver = {
     ): Promise<ISalePayment[]> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_PAYMENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await listSalePaymentBySaleOrder(
         context.user.companyId,
@@ -48,7 +48,7 @@ export const salePaymentResolver = {
     ): Promise<IDetailSalePaymentBySaleOrder> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_PAYMENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await detailSalePaymentBySaleOrder(
         context.user.companyId,
@@ -60,7 +60,7 @@ export const salePaymentResolver = {
     async createSalePayment(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_PAYMENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await createPayment(
         context.user.companyId,
@@ -72,7 +72,7 @@ export const salePaymentResolver = {
     async deleteSalePayment(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_PAYMENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteSalePayment(
         context.user.companyId,

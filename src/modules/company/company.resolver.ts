@@ -7,7 +7,9 @@ import {
   detailCompany,
   findAll,
   findAllAdmin,
+  update,
 } from "./company.service";
+import { hasPermission } from "../../utils/hasPermission";
 
 export const companyResolver = {
   Query: {
@@ -38,6 +40,13 @@ export const companyResolver = {
   Mutation: {
     async createCompany(_: any, args: Record<string, any>, context: any) {
       return await create(context.user.id, args.companyInput);
+    },
+    async updateCompany(_: any, args: Record<string, any>, context: any): Promise<ICompany> {
+      const roleName = context.user.role;
+      const permission = ["UPDATE_COMPANY"];
+      await hasPermission(roleName, permission, context.user.companyId);
+
+      return await update(context.user.companyId, args.updateCompanyInput);
     },
   },
 };

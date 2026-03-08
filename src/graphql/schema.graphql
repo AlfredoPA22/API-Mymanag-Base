@@ -45,6 +45,17 @@ input CompanyInput {
   currency: String!
 }
 
+input UpdateCompanyInput {
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  image: String
+  currency: String
+}
+
 type Warehouse {
   _id: ID!
   name: String
@@ -309,6 +320,11 @@ input ProductTransferDetailInput {
   product_transfer: String!
   product: String!
   quantity: Int!
+}
+
+input AddSerialToTransferDetailInput {
+  product_transfer_detail: String!
+  serial: String!
 }
 
 type ProductSerial {
@@ -629,6 +645,10 @@ type Query {
   findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
   listPurchaseOrderByProduct(productId: ID!): [PurchaseOrderByProduct]
 
+  listProductTransfer: [ProductTransfer]
+  findProductTransfer(transferId: String!): ProductTransfer
+  listProductTransferDetail(transferId: String!): [ProductTransferDetail]
+
   generateCode(type: String!): String
 
   listPaymentLandingByCompany(companyId: String!): [PaymentLanding]
@@ -636,10 +656,12 @@ type Query {
 
 type Mutation {
   createCompany(companyInput: CompanyInput!): CompanyOutput
+  updateCompany(updateCompanyInput: UpdateCompanyInput!): Company
 
   createPermission(permissionInput: PermissionInput!): Permission
 
   createRole(roleInput: RoleInput!): Role
+  updateRolePermissions(roleId: String!, permissions: [String!]!): Role
   deleteRole(roleId: String!): DeleteResponse
 
   createUser(userInput: UserInput!): User
@@ -733,6 +755,16 @@ type Mutation {
   createProductTransferDetail(
     productTransferDetailInput: ProductTransferDetailInput!
   ): ProductTransferDetail
+  addSerialToTransferDetail(
+    addSerialToTransferDetailInput: AddSerialToTransferDetailInput!
+  ): ProductSerial
+  removeSerialFromTransferDetail(
+    transferDetailId: String!
+    serial: String!
+  ): DeleteResponse
+  deleteProductFromTransfer(transferDetailId: String!): DeleteResponse
+  deleteProductTransfer(transferId: String!): DeleteResponse
+  approveProductTransfer(transferId: String!): ProductTransfer
 
   createPaymentLanding(
     paymentLandingInput: PaymentLandingInput!

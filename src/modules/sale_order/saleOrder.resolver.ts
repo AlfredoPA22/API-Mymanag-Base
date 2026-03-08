@@ -36,7 +36,7 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrder[]> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId, context.user.id);
     },
@@ -47,7 +47,7 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrderByProduct[]> {
       // const roleName = context.user.role;
       // const permission = ["LIST_AND_CREATE_SALE"];
-      // await hasPermission(roleName, permission);
+      // await hasPermission(roleName, permission, context.user.companyId);
 
       return await listSaleOrderByProduct(
         context.user.companyId,
@@ -62,7 +62,7 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrder> {
       const roleName = context.user.role;
       const permission = ["DETAIL_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findSaleOrder(context.user.companyId, args.saleOrderId);
     },
@@ -73,7 +73,7 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrderDetail[]> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "DETAIL_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findDetail(context.user.companyId, args.saleOrderId);
     },
@@ -84,7 +84,7 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrderToPDF> {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findSaleOrderToPDF(context.user.companyId, args.saleOrderId);
     },
@@ -96,7 +96,7 @@ export const saleOrderResolver = {
     ): Promise<ISalesReportByClient[]> {
       const roleName = context.user.role;
       const permission = ["REPORT_SALE_ORDER_BY_CLIENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await reportSaleOrderByClient(
         context.user.companyId,
@@ -111,7 +111,7 @@ export const saleOrderResolver = {
     ): Promise<ISalesReportByCategory[]> {
       const roleName = context.user.role;
       const permission = ["REPORT_SALE_ORDER_BY_CATEGORY"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await reportSaleOrderByCategory(
         context.user.companyId,
@@ -126,7 +126,7 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrder[]> {
       const roleName = context.user.role;
       const permission = ["REPORT_SALE_ORDER_BY_MONTH"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await reportSaleOrderByMonth(
         context.user.companyId,
@@ -140,7 +140,7 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrder[]> {
       const roleName = context.user.role;
       const permission = ["SALE_ORDER_REPORT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await saleOrderReport(
         context.user.companyId,
@@ -153,7 +153,7 @@ export const saleOrderResolver = {
     async createSaleOrder(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await create(
         context.user.companyId,
@@ -164,7 +164,7 @@ export const saleOrderResolver = {
     async deleteSaleOrder(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteSaleOrder(context.user.companyId, args.saleOrderId);
     },
@@ -175,7 +175,7 @@ export const saleOrderResolver = {
     ) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await createDetail(
         context.user.companyId,
@@ -189,7 +189,7 @@ export const saleOrderResolver = {
     ) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await updateSaleOrderDetail(
         context.user.companyId,
@@ -204,7 +204,7 @@ export const saleOrderResolver = {
     ) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteProductToOrder(
         context.user.companyId,
@@ -218,7 +218,7 @@ export const saleOrderResolver = {
     ) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await addSerialToOrder(
         context.user.companyId,
@@ -232,7 +232,7 @@ export const saleOrderResolver = {
     ) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteSerialToOrder(
         context.user.companyId,
@@ -242,7 +242,7 @@ export const saleOrderResolver = {
     async approveSaleOrder(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_SALE", "EDIT_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await approve(context.user.companyId, args.saleOrderId);
     },

@@ -60,6 +60,26 @@ export const create = async (
   return newRole;
 };
 
+export const updateRolePermissions = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  roleId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  permissions: string[]
+): Promise<IRole> => {
+  const role = await Role.findOne({ _id: roleId, company: companyId });
+
+  if (!role) {
+    throw new Error("Rol no encontrado");
+  }
+
+  const updated = await Role.findByIdAndUpdate(
+    roleId,
+    { $set: { permission: permissions } },
+    { new: true }
+  ).lean<IRole>();
+
+  return updated!;
+};
+
 export const deleteRole = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   roleId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId

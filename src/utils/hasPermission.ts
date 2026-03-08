@@ -2,9 +2,10 @@ import { Role } from "../modules/role/role.model";
 
 export const hasPermission = async (
   roleName: string,
-  permissionNames: string[]
+  permissionNames: string[],
+  companyId: any
 ): Promise<boolean> => {
-  const role = await Role.findOne({ name: roleName }).populate("permission");
+  const role = await Role.findOne({ name: roleName, company: companyId });
 
   if (!role) {
     throw new Error("Rol no encontrado.");

@@ -49,6 +49,7 @@ export const resolvers = {
     ...salePaymentResolver.Query,
     ...companyResolver.Query,
     ...paymentLandingResolver.Query,
+    ...ProductTransferResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,

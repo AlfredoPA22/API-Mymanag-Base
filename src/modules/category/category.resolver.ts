@@ -15,7 +15,7 @@ export const categoryResolver = {
         "LIST_AND_CREATE_PRODUCT",
         "PRODUCT_REPORT",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId);
     },
@@ -27,19 +27,19 @@ export const categoryResolver = {
         "LIST_AND_CREATE_CATEGORY",
         "LIST_AND_CREATE_PRODUCT",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
       return await create(context.user.companyId, args.categoryInput);
     },
     async deleteCategory(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_CATEGORY"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
       return await deleteCategory(context.user.companyId, args.categoryId);
     },
     async updateCategory(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_CATEGORY"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
       return await update(
         context.user.companyId,
         args.categoryId,

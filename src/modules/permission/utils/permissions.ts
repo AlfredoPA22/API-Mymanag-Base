@@ -276,4 +276,43 @@ export const PERMISSIONS_TREE: IPermission[] = [
     name: "Usuarios",
     value: "USER_AND_ROLE",
   },
+  {
+    label: "Empresa",
+    name: "Empresa",
+    value: "ALL_COMPANY",
+    children: [
+      {
+        label: "Actualizar empresa",
+        name: "updateCompany",
+        value: "UPDATE_COMPANY",
+      },
+    ],
+  },
+  {
+    label: "Transferencias",
+    name: "Transferencias",
+    value: "ALL_TRANSFERS",
+    children: [
+      {
+        label: "Listar y crear transferencias",
+        name: "Listar y crear transferencias",
+        value: "LIST_AND_CREATE_TRANSFER",
+      },
+      {
+        label: "Detalle de transferencia",
+        name: "Detalle de transferencia",
+        value: "DETAIL_TRANSFER",
+      },
+      {
+        label: "Editar transferencia",
+        name: "Editar transferencia",
+        value: "EDIT_TRANSFER",
+      },
+      {
+        label: "Eliminar transferencia",
+        name: "Eliminar transferencia",
+        value: "DELETE_TRANSFER",
+      },
+    ],
+  },
 ];

@@ -22,7 +22,7 @@ export const clientResolver = {
         "LIST_AND_CREATE_SALE",
         "SALE_ORDER_REPORT",
       ];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAll(context.user.companyId);
     },
@@ -33,7 +33,7 @@ export const clientResolver = {
     ): Promise<ISaleOrderByClient> {
       const roleName = context.user.role;
       const permission = ["LIST_SALE_ORDER_BY_CLIENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await findAllSaleOrderByClient(
         context.user.companyId,
@@ -46,21 +46,21 @@ export const clientResolver = {
     async createClient(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["LIST_AND_CREATE_CLIENT", "LIST_AND_CREATE_SALE"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await create(context.user.companyId, args.clientInput);
     },
     async deleteClient(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["DELETE_CLIENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await deleteClient(context.user.companyId, args.clientId);
     },
     async updateClient(_: any, args: Record<string, any>, context: any) {
       const roleName = context.user.role;
       const permission = ["UPDATE_CLIENT"];
-      await hasPermission(roleName, permission);
+      await hasPermission(roleName, permission, context.user.companyId);
 
       return await update(
         context.user.companyId,
