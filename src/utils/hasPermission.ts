@@ -1,23 +1,9 @@
-import { Role } from "../modules/role/role.model";
-
-export const hasPermission = async (
-  roleName: string,
-  permissionNames: string[],
-  companyId: any
-): Promise<boolean> => {
-  const role = await Role.findOne({ name: roleName, company: companyId });
-
-  if (!role) {
-    throw new Error("Rol no encontrado.");
-  }
-
-  const hasPermission = permissionNames.some((permission) =>
-    role.permission.includes(permission)
-  );
-
-  if (!hasPermission) {
-    throw new Error(`No tienes permisos para esta accion`);
-  }
-
-  return hasPermission;
-};
+/**
+ * DEPRECADO — mantenido solo como referencia.
+ * Usar checkAbility() de ./ability.ts en su lugar.
+ *
+ * La función anterior hacía una query a la DB por cada resolver.
+ * Ahora los permisos se leen directamente del JWT (context.user.permissions)
+ * y se evalúan con CASL sin tocar la base de datos.
+ */
+export {};

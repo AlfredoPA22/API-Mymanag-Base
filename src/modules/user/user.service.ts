@@ -237,8 +237,6 @@ export const changePassword = async (
     throw new Error("La contraseña actual es incorrecta");
   }
 
-  console.log(changePasswordInput);
-
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(
     changePasswordInput.newPassword,

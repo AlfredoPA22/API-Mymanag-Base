@@ -3,6 +3,7 @@ import { expressMiddleware } from "@apollo/server/express4";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import jwt from "jsonwebtoken";
 import { Types as MongooseTypes } from "mongoose";
 import multer from "multer";
@@ -10,12 +11,12 @@ import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
 import { previewImportProducts } from "./modules/product/product.service";
-import { verifyEmailConnection, sendEmailWithRetry } from "./utils/emailTransporter";
+import { verifyEmailConnection } from "./utils/emailTransporter";
+import { buildAbility } from "./utils/ability";
 
 dotenv.config();
 const app = express();
 
-// const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 const allowedOrigins = [
   "https://mymanag.vercel.app",
   "https://www.inventasys.site",
@@ -46,17 +47,48 @@ const corsOptions = {
   ],
 };
 
+// Rate limiting para login: máx 10 intentos por IP cada 15 minutos
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: "Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const port = process.env.PORT || 3000;
+
+// Operaciones GraphQL públicas (no requieren token)
+const PUBLIC_OPERATIONS = new Set(["Login", "loginLanding"]);
+
+/**
+ * Detecta si el cuerpo del request es una operación pública.
+ * Usa operationName cuando está disponible; sino busca en el query.
+ * Más robusto que un simple string includes().
+ */
+function isPublicOperation(body: any): boolean {
+  if (body?.operationName && PUBLIC_OPERATIONS.has(body.operationName)) {
+    return true;
+  }
+  if (body?.query) {
+    // Fallback: parseo simple de la primera operación del query
+    const match = body.query.match(/^\s*(?:query|mutation)\s+(\w+)/);
+    if (match && PUBLIC_OPERATIONS.has(match[1])) {
+      return true;
+    }
+  }
+  return false;
+}
 
 const bootstrapServer = async () => {
   connectToMongoDB();
-  
-  // Verificar conexión de correo al iniciar (no bloquea el inicio si falla)
+
   verifyEmailConnection().catch((error) => {
     console.warn("⚠️ Advertencia: No se pudo verificar la conexión de correo al iniciar:", error);
   });
-  
+
   initCompanyExpirationCron();
+
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -71,19 +103,23 @@ const bootstrapServer = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Aplicar rate limiting solo a operaciones de login
+  app.use("/graphql", (req, res, next) => {
+    if (isPublicOperation(req.body)) {
+      return loginRateLimiter(req, res, next);
+    }
+    next();
+  });
+
   app.use(
     "/graphql",
     expressMiddleware(server, {
       context: async ({ req }) => {
-        const publicOperations = ["Login", "loginLanding"];
-        const query = req.body?.query || "";
-
-        if (query.includes("__schema")) {
+        if (req.body?.query?.includes("__schema")) {
           return {};
         }
 
-        const isPublic = publicOperations.some((op) => query.includes(op));
-        if (isPublic) {
+        if (isPublicOperation(req.body)) {
           return {};
         }
 
@@ -101,8 +137,10 @@ const bootstrapServer = async () => {
         }
 
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || "");
-          return { user: decoded };
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as any;
+          // Construir ability CASL una sola vez por request, sin query a DB
+          const ability = buildAbility(decoded.permissions ?? []);
+          return { user: decoded, ability };
         } catch (error) {
           throw new Error("No autorizado: Token inválido.");
         }
@@ -131,9 +169,14 @@ const bootstrapServer = async () => {
       : authHeader;
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as {
-        companyId: string;
-      };
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as any;
+
+      // Verificar permiso de importar productos
+      const ability = buildAbility(decoded.permissions ?? []);
+      if (!ability.can("create", "Product")) {
+        return res.status(403).json({ message: "No tienes permisos para importar productos" });
+      }
+
       const companyId = new MongooseTypes.ObjectId(decoded.companyId);
       if (!file) {
         return res.status(400).json({ message: "Archivo no proporcionado" });

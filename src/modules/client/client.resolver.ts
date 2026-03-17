@@ -7,7 +7,7 @@ import {
 } from "./client.service";
 import { IClient } from "../../interfaces/client.interface";
 import { ISaleOrderByClient } from "../../interfaces/saleOrder.interface";
-import { hasPermission } from "../../utils/hasPermission";
+import { checkAbility, checkAnyAbility } from "../../utils/ability";
 
 export const clientResolver = {
   Query: {
@@ -16,14 +16,11 @@ export const clientResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IClient[]> {
-      const roleName = context.user.role;
-      const permission = [
-        "LIST_AND_CREATE_CLIENT",
-        "LIST_AND_CREATE_SALE",
-        "SALE_ORDER_REPORT",
-      ];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["list", "Client"],
+        ["list", "Sale"],
+        ["read", "SaleReport"],
+      ]);
       return await findAll(context.user.companyId);
     },
     async listSaleOrderByClient(
@@ -31,10 +28,7 @@ export const clientResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<ISaleOrderByClient> {
-      const roleName = context.user.role;
-      const permission = ["LIST_SALE_ORDER_BY_CLIENT"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "listSaleOrders", "Client");
       return await findAllSaleOrderByClient(
         context.user.companyId,
         context.user.id,
@@ -44,24 +38,18 @@ export const clientResolver = {
   },
   Mutation: {
     async createClient(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_CLIENT", "LIST_AND_CREATE_SALE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Client"],
+        ["create", "Sale"],
+      ]);
       return await create(context.user.companyId, args.clientInput);
     },
     async deleteClient(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["DELETE_CLIENT"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "delete", "Client");
       return await deleteClient(context.user.companyId, args.clientId);
     },
     async updateClient(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["UPDATE_CLIENT"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "update", "Client");
       return await update(
         context.user.companyId,
         args.clientId,

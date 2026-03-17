@@ -9,7 +9,7 @@ import {
   findAllAdmin,
   update,
 } from "./company.service";
-import { hasPermission } from "../../utils/hasPermission";
+import { checkAbility } from "../../utils/ability";
 
 export const companyResolver = {
   Query: {
@@ -20,7 +20,6 @@ export const companyResolver = {
     ): Promise<ICompanyWithPayment[]> {
       return await findAll(context.user.id);
     },
-
     async listCompanyAdmin(
       _: any,
       args: Record<string, any>,
@@ -28,7 +27,6 @@ export const companyResolver = {
     ): Promise<ICompany[]> {
       return await findAllAdmin(context.user.id);
     },
-
     async detailCompany(
       _: any,
       args: Record<string, any>,
@@ -42,10 +40,7 @@ export const companyResolver = {
       return await create(context.user.id, args.companyInput);
     },
     async updateCompany(_: any, args: Record<string, any>, context: any): Promise<ICompany> {
-      const roleName = context.user.role;
-      const permission = ["UPDATE_COMPANY"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "update", "Company");
       return await update(context.user.companyId, args.updateCompanyInput);
     },
   },

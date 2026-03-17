@@ -4,7 +4,7 @@ import {
   IPurchaseOrderToPDF,
 } from "../../interfaces/purchaseOrder.interface";
 import { IPurchaseOrderDetail } from "../../interfaces/purchaseOrderDetail.interface";
-import { hasPermission } from "../../utils/hasPermission";
+import { checkAbility, checkAnyAbility } from "../../utils/ability";
 import {
   addSerialToOrder,
   approve,
@@ -29,84 +29,63 @@ export const purchaseOrderResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IPurchaseOrder[]> {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "list", "Purchase");
       return await findAll(context.user.companyId, context.user.id);
     },
-
     async listPurchaseOrderByProduct(
       _: any,
       args: Record<string, any>,
       context: any
     ): Promise<IPurchaseOrderByProduct[]> {
-      // const roleName = context.user.role;
-      // const permission = ["LIST_AND_CREATE_SALE"];
-      // await hasPermission(roleName, permission, context.user.companyId);
-
       return await listPurchaseOrderByProduct(
         context.user.companyId,
         context.user.id,
         args.productId
       );
     },
-
     async listPurchaseOrderDetail(
       _: any,
       args: Record<string, any>,
       context: any
     ): Promise<IPurchaseOrderDetail[]> {
-      const roleName = context.user.role;
-      const permission = [
-        "LIST_AND_CREATE_PURCHASE",
-        "DETAIL_PURCHASE",
-        "EDIT_PURCHASE",
-      ];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["list", "Purchase"],
+        ["read", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await findDetail(context.user.companyId, args.purchaseOrderId);
     },
-
     async findPurchaseOrder(
       _: any,
       args: Record<string, any>,
       context: any
     ): Promise<IPurchaseOrder> {
-      const roleName = context.user.role;
-      const permission = ["DETAIL_PURCHASE", "EDIT_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["read", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await findPurchaseOrder(
         context.user.companyId,
         args.purchaseOrderId
       );
     },
-
     async findPurchaseOrderToPDF(
       _: any,
       args: Record<string, any>,
       context: any
     ): Promise<IPurchaseOrderToPDF> {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "list", "Purchase");
       return await findPurchaseOrderToPDF(
         context.user.companyId,
         args.purchaseOrderId
       );
     },
-
     async purchaseOrderReport(
       _: any,
       args: Record<string, any>,
       context: any
     ): Promise<IPurchaseOrder[]> {
-      const roleName = context.user.role;
-      const permission = ["PURCHASE_ORDER_REPORT"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "read", "PurchaseReport");
       return await purchaseOrderReport(
         context.user.companyId,
         context.user.id,
@@ -116,10 +95,7 @@ export const purchaseOrderResolver = {
   },
   Mutation: {
     async createPurchaseOrder(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "create", "Purchase");
       return await create(
         context.user.companyId,
         context.user.id,
@@ -131,10 +107,10 @@ export const purchaseOrderResolver = {
       args: Record<string, any>,
       context: any
     ) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE", "EDIT_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await createDetail(
         context.user.companyId,
         args.purchaseOrderDetailInput
@@ -145,10 +121,10 @@ export const purchaseOrderResolver = {
       args: Record<string, any>,
       context: any
     ) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE", "EDIT_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await updatePurchaseOrderDetail(
         context.user.companyId,
         args.purchaseOrderDetailId,
@@ -160,10 +136,10 @@ export const purchaseOrderResolver = {
       args: Record<string, any>,
       context: any
     ) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE", "EDIT_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await addSerialToOrder(
         context.user.companyId,
         args.addSerialToPurchaseOrderDetailInput
@@ -174,10 +150,10 @@ export const purchaseOrderResolver = {
       args: Record<string, any>,
       context: any
     ) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE", "EDIT_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await deleteSerialToOrder(
         context.user.companyId,
         args.productSerialId
@@ -188,20 +164,17 @@ export const purchaseOrderResolver = {
       args: Record<string, any>,
       context: any
     ) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE", "EDIT_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await deleteProductToOrder(
         context.user.companyId,
         args.purchaseOrderDetailId
       );
     },
     async deletePurchaseOrder(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["DELETE_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "delete", "Purchase");
       return await deletePurchaseOrder(
         context.user.companyId,
         args.purchaseOrderId
@@ -212,10 +185,10 @@ export const purchaseOrderResolver = {
       args: Record<string, any>,
       context: any
     ) {
-      const roleName = context.user.role;
-      const permission = ["LIST_AND_CREATE_PURCHASE", "EDIT_PURCHASE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Purchase"],
+        ["update", "Purchase"],
+      ]);
       return await approve(context.user.companyId, args.purchaseOrderId);
     },
   },

@@ -1,5 +1,5 @@
 import { IUser } from "../../interfaces/user.interface";
-import { hasPermission } from "../../utils/hasPermission";
+import { checkAbility } from "../../utils/ability";
 import {
   changePassword,
   create,
@@ -17,32 +17,24 @@ export const userResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IUser[]> {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "User");
       return await findAll(context.user.companyId);
     },
   },
   Mutation: {
     async createUser(_: any, args: Record<string, any>, context: any) {
+      checkAbility(context.ability, "manage", "User");
       return await create(context.user.companyId, args.userInput);
     },
     async login(_: any, args: Record<string, any>) {
       return await login(args.loginInput);
     },
     async switchUserState(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "User");
       return await switchUserState(context.user.companyId, args.userId);
     },
     async updateUser(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "User");
       return await update(
         context.user.companyId,
         args.userId,
@@ -50,10 +42,7 @@ export const userResolver = {
       );
     },
     async changePassword(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "User");
       return await changePassword(
         context.user.companyId,
         args.userId,
@@ -61,10 +50,7 @@ export const userResolver = {
       );
     },
     async deleteUser(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "User");
       return await deleteUser(context.user.companyId, args.userId);
     },
   },

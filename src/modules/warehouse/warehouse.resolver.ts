@@ -1,5 +1,5 @@
 import { IWarehouse } from "../../interfaces/warehouse.interface";
-import { hasPermission } from "../../utils/hasPermission";
+import { checkAbility, checkAnyAbility } from "../../utils/ability";
 import { create, deleteWarehouse, findAll, update } from "./warehouse.service";
 
 export const warehouseResolver = {
@@ -9,41 +9,29 @@ export const warehouseResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IWarehouse[]> {
-      const roleName = context.user.role;
-      const permission = [
-        "LIST_AND_CREATE_WAREHOUSE",
-        "LIST_AND_CREATE_PURCHASE",
-        "LIST_AND_CREATE_SALE",
-      ];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["list", "Warehouse"],
+        ["list", "Purchase"],
+        ["list", "Sale"],
+      ]);
       return await findAll(context.user.companyId);
     },
   },
   Mutation: {
     async createWarehouse(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = [
-        "LIST_AND_CREATE_WAREHOUSE",
-        "LIST_AND_CREATE_PURCHASE",
-        "LIST_AND_CREATE_SALE",
-      ];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAnyAbility(context.ability, [
+        ["create", "Warehouse"],
+        ["create", "Purchase"],
+        ["create", "Sale"],
+      ]);
       return await create(context.user.companyId, args.warehouseInput);
     },
     async deleteWarehouse(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["DELETE_WAREHOUSE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "delete", "Warehouse");
       return await deleteWarehouse(context.user.companyId, args.warehouseId);
     },
     async updateWarehouse(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["UPDATE_WAREHOUSE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "update", "Warehouse");
       return await update(
         context.user.companyId,
         args.warehouseId,

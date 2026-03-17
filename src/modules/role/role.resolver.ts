@@ -1,5 +1,5 @@
 import { IRole } from "../../interfaces/role.interface";
-import { hasPermission } from "../../utils/hasPermission";
+import { checkAbility } from "../../utils/ability";
 import {
   create,
   deleteRole,
@@ -15,10 +15,7 @@ export const roleResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IRole[]> {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "Role");
       return await findAll(context.user.companyId);
     },
 
@@ -27,19 +24,13 @@ export const roleResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<[]> {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "Role");
       return await listPermissionsByRole(context.user.companyId, args.roleId);
     },
   },
   Mutation: {
     async createRole(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "Role");
       return await create(context.user.companyId, args.roleInput);
     },
     async updateRolePermissions(
@@ -47,10 +38,7 @@ export const roleResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IRole> {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "Role");
       return await updateRolePermissions(
         context.user.companyId,
         args.roleId,
@@ -58,10 +46,7 @@ export const roleResolver = {
       );
     },
     async deleteRole(_: any, args: Record<string, any>, context: any) {
-      const roleName = context.user.role;
-      const permission = ["USER_AND_ROLE"];
-      await hasPermission(roleName, permission, context.user.companyId);
-
+      checkAbility(context.ability, "manage", "Role");
       return await deleteRole(context.user.companyId, args.roleId);
     },
   },
