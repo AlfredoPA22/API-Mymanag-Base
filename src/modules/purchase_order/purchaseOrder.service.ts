@@ -364,14 +364,27 @@ export const createDetail = async (
   );
 
   if (newPurchaseOrderDetail.product.stock_type === stockType.INDIVIDUAL) {
-    await ProductInventory.create({
-      company: companyId,
-      product: createPurchaseOrderDetailInput.product,
-      warehouse: createPurchaseOrderDetailInput.warehouse,
-      purchase_order_detail: newPurchaseOrderDetail._id,
-      quantity: createPurchaseOrderDetailInput.quantity,
-      status: productInventoryStatus.BORRADOR,
-    });
+    try {
+      await ProductInventory.create({
+        company: companyId,
+        product: createPurchaseOrderDetailInput.product,
+        warehouse: createPurchaseOrderDetailInput.warehouse,
+        purchase_order_detail: newPurchaseOrderDetail._id,
+        quantity: createPurchaseOrderDetailInput.quantity,
+        status: productInventoryStatus.BORRADOR,
+      });
+    } catch (inventoryError) {
+      await PurchaseOrderDetail.deleteOne({
+        _id: newPurchaseOrderDetail._id,
+        company: companyId,
+      });
+      await PurchaseOrder.findOneAndUpdate(
+        { _id: createPurchaseOrderDetailInput.purchase_order, company: companyId },
+        { total: foundOrder.total },
+        { new: true }
+      );
+      throw new Error("Error al crear el inventario del producto. Se revirtió el detalle de la compra.");
+    }
   }
 
   const foundPurchaseOrderDetail = await PurchaseOrderDetail.findOne({
@@ -731,6 +744,31 @@ export const approve = async (
 
   if (hasSerialsInZero) {
     throw new Error("Faltan agregar seriales a la compra");
+  }
+
+  const individualDetails = foundDetail.filter(
+    (detail) => detail.product.stock_type === stockType.INDIVIDUAL
+  );
+
+  if (individualDetails.length > 0) {
+    const inventories = await ProductInventory.find({
+      company: companyId,
+      purchase_order_detail: { $in: individualDetails.map((d) => d._id) },
+    });
+
+    const inventoryDetailIds = new Set(
+      inventories.map((inv) => inv.purchase_order_detail?.toString())
+    );
+
+    const missingInventory = individualDetails.filter(
+      (detail) => !inventoryDetailIds.has(detail._id.toString())
+    );
+
+    if (missingInventory.length > 0) {
+      throw new Error(
+        `Faltan registros de inventario para ${missingInventory.length} producto(s) no serializados. La compra tiene datos inconsistentes y no puede aprobarse.`
+      );
+    }
   }
 
   await Promise.all(

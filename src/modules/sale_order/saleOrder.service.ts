@@ -397,25 +397,48 @@ export const createDetail = async (
         100
     ) / 100;
 
-  const newSaleOrderDetail = await (
-    await (
-      await SaleOrderDetail.create({
-        company: companyId,
-        ...createSaleOrderDetailInput,
-        subtotal,
-      })
-    ).populate("sale_order")
-  ).populate("product");
+  let newSaleOrderDetail;
+  try {
+    newSaleOrderDetail = await (
+      await (
+        await SaleOrderDetail.create({
+          company: companyId,
+          ...createSaleOrderDetailInput,
+          subtotal,
+        })
+      ).populate("sale_order")
+    ).populate("product");
 
-  const updatedTotal = parseFloat((foundOrder.total + subtotal).toFixed(2));
+    const updatedTotal = parseFloat((foundOrder.total + subtotal).toFixed(2));
 
-  await SaleOrder.findOneAndUpdate(
-    { _id: createSaleOrderDetailInput.sale_order, company: companyId },
-    {
-      total: updatedTotal,
-    },
-    { new: true }
-  );
+    await SaleOrder.findOneAndUpdate(
+      { _id: createSaleOrderDetailInput.sale_order, company: companyId },
+      {
+        total: updatedTotal,
+      },
+      { new: true }
+    );
+  } catch (createError) {
+    if (
+      foundProduct.stock_type === stockType.INDIVIDUAL &&
+      createSaleOrderDetailInput.inventory_usage
+    ) {
+      for (const usage of createSaleOrderDetailInput.inventory_usage as any[]) {
+        const productInventory = await ProductInventory.findOne({
+          company: companyId,
+          product: createSaleOrderDetailInput.product,
+          warehouse: usage.warehouse,
+          purchase_order_detail: usage.purchase_order_detail,
+        });
+        if (productInventory) {
+          productInventory.reserved -= usage.quantity;
+          productInventory.available += usage.quantity;
+          await productInventory.save();
+        }
+      }
+    }
+    throw new Error("Error al crear el detalle de venta. Se revirtió la reserva de inventario.");
+  }
 
   const foundSaleOrderDetail = await SaleOrderDetail.findOne({
     _id: newSaleOrderDetail._id,
@@ -775,6 +798,23 @@ export const deleteSaleOrder = async (
     // En estado borrador solo eliminamos los detalles de la orden y la orden de venta
     await Promise.all(
       foundSaleOrderDetails.map(async (detail) => {
+        // Restaurar inventory_usage reservado para productos INDIVIDUAL
+        if (detail.inventory_usage && Array.isArray(detail.inventory_usage) && detail.inventory_usage.length > 0) {
+          for (const usage of detail.inventory_usage as any[]) {
+            const productInventory = await ProductInventory.findOne({
+              company: companyId,
+              product: detail.product,
+              warehouse: usage.warehouse,
+              purchase_order_detail: usage.purchase_order_detail,
+            });
+            if (productInventory) {
+              productInventory.available += usage.quantity;
+              productInventory.reserved -= usage.quantity;
+              await productInventory.save();
+            }
+          }
+        }
+
         await ProductSerial.updateMany(
           {
             company: companyId,
@@ -867,22 +907,6 @@ export const approve = async (
       }
     }
   }
-
-  await Promise.all(
-    foundDetail.map(async (detail) => {
-      if (detail.product.stock_type === stockType.INDIVIDUAL) {
-        const product = await Product.findOne({
-          _id: detail.product._id,
-          company: companyId,
-        });
-        if (product && product.stock < detail.quantity) {
-          throw new Error(
-            `No hay suficiente stock para el producto ${product.name}. Solo quedan ${product.stock} unidades disponibles.`
-          );
-        }
-      }
-    })
-  );
 
   for (const detail of foundDetail) {
     const product = await Product.findOneAndUpdate(

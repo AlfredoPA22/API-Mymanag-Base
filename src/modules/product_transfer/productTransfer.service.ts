@@ -36,7 +36,7 @@ export const create = async (
     );
   }
 
-  const newProductTransfer = await await ProductTransfer.create({
+  const newProductTransfer = await ProductTransfer.create({
     company: companyId,
     code: await generate(companyId, codeType.PRODUCT_TRANSFER),
     date: createProductTransferInput.date,
@@ -110,12 +110,14 @@ export const createDetail = async (
     );
 
     if (totalAvailable < createProductTransferDetailInput.quantity) {
+      await ProductTransferDetail.deleteOne({ _id: newDetail._id, company: companyId });
       throw new Error(
         `Stock insuficiente en el almacén origen. Disponible: ${totalAvailable}`
       );
     }
 
     let remaining = createProductTransferDetailInput.quantity;
+    const modifiedInventories: { inv: any; qty: number }[] = [];
 
     for (const inv of inventories) {
       if (remaining <= 0) break;
@@ -125,19 +127,30 @@ export const createDetail = async (
       inv.reserved += transferQty;
 
       await inv.save();
+      modifiedInventories.push({ inv, qty: transferQty });
       remaining -= transferQty;
     }
 
     // Crear nuevo ProductInventory en almacén destino en estado BORRADOR
-    await ProductInventory.create({
-      company: companyId,
-      product: foundProduct._id,
-      warehouse: foundTransfer.destination_warehouse,
-      product_transfer_detail: newDetail._id,
-      quantity: createProductTransferDetailInput.quantity,
-      available: createProductTransferDetailInput.quantity,
-      status: productInventoryStatus.BORRADOR,
-    });
+    try {
+      await ProductInventory.create({
+        company: companyId,
+        product: foundProduct._id,
+        warehouse: foundTransfer.destination_warehouse,
+        product_transfer_detail: newDetail._id,
+        quantity: createProductTransferDetailInput.quantity,
+        available: createProductTransferDetailInput.quantity,
+        status: productInventoryStatus.BORRADOR,
+      });
+    } catch (inventoryError) {
+      for (const { inv, qty } of modifiedInventories) {
+        inv.available += qty;
+        inv.reserved -= qty;
+        await inv.save();
+      }
+      await ProductTransferDetail.deleteOne({ _id: newDetail._id, company: companyId });
+      throw new Error("Error al crear el inventario de destino. Se revirtieron los cambios.");
+    }
   } else if (foundProduct.stock_type === stockType.SERIALIZADO) {
     const availableSerials = await ProductSerial.countDocuments({
       company: companyId,
@@ -147,6 +160,7 @@ export const createDetail = async (
     });
 
     if (availableSerials < createProductTransferDetailInput.quantity) {
+      await ProductTransferDetail.deleteOne({ _id: newDetail._id, company: companyId });
       throw new Error(
         `Stock insuficiente en el almacén origen. Disponible: ${availableSerials}`
       );
@@ -291,10 +305,16 @@ export const addSerialToTransferDetail = async (
   foundSerial.status = productSerialStatus.RESERVADO;
   await foundSerial.save();
 
-  await ProductTransferDetail.updateOne(
-    { _id: foundDetail._id, company: companyId },
-    { $push: { serials: input.serial } }
-  );
+  try {
+    await ProductTransferDetail.updateOne(
+      { _id: foundDetail._id, company: companyId },
+      { $push: { serials: input.serial } }
+    );
+  } catch (updateError) {
+    foundSerial.status = productSerialStatus.DISPONIBLE;
+    await foundSerial.save();
+    throw new Error("Error al agregar el serial a la transferencia. Se revirtió el estado del serial.");
+  }
 
   return foundSerial;
 };
@@ -340,10 +360,16 @@ export const removeSerialFromTransferDetail = async (
   foundSerial.status = productSerialStatus.DISPONIBLE;
   await foundSerial.save();
 
-  await ProductTransferDetail.updateOne(
-    { _id: foundDetail._id, company: companyId },
-    { $pull: { serials: serial } }
-  );
+  try {
+    await ProductTransferDetail.updateOne(
+      { _id: foundDetail._id, company: companyId },
+      { $pull: { serials: serial } }
+    );
+  } catch (updateError) {
+    foundSerial.status = productSerialStatus.RESERVADO;
+    await foundSerial.save();
+    throw new Error("Error al quitar el serial de la transferencia. Se revirtió el estado del serial.");
+  }
 
   return { success: true };
 };
