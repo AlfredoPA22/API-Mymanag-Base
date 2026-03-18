@@ -4,6 +4,7 @@ import {
   ISaleOrderToPDF,
   ISalesReportByCategory,
   ISalesReportByClient,
+  ISalesReportBySeller,
 } from "../../interfaces/saleOrder.interface";
 import { ISaleOrderDetail } from "../../interfaces/saleOrderDetail.interface";
 import { checkAbility, checkAnyAbility } from "../../utils/ability";
@@ -22,6 +23,7 @@ import {
   listSaleOrderByProduct,
   reportSaleOrderByCategory,
   reportSaleOrderByClient,
+  reportSaleOrderBySeller,
   reportSaleOrderByMonth,
   saleOrderReport,
   updateSaleOrderDetail,
@@ -87,7 +89,22 @@ export const saleOrderResolver = {
       checkAbility(context.ability, "read", "ReportByClient");
       return await reportSaleOrderByClient(
         context.user.companyId,
-        context.user.id
+        context.user.id,
+        args.startDate,
+        args.endDate
+      );
+    },
+    async reportSaleOrderBySeller(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISalesReportBySeller[]> {
+      checkAbility(context.ability, "read", "ReportByClient");
+      return await reportSaleOrderBySeller(
+        context.user.companyId,
+        context.user.id,
+        args.startDate,
+        args.endDate
       );
     },
     async reportSaleOrderByCategory(

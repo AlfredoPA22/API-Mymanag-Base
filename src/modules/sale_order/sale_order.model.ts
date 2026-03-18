@@ -22,6 +22,7 @@ const saleOrderSchema = new mongoose.Schema(
       required: true,
       default: paymentMethod.CONTADO,
     },
+    contado_payment_method: { type: String, required: false },
     is_paid: { type: Boolean, required: true, default: false },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,

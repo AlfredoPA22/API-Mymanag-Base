@@ -115,6 +115,7 @@ export const login = async (loginInput: LoginInput) => {
       companyId: user.company._id,
       currency: user.company.currency,
       permissions: user.role.permission,
+      is_global: user.is_global ?? false,
       access: true,
     },
     secret,

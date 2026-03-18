@@ -80,6 +80,9 @@ export function buildAbility(permissions: string[]): AppAbility {
       case "REPORT_SALE_ORDER_BY_CLIENT":
         can("read", "ReportByClient");
         break;
+      case "REPORT_SALE_ORDER_BY_SELLER":
+        can("read", "ReportBySeller");
+        break;
       case "REPORT_SALE_ORDER_BY_CATEGORY":
         can("read", "ReportByCategory");
         break;

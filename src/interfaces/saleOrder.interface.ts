@@ -17,6 +17,7 @@ export interface ISaleOrder {
   total: number;
   status: saleOrderStatus;
   payment_method: paymentMethod;
+  contado_payment_method?: string;
   is_paid: boolean;
   created_by: IUser;
   company: ICompany;
@@ -36,6 +37,7 @@ export interface SaleOrderInput {
   date: Date;
   client: string;
   payment_method: string;
+  contado_payment_method?: string;
 }
 
 export interface ISaleOrderToPDF {
@@ -45,6 +47,11 @@ export interface ISaleOrderToPDF {
 
 export interface ISalesReportByClient {
   client: string;
+  total: Number;
+}
+
+export interface ISalesReportBySeller {
+  seller: string;
   total: Number;
 }
 

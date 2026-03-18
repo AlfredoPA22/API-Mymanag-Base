@@ -43,6 +43,7 @@ export const PERMISSIONS_TREE: IPermission[] = [
       { label: "Buscar productos", name: "searchProduct", value: "SEARCH_PRODUCT" },
       { label: "Datos generales", name: "generalData", value: "GENERAL_DATA" },
       { label: "Mejores clientes", name: "reportSaleOrderByClient", value: "REPORT_SALE_ORDER_BY_CLIENT" },
+      { label: "Mejores vendedores", name: "reportSaleOrderBySeller", value: "REPORT_SALE_ORDER_BY_SELLER" },
       { label: "Mejores categorias", name: "reportSaleOrderByCategory", value: "REPORT_SALE_ORDER_BY_CATEGORY" },
       { label: "Ventas recientes", name: "reportSaleOrderByMonth", value: "REPORT_SALE_ORDER_BY_MONTH" },
     ],

@@ -393,6 +393,7 @@ type SaleOrder {
   status: String
   created_by: User
   payment_method: String
+  contado_payment_method: String
   is_paid: Boolean
 }
 
@@ -400,6 +401,7 @@ input SaleOrderInput {
   date: String!
   client: String!
   payment_method: String!
+  contado_payment_method: String
 }
 
 input FilterSaleOrderInput {
@@ -489,6 +491,11 @@ input addSerialToSaleOrderDetailInput {
 
 type ReportSaleOrderByClient {
   client: String!
+  total: Float!
+}
+
+type ReportSaleOrderBySeller {
+  seller: String!
   total: Float!
 }
 
@@ -623,7 +630,8 @@ type Query {
   saleOrderReport(filterSaleOrderInput: FilterSaleOrderInput!): [SaleOrder]
   findSaleOrder(saleOrderId: String!): SaleOrder
   findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
-  reportSaleOrderByClient: [ReportSaleOrderByClient]
+  reportSaleOrderByClient(startDate: Date, endDate: Date): [ReportSaleOrderByClient]
+  reportSaleOrderBySeller(startDate: Date, endDate: Date): [ReportSaleOrderBySeller]
   reportSaleOrderByCategory: [ReportSaleOrderByCategory]
   reportSaleOrderByMonth: [SaleOrder]
   generalData: GeneralData

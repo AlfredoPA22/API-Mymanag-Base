@@ -8,6 +8,7 @@ import {
   ISaleOrderToPDF,
   ISalesReportByCategory,
   ISalesReportByClient,
+  ISalesReportBySeller,
   SaleOrderInput,
 } from "../../interfaces/saleOrder.interface";
 import {
@@ -276,6 +277,7 @@ export const create = async (
       date: createSaleOrderInput.date,
       client: createSaleOrderInput.client,
       payment_method: createSaleOrderInput.payment_method,
+      contado_payment_method: createSaleOrderInput.contado_payment_method,
       is_paid: isPaid,
       created_by: userId,
     })
@@ -1108,7 +1110,9 @@ export const updateSaleOrderDetail = async (
 
 export const reportSaleOrderByClient = async (
   companyId: MongooseTypes.ObjectId,
-  userId: MongooseTypes.ObjectId // Usamos solo MongooseTypes.ObjectId
+  userId: MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
 ) => {
   const foundUser: IUser | null = await User.findOne({
     _id: userId,
@@ -1120,14 +1124,17 @@ export const reportSaleOrderByClient = async (
   }
 
   const currentYear = new Date().getFullYear();
+  const dateFrom = startDate
+    ? new Date(startDate)
+    : new Date(`${currentYear}-01-01T00:00:00.000`);
+  const dateTo = endDate
+    ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+    : new Date(`${currentYear + 1}-01-01T00:00:00.000`);
 
   const matchStage: any = {
     company: new MongooseTypes.ObjectId(companyId),
     status: saleOrderStatus.APROBADO,
-    date: {
-      $gte: new Date(`${currentYear}-01-01`),
-      $lt: new Date(`${currentYear + 1}-01-01`),
-    },
+    date: { $gte: dateFrom, $lte: dateTo },
   };
 
   if (!foundUser.is_global) {
@@ -1175,10 +1182,79 @@ export const reportSaleOrderByClient = async (
       },
     },
     { $sort: { total: -1 } },
-    { $limit: 5 },
+    { $limit: 10 },
   ]);
 
   return topClients as ISalesReportByClient[];
+};
+
+export const reportSaleOrderBySeller = async (
+  companyId: MongooseTypes.ObjectId,
+  userId: MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
+) => {
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const currentYear = new Date().getFullYear();
+  const dateFrom = startDate
+    ? new Date(startDate)
+    : new Date(`${currentYear}-01-01T00:00:00.000`);
+  const dateTo = endDate
+    ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+    : new Date(`${currentYear + 1}-01-01T00:00:00.000`);
+
+  const matchStage: any = {
+    company: new MongooseTypes.ObjectId(companyId),
+    status: saleOrderStatus.APROBADO,
+    date: { $gte: dateFrom, $lte: dateTo },
+  };
+
+  if (!foundUser.is_global) {
+    matchStage["created_by"] = new MongooseTypes.ObjectId(userId);
+  }
+
+  const topSellers = await SaleOrder.aggregate([
+    { $match: matchStage },
+    {
+      $group: {
+        _id: "$created_by",
+        total: { $sum: "$total" },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "userData",
+      },
+    },
+    {
+      $unwind: {
+        path: "$userData",
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        seller: "$userData.user_name",
+        total: 1,
+      },
+    },
+    { $sort: { total: -1 } },
+    { $limit: 10 },
+  ]);
+
+  return topSellers as ISalesReportBySeller[];
 };
 
 export const reportSaleOrderByCategory = async (
