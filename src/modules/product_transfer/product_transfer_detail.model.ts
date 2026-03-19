@@ -14,6 +14,16 @@ const productTransferDetailSchema = new mongoose.Schema(
     },
     quantity: { type: Number, required: true },
     serials: [{ type: String }],
+    inventory_usage: [
+      {
+        purchase_order_detail: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "purchase_order_detail",
+          default: null,
+        },
+        quantity: { type: Number, default: 0 },
+      },
+    ],
     company: {
       type: MongooseSchema.Types.ObjectId,
       ref: "company",

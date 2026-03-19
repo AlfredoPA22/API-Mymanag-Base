@@ -118,6 +118,7 @@ export const createDetail = async (
 
     let remaining = createProductTransferDetailInput.quantity;
     const modifiedInventories: { inv: any; qty: number }[] = [];
+    const inventoryUsage: { purchase_order_detail: any; quantity: number }[] = [];
 
     for (const inv of inventories) {
       if (remaining <= 0) break;
@@ -128,6 +129,10 @@ export const createDetail = async (
 
       await inv.save();
       modifiedInventories.push({ inv, qty: transferQty });
+      inventoryUsage.push({
+        purchase_order_detail: inv.purchase_order_detail ?? null,
+        quantity: transferQty,
+      });
       remaining -= transferQty;
     }
 
@@ -151,6 +156,12 @@ export const createDetail = async (
       await ProductTransferDetail.deleteOne({ _id: newDetail._id, company: companyId });
       throw new Error("Error al crear el inventario de destino. Se revirtieron los cambios.");
     }
+
+    // Guardar inventory_usage para poder revertir exactamente los mismos batches después
+    await ProductTransferDetail.updateOne(
+      { _id: newDetail._id, company: companyId },
+      { $set: { inventory_usage: inventoryUsage } }
+    );
   } else if (foundProduct.stock_type === stockType.SERIALIZADO) {
     const availableSerials = await ProductSerial.countDocuments({
       company: companyId,
@@ -392,21 +403,40 @@ const restoreDetailStock = async (
       product_transfer_detail: detail._id,
     });
 
-    let remaining = detail.quantity;
-    const originInventories = await ProductInventory.find({
-      company: companyId,
-      product: foundProduct._id,
-      warehouse: originWarehouse,
-      reserved: { $gt: 0 },
-    }).sort({ createdAt: 1 });
+    // Usar inventory_usage para restaurar exactamente los batches reservados
+    if (detail.inventory_usage && detail.inventory_usage.length > 0) {
+      for (const usage of detail.inventory_usage) {
+        const inv = await ProductInventory.findOne({
+          company: companyId,
+          product: foundProduct._id,
+          warehouse: originWarehouse,
+          purchase_order_detail: usage.purchase_order_detail ?? null,
+        });
+        if (inv) {
+          inv.reserved -= usage.quantity;
+          if (inv.reserved < 0) inv.reserved = 0;
+          inv.available += usage.quantity;
+          await inv.save();
+        }
+      }
+    } else {
+      // Fallback para registros sin inventory_usage (datos previos al fix)
+      let remaining = detail.quantity;
+      const originInventories = await ProductInventory.find({
+        company: companyId,
+        product: foundProduct._id,
+        warehouse: originWarehouse,
+        reserved: { $gt: 0 },
+      }).sort({ createdAt: 1 });
 
-    for (const inv of originInventories) {
-      if (remaining <= 0) break;
-      const restoreQty = Math.min(inv.reserved, remaining);
-      inv.reserved -= restoreQty;
-      inv.available += restoreQty;
-      await inv.save();
-      remaining -= restoreQty;
+      for (const inv of originInventories) {
+        if (remaining <= 0) break;
+        const restoreQty = Math.min(inv.reserved, remaining);
+        inv.reserved -= restoreQty;
+        inv.available += restoreQty;
+        await inv.save();
+        remaining -= restoreQty;
+      }
     }
   } else if (foundProduct.stock_type === stockType.SERIALIZADO) {
     if (detail.serials && detail.serials.length > 0) {
@@ -546,21 +576,40 @@ export const approveProductTransfer = async (
 
   for (const detail of details as any[]) {
     if (detail.product.stock_type === stockType.INDIVIDUAL) {
-      let remaining = detail.quantity;
-      const originInventories = await ProductInventory.find({
-        company: companyId,
-        product: detail.product._id,
-        warehouse: foundTransfer.origin_warehouse,
-        reserved: { $gt: 0 },
-      }).sort({ createdAt: 1 });
+      // Usar inventory_usage para mover exactamente los batches reservados a transferred
+      if (detail.inventory_usage && detail.inventory_usage.length > 0) {
+        for (const usage of detail.inventory_usage) {
+          const inv = await ProductInventory.findOne({
+            company: companyId,
+            product: detail.product._id,
+            warehouse: foundTransfer.origin_warehouse,
+            purchase_order_detail: usage.purchase_order_detail ?? null,
+          });
+          if (inv) {
+            inv.reserved -= usage.quantity;
+            if (inv.reserved < 0) inv.reserved = 0;
+            inv.transferred += usage.quantity;
+            await inv.save();
+          }
+        }
+      } else {
+        // Fallback para registros sin inventory_usage (datos previos al fix)
+        let remaining = detail.quantity;
+        const originInventories = await ProductInventory.find({
+          company: companyId,
+          product: detail.product._id,
+          warehouse: foundTransfer.origin_warehouse,
+          reserved: { $gt: 0 },
+        }).sort({ createdAt: 1 });
 
-      for (const inv of originInventories) {
-        if (remaining <= 0) break;
-        const moveQty = Math.min(inv.reserved, remaining);
-        inv.reserved -= moveQty;
-        inv.transferred += moveQty;
-        await inv.save();
-        remaining -= moveQty;
+        for (const inv of originInventories) {
+          if (remaining <= 0) break;
+          const moveQty = Math.min(inv.reserved, remaining);
+          inv.reserved -= moveQty;
+          inv.transferred += moveQty;
+          await inv.save();
+          remaining -= moveQty;
+        }
       }
 
       await ProductInventory.updateOne(

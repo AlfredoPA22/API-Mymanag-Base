@@ -659,6 +659,11 @@ export const deletePurchaseOrder = async (
           product: detail.product._id,
         });
 
+        await ProductInventory.deleteOne({
+          company: companyId,
+          purchase_order_detail: detail._id,
+        });
+
         // Eliminar el detalle de la orden de compra
         await PurchaseOrderDetail.deleteOne({
           _id: detail._id,
@@ -796,11 +801,10 @@ export const approve = async (
         }
       );
 
-      await ProductInventory.updateOne(
+      await ProductInventory.updateMany(
         {
           company: companyId,
           purchase_order_detail: detail._id,
-          product: detail.product._id,
         },
         {
           status: productInventoryStatus.DISPONIBLE,

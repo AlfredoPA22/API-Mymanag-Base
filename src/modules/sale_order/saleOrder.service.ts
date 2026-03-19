@@ -937,29 +937,32 @@ export const approve = async (
       }
     );
 
-    // 👇 Aquí modificamos los inventarios asociados
-    const inventories = await ProductInventory.find({
-      company: companyId,
-      product: detail.product._id,
-      reserved: { $gt: 0 }, // solo inventarios con reservas
-    });
+    // Modificar los inventarios usando inventory_usage del detalle
+    if (
+      detail.inventory_usage &&
+      Array.isArray(detail.inventory_usage) &&
+      detail.inventory_usage.length > 0
+    ) {
+      for (const usage of detail.inventory_usage) {
+        const inventory = await ProductInventory.findOne({
+          company: companyId,
+          product: detail.product._id,
+          warehouse: usage.warehouse,
+          purchase_order_detail: usage.purchase_order_detail,
+        });
 
-    let quantityToSell = detail.quantity;
+        if (inventory) {
+          inventory.sold += usage.quantity;
+          inventory.reserved -= usage.quantity;
+          if (inventory.reserved < 0) inventory.reserved = 0;
 
-    for (const inventory of inventories) {
-      if (quantityToSell <= 0) break;
+          if (inventory.reserved === 0 && inventory.available === 0) {
+            inventory.status = productInventoryStatus.SIN_STOCK;
+          }
 
-      const canSellFromThis = Math.min(inventory.reserved, quantityToSell);
-
-      inventory.sold += canSellFromThis;
-      inventory.reserved -= canSellFromThis;
-      quantityToSell -= canSellFromThis;
-
-      if (inventory.reserved === 0 && inventory.available === 0) {
-        inventory.status = productInventoryStatus.SIN_STOCK;
+          await inventory.save();
+        }
       }
-
-      await inventory.save();
     }
   }
 
