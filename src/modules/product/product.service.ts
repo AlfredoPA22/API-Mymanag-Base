@@ -59,7 +59,10 @@ export const listLowStockProduct = async (
 ): Promise<IProduct[]> => {
   return await Product.find({
     company: companyId,
-    $expr: { $lt: ["$stock", "$min_stock"] },
+    $or: [
+      { $expr: { $lt: ["$stock", "$min_stock"] } },
+      { stock: { $lte: 0 } },
+    ],
   })
     .populate("category")
     .populate("brand")
@@ -340,7 +343,10 @@ export const generalData = async (
 
   const total_products_low: number = await Product.countDocuments({
     company: companyId,
-    $expr: { $lt: ["$stock", "$min_stock"] },
+    $or: [
+      { $expr: { $lt: ["$stock", "$min_stock"] } },
+      { stock: { $lte: 0 } },
+    ],
   });
 
   const totalStock = await Product.aggregate([
