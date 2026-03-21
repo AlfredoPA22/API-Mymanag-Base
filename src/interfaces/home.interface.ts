@@ -8,4 +8,6 @@ export interface IGeneralData {
   best_product_sales_number: number;
   total_sales_number: number;
   total_sales_value: number;
+  total_credit_pending: number;
+  total_credit_pending_count: number;
 }

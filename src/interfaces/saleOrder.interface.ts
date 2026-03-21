@@ -60,6 +60,16 @@ export interface ISalesReportByCategory {
   total: Number;
 }
 
+export interface ISalesReportByProduct {
+  product: string;
+  total: Number;
+}
+
+export interface IReportMonthlySales {
+  month: string;
+  total: Number;
+}
+
 export interface FilterSaleOrderInput {
   startDate?: Date;
   endDate?: Date;

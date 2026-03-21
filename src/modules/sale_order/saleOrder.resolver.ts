@@ -5,6 +5,8 @@ import {
   ISalesReportByCategory,
   ISalesReportByClient,
   ISalesReportBySeller,
+  ISalesReportByProduct,
+  IReportMonthlySales,
 } from "../../interfaces/saleOrder.interface";
 import { ISaleOrderDetail } from "../../interfaces/saleOrderDetail.interface";
 import { checkAbility, checkAnyAbility } from "../../utils/ability";
@@ -24,7 +26,10 @@ import {
   reportSaleOrderByCategory,
   reportSaleOrderByClient,
   reportSaleOrderBySeller,
+  reportSaleOrderByProduct,
+  reportMonthlySales,
   reportSaleOrderByMonth,
+  reportCuentasCobrar,
   saleOrderReport,
   updateSaleOrderDetail,
 } from "./saleOrder.service";
@@ -118,6 +123,30 @@ export const saleOrderResolver = {
         context.user.id
       );
     },
+    async reportSaleOrderByProduct(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISalesReportByProduct[]> {
+      checkAbility(context.ability, "read", "ReportByClient");
+      return await reportSaleOrderByProduct(
+        context.user.companyId,
+        context.user.id,
+        args.startDate,
+        args.endDate
+      );
+    },
+    async reportMonthlySales(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IReportMonthlySales[]> {
+      checkAbility(context.ability, "read", "ReportByClient");
+      return await reportMonthlySales(
+        context.user.companyId,
+        context.user.id
+      );
+    },
     async reportSaleOrderByMonth(
       _: any,
       args: Record<string, any>,
@@ -139,6 +168,19 @@ export const saleOrderResolver = {
         context.user.companyId,
         context.user.id,
         args.filterSaleOrderInput
+      );
+    },
+    async reportCuentasCobrar(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISaleOrder[]> {
+      checkAbility(context.ability, "read", "SaleReport");
+      return await reportCuentasCobrar(
+        context.user.companyId,
+        context.user.id,
+        args.startDate,
+        args.endDate
       );
     },
   },

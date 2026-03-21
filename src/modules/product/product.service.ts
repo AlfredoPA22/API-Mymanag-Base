@@ -17,6 +17,7 @@ import { codeType } from "../../utils/enums/orderType.enum";
 import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
 import { productStatus } from "../../utils/enums/productStatus.enum";
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
+import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
 import {
   addCount as addCountBrand,
   subtractCount as subtractCountBrand,
@@ -445,6 +446,24 @@ export const generalData = async (
       ? total_sales_value_aggregate[0].total
       : 0;
 
+  const creditPendingMatch: any = {
+    company: new MongooseTypes.ObjectId(`${companyId}`),
+    status: saleOrderStatus.APROBADO,
+    payment_method: paymentMethod.CREDITO,
+    is_paid: false,
+    ...(foundUser.is_global ? {} : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
+  };
+
+  const creditPendingAgg = await SaleOrder.aggregate([
+    { $match: creditPendingMatch },
+    { $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } } },
+  ]);
+
+  const total_credit_pending: number =
+    creditPendingAgg.length > 0 ? parseFloat(creditPendingAgg[0].total.toFixed(2)) : 0;
+  const total_credit_pending_count: number =
+    creditPendingAgg.length > 0 ? creditPendingAgg[0].count : 0;
+
   const response: IGeneralData = {
     best_product,
     stock,
@@ -453,6 +472,8 @@ export const generalData = async (
     total_sales_number,
     total_sales_value,
     best_product_sales_number,
+    total_credit_pending,
+    total_credit_pending_count,
   };
 
   return response;

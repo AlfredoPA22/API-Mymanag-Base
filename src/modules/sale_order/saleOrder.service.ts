@@ -9,6 +9,8 @@ import {
   ISalesReportByCategory,
   ISalesReportByClient,
   ISalesReportBySeller,
+  ISalesReportByProduct,
+  IReportMonthlySales,
   SaleOrderInput,
 } from "../../interfaces/saleOrder.interface";
 import {
@@ -1337,6 +1339,145 @@ export const reportSaleOrderByCategory = async (
   ]);
 
   return topCategories as ISalesReportByCategory[];
+};
+
+export const reportSaleOrderByProduct = async (
+  companyId: MongooseTypes.ObjectId,
+  userId: MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
+) => {
+  const foundUser: IUser | null = await User.findOne({ _id: userId, company: companyId });
+  if (!foundUser) throw new Error("Usuario no encontrado");
+
+  const currentYear = new Date().getFullYear();
+  const dateFrom = startDate
+    ? new Date(startDate)
+    : new Date(`${currentYear}-01-01T00:00:00.000`);
+  const dateTo = endDate
+    ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+    : new Date(`${currentYear + 1}-01-01T00:00:00.000`);
+
+  const orderMatch: any = {
+    "order.company": new MongooseTypes.ObjectId(companyId),
+    "order.status": saleOrderStatus.APROBADO,
+    "order.date": { $gte: dateFrom, $lte: dateTo },
+  };
+  if (!foundUser.is_global) {
+    orderMatch["order.created_by"] = new MongooseTypes.ObjectId(userId);
+  }
+
+  const topProducts = await SaleOrderDetail.aggregate([
+    {
+      $lookup: {
+        from: "sale_orders",
+        localField: "sale_order",
+        foreignField: "_id",
+        as: "order",
+      },
+    },
+    { $unwind: "$order" },
+    { $match: orderMatch },
+    {
+      $group: {
+        _id: "$product",
+        total: { $sum: "$subtotal" },
+      },
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "productData",
+      },
+    },
+    { $unwind: "$productData" },
+    {
+      $project: {
+        _id: 0,
+        product: "$productData.name",
+        total: 1,
+      },
+    },
+    { $sort: { total: -1 } },
+    { $limit: 10 },
+  ]);
+
+  return topProducts;
+};
+
+export const reportMonthlySales = async (
+  companyId: MongooseTypes.ObjectId,
+  userId: MongooseTypes.ObjectId
+) => {
+  const foundUser: IUser | null = await User.findOne({ _id: userId, company: companyId });
+  if (!foundUser) throw new Error("Usuario no encontrado");
+
+  const currentYear = new Date().getFullYear();
+  const matchStage: any = {
+    company: new MongooseTypes.ObjectId(companyId),
+    status: saleOrderStatus.APROBADO,
+    date: {
+      $gte: new Date(`${currentYear}-01-01T00:00:00.000`),
+      $lte: new Date(`${currentYear}-12-31T23:59:59.999`),
+    },
+  };
+  if (!foundUser.is_global) {
+    matchStage["created_by"] = new MongooseTypes.ObjectId(userId);
+  }
+
+  const monthlyData = await SaleOrder.aggregate([
+    { $match: matchStage },
+    {
+      $group: {
+        _id: { $month: "$date" },
+        total: { $sum: "$total" },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const result = monthNames.map((name, i) => {
+    const found = monthlyData.find((m: any) => m._id === i + 1);
+    return { month: name, total: found ? found.total : 0 };
+  });
+
+  return result;
+};
+
+export const reportCuentasCobrar = async (
+  companyId: MongooseTypes.ObjectId,
+  userId: MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
+): Promise<ISaleOrder[]> => {
+  const foundUser: IUser | null = await User.findOne({ _id: userId, company: companyId });
+  if (!foundUser) throw new Error("Usuario no encontrado");
+
+  const matchStage: any = {
+    company: new MongooseTypes.ObjectId(companyId),
+    status: saleOrderStatus.APROBADO,
+    payment_method: paymentMethod.CREDITO,
+    is_paid: false,
+  };
+
+  if (!foundUser.is_global) {
+    matchStage["created_by"] = new MongooseTypes.ObjectId(userId);
+  }
+
+  if (startDate || endDate) {
+    matchStage["date"] = {};
+    if (startDate) matchStage["date"]["$gte"] = new Date(startDate);
+    if (endDate) matchStage["date"]["$lte"] = new Date(endDate);
+  }
+
+  return await SaleOrder.find(matchStage)
+    .populate("client")
+    .populate("created_by")
+    .sort({ date: -1 })
+    .lean<ISaleOrder[]>();
 };
 
 export const reportSaleOrderByMonth = async (

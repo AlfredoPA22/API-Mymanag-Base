@@ -504,6 +504,16 @@ type ReportSaleOrderByCategory {
   total: Float!
 }
 
+type ReportSaleOrderByProduct {
+  product: String!
+  total: Float!
+}
+
+type ReportMonthlySales {
+  month: String!
+  total: Float!
+}
+
 type SaleOrderByProduct {
   saleOrder: SaleOrder
   saleOrderDetail: SaleOrderDetail
@@ -522,6 +532,8 @@ type GeneralData {
   best_product_sales_number: Int!
   total_sales_number: Int!
   total_sales_value: Float!
+  total_credit_pending: Float!
+  total_credit_pending_count: Int!
 }
 
 type BillingInfo {
@@ -633,7 +645,10 @@ type Query {
   reportSaleOrderByClient(startDate: Date, endDate: Date): [ReportSaleOrderByClient]
   reportSaleOrderBySeller(startDate: Date, endDate: Date): [ReportSaleOrderBySeller]
   reportSaleOrderByCategory: [ReportSaleOrderByCategory]
+  reportSaleOrderByProduct(startDate: Date, endDate: Date): [ReportSaleOrderByProduct]
+  reportMonthlySales: [ReportMonthlySales]
   reportSaleOrderByMonth: [SaleOrder]
+  reportCuentasCobrar(startDate: Date, endDate: Date): [SaleOrder]
   generalData: GeneralData
   listSaleOrderByProduct(productId: ID!): [SaleOrderByProduct]
 
