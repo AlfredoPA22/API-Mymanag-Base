@@ -952,8 +952,9 @@ export const approve = async (
         });
 
         if (inventory) {
-          inventory.sold += usage.quantity;
-          inventory.reserved -= usage.quantity;
+          const qty = usage.quantity ?? 0;
+          inventory.sold += qty;
+          inventory.reserved -= qty;
           if (inventory.reserved < 0) inventory.reserved = 0;
 
           if (inventory.reserved === 0 && inventory.available === 0) {
