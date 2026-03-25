@@ -11,6 +11,10 @@ export const loginLanding = async (loginLandingInput: LoginLandingInput) => {
     throw new Error("Faltan variables de entorno críticas para autenticación");
   }
 
+  if (!loginLandingInput.credential) {
+    throw new Error("Credencial de Google no recibida");
+  }
+
   const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
   const ticket = await client.verifyIdToken({
