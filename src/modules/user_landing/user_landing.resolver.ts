@@ -5,7 +5,12 @@ export const userLandingResolver = {
 
   Mutation: {
     async loginLanding(_: any, args: Record<string, any>) {
-      return await loginLanding(args.loginLandingInput);
+      try {
+        return await loginLanding(args.loginLandingInput);
+      } catch (error: any) {
+        console.error("[loginLanding error]", error?.message || error);
+        throw new Error(error?.message || "Error en autenticación con Google");
+      }
     },
   },
 };
