@@ -10,6 +10,7 @@ import multer from "multer";
 import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
+import { Company } from "./modules/company/company.model";
 import { previewImportProducts } from "./modules/product/product.service";
 import { verifyEmailConnection } from "./utils/emailTransporter";
 import { buildAbility } from "./utils/ability";
@@ -22,6 +23,7 @@ const allowedOrigins = [
   "https://www.inventasys.site",
   "http://localhost:5173",
   "http://localhost:5174",
+  "http://localhost:5175",
 ];
 
 const corsOptions = {
@@ -150,6 +152,70 @@ const bootstrapServer = async () => {
 
   app.get("/", (req, res) => {
     res.send("hello world!");
+  });
+
+  // Public REST: resolve slug → company info (used by ReservaYa booking page)
+  app.get("/company/by-slug/:slug", async (req, res) => {
+    try {
+      const company = await Company.findOne({ slug: req.params.slug.toLowerCase() })
+        .select("_id name slug")
+        .lean();
+      if (!company) return res.status(404).json({ message: "Empresa no encontrada" });
+      return res.json({ companyId: company._id, name: company.name, slug: company.slug });
+    } catch {
+      return res.status(500).json({ message: "Error al buscar empresa" });
+    }
+  });
+
+  // Public REST: get full company profile by companyId (used by ReservaYa booking page & admin)
+  app.get("/company/info/:id", async (req, res) => {
+    try {
+      const company = await Company.findById(req.params.id)
+        .select("_id name slug tagline description image address phone email country")
+        .lean();
+      if (!company) return res.status(404).json({ message: "Empresa no encontrada" });
+      return res.json({
+        companyId: company._id,
+        name: (company as any).name,
+        slug: (company as any).slug,
+        tagline: (company as any).tagline || "",
+        description: (company as any).description || "",
+        image: (company as any).image || "",
+        address: (company as any).address || "",
+        phone: (company as any).phone || "",
+        email: (company as any).email || "",
+        country: (company as any).country || "",
+      });
+    } catch {
+      return res.status(500).json({ message: "Error al buscar empresa" });
+    }
+  });
+
+  // Protected REST: update company profile (called by ReservaYa backend with API key)
+  app.put("/company/update/:id", async (req, res) => {
+    const apiKey = req.headers["x-api-key"];
+    const expectedKey = process.env.RESERVAYA_API_KEY;
+    if (!expectedKey || apiKey !== expectedKey) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+    try {
+      const allowed = ["name", "tagline", "description", "image", "address", "phone", "email", "country"];
+      const update: Record<string, string> = {};
+      for (const key of allowed) {
+        if (req.body[key] !== undefined && req.body[key] !== null) {
+          update[key] = req.body[key];
+        }
+      }
+      const company = await Company.findByIdAndUpdate(
+        req.params.id,
+        { $set: update },
+        { new: true }
+      ).select("_id name slug tagline description image address phone email country").lean();
+      if (!company) return res.status(404).json({ message: "Empresa no encontrada" });
+      return res.json({ companyId: company._id, ...(company as any) });
+    } catch {
+      return res.status(500).json({ message: "Error al actualizar empresa" });
+    }
   });
 
   const upload = multer({ storage: multer.memoryStorage() });

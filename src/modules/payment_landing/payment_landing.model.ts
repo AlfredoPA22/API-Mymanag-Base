@@ -2,6 +2,7 @@ import mongoose, { Schema as MongooseSchema } from "mongoose";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { paymentLandingMethod } from "../../utils/enums/paymentLandingMethod.enum";
 import { paymentLandingStatus } from "../../utils/enums/paymentLandingStatus.enum";
+import { systemType } from "../../utils/enums/systemType.enum";
 
 const paymentLandingSchema = new mongoose.Schema(
   {
@@ -9,6 +10,11 @@ const paymentLandingSchema = new mongoose.Schema(
       type: MongooseSchema.Types.ObjectId,
       ref: "company",
       required: true,
+    },
+    system: {
+      type: String,
+      enum: Object.values(systemType),
+      default: systemType.MYMANAG,
     },
     plan: {
       type: String,

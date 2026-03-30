@@ -6,6 +6,7 @@ import { paymentLandingStatus } from "../utils/enums/paymentLandingStatus.enum";
 export interface IPaymentLanding {
   _id: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   company: ICompany;
+  system: string;
   plan: string;
   amount: number;
   currency: string;
@@ -22,6 +23,7 @@ export interface IPaymentLanding {
 
 export interface PaymentLandingInput {
   company: string;
+  system?: string;
   plan: string;
   amount: number;
   currency: string;

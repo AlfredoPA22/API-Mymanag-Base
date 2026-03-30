@@ -1,7 +1,17 @@
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { companyPlan } from "../utils/enums/companyPlan.enum";
 import { companyStatus } from "../utils/enums/companyStatus.enum";
+import { systemType } from "../utils/enums/systemType.enum";
 import { IPaymentLanding } from "./paymentLanding.interface";
+
+export interface ISubscription {
+  system: systemType;
+  plan: companyPlan;
+  status: companyStatus;
+  trial_expires_at?: Date | null;
+  subscription_expires_at?: Date | null;
+  notified_before_expiration: boolean;
+}
 
 export interface ICompanyWithPayment extends ICompany {
   latest_payment?: IPaymentLanding | null;
@@ -10,6 +20,9 @@ export interface ICompanyWithPayment extends ICompany {
 export interface ICompany {
   _id: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   name: string;
+  slug?: string;
+  tagline?: string;
+  description?: string;
   legal_name: string;
   nit: string;
   email: string;
@@ -22,6 +35,7 @@ export interface ICompany {
   status: companyStatus;
   trial_expires_at: Date;
   subscription_expires_at: Date;
+  subscriptions: ISubscription[];
 }
 
 export interface CompanyInput {
@@ -34,6 +48,7 @@ export interface CompanyInput {
   country?: string;
   plan?: string;
   currency: string;
+  system?: string;
 }
 
 export interface UpdateCompanyInput {

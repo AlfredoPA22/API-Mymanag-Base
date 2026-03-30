@@ -11,9 +11,21 @@ type AdminCredentials {
   password: String!
 }
 
+type CompanySubscription {
+  system: String
+  plan: String
+  status: String
+  trial_expires_at: String
+  subscription_expires_at: String
+  notified_before_expiration: Boolean
+}
+
 type Company {
   _id: ID!
   name: String
+  slug: String
+  tagline: String
+  description: String
   legal_name: String
   nit: String
   email: String
@@ -26,6 +38,7 @@ type Company {
   status: String
   trial_expires_at: String
   subscription_expires_at: String
+  subscriptions: [CompanySubscription]
 }
 
 type CompanyOutput {
@@ -43,6 +56,7 @@ input CompanyInput {
   country: String
   plan: String!
   currency: String!
+  system: String
 }
 
 input UpdateCompanyInput {
@@ -545,6 +559,7 @@ type BillingInfo {
 type PaymentLanding {
   _id: ID!
   company: Company
+  system: String
   plan: String
   amount: Float
   currency: String
@@ -557,6 +572,7 @@ type PaymentLanding {
 
 input PaymentLandingInput {
   company: String!
+  system: String
   plan: String!
   amount: Float!
   currency: String!

@@ -11,12 +11,14 @@ import { userLandingType } from "../../utils/enums/userLandingType.enum";
 import { sendPaymentApproveEmail } from "../../utils/sendPaymentApproveEmail";
 import { sendPaymentRejectedEmail } from "../../utils/sendPaymentRejectEmail";
 import { companyStatus } from "../../utils/enums/companyStatus.enum";
+import { systemType } from "../../utils/enums/systemType.enum";
 import { addMonths } from "date-fns";
 import { Role } from "../role/role.model";
 import { PERMISSIONS_MOCK } from "../permission/utils/permissionsMock";
 import { generatePassword, generateUsername } from "../company/company.service";
 import { User } from "../user/user.model";
 import { sendCredentialsEmail } from "../../utils/sendCredentialsEmail";
+import { createReservaYaAdmin } from "../../utils/reservayaClient";
 
 export const createPaymentLanding = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -26,17 +28,21 @@ export const createPaymentLanding = async (
     throw new Error("Debe subir el comprobante de pago");
   }
 
+  const system = (paymentLandingInput.system as systemType) || systemType.MYMANAG;
+
   const existing = await PaymentLanding.findOne({
     company: paymentLandingInput.company,
+    system,
     status: paymentLandingStatus.REVIEW,
   });
 
   if (existing) {
-    throw new Error("Ya existe un pago en revision para la empresa");
+    throw new Error("Ya existe un pago en revision para esta empresa y sistema");
   }
 
   const newPayment = await PaymentLanding.create({
     company: paymentLandingInput.company,
+    system,
     plan: paymentLandingInput.plan,
     amount: paymentLandingInput.amount,
     currency: paymentLandingInput.currency,
@@ -95,89 +101,137 @@ export const approvePaymentLanding = async (
   paymentId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IPaymentLanding> => {
   const user = await UserLanding.findById(userId);
-  if (!user) {
-    throw new Error("Usuario no encontrado");
-  }
+  if (!user) throw new Error("Usuario no encontrado");
   if (user.user_type !== userLandingType.ADMIN) {
     throw new Error("No tienes permisos para aprobar pagos");
   }
 
   const payment = await PaymentLanding.findById(paymentId);
-  if (!payment) {
-    throw new Error("Pago no encontrado");
-  }
+  if (!payment) throw new Error("Pago no encontrado");
   if (payment.status === paymentLandingStatus.APPROVED) {
     throw new Error("Este pago ya fue aprobado");
   }
 
   const paymentCreator = await UserLanding.findById(payment.created_by);
-  if (!paymentCreator) {
-    throw new Error("Usuario creador del pago no encontrado");
-  }
+  if (!paymentCreator) throw new Error("Usuario creador del pago no encontrado");
 
   const company = await Company.findById(payment.company._id);
   if (!company) throw new Error("Empresa no encontrada");
 
   const companyCreator = await UserLanding.findById(company.created_by);
-  if (!companyCreator) {
-    throw new Error("Usuario creador de la empresa no encontrado");
-  }
+  if (!companyCreator) throw new Error("Usuario creador de la empresa no encontrado");
 
   payment.status = paymentLandingStatus.APPROVED;
   await payment.save();
 
-  const isFirstTime = company.status === companyStatus.PENDING;
-  const isPlanChange = company.plan !== payment.plan;
+  const paymentSystem = (payment as any).system as systemType || systemType.MYMANAG;
+  const isMyManag = paymentSystem === systemType.MYMANAG;
 
-  if (isFirstTime) {
-    const role = await Role.create({
-      company: company._id,
-      name: "Administrador",
-      description: "Rol administrador",
-      permission: PERMISSIONS_MOCK,
+  // Find or create the subscription for this system
+  const subIndex = (company as any).subscriptions.findIndex(
+    (s: any) => s.system === paymentSystem
+  );
+
+  const today = new Date();
+
+  if (subIndex === -1) {
+    // New subscription for this system
+    (company as any).subscriptions.push({
+      system: paymentSystem,
+      plan: payment.plan,
+      status: companyStatus.ACTIVE,
+      trial_expires_at: null,
+      subscription_expires_at: addMonths(today, 1),
+      notified_before_expiration: false,
     });
 
-    const user_name = generateUsername(company.name);
-    const password = generatePassword();
+    // Create MyManag user only for MYMANAG system
+    if (isMyManag) {
+      const role = await Role.create({
+        company: company._id,
+        name: "Administrador",
+        description: "Rol administrador",
+        permission: PERMISSIONS_MOCK,
+      });
 
-    await User.create({
-      company: company._id,
-      user_name,
-      password,
-      role: role._id,
-      is_global: true,
-      is_admin: true,
-    });
+      const user_name = generateUsername(company.name);
+      const password = generatePassword();
 
-    // Enviar credenciales por correo
-    try {
-      await sendCredentialsEmail({
-        to: companyCreator.email,
+      await User.create({
+        company: company._id,
         user_name,
         password,
-        company_name: company.name,
+        role: role._id,
+        is_global: true,
+        is_admin: true,
       });
-    } catch (error) {
-      console.error(
-        "⚠️ No se pudo enviar el correo con credenciales, pero el usuario se creó correctamente:",
-        error
-      );
-      // Continuar con el flujo aunque falle el correo
+
+      try {
+        await sendCredentialsEmail({
+          to: companyCreator.email,
+          user_name,
+          password,
+          company_name: company.name,
+        });
+      } catch (error) {
+        console.error("⚠️ No se pudo enviar credenciales:", error);
+      }
     }
 
-    company.status = companyStatus.ACTIVE;
-    company.plan = payment.plan;
-    company.trial_expires_at = null;
-    company.subscription_expires_at = addMonths(new Date(), 1);
-    company.notified_before_expiration = false;
+    // Create ReservaYa admin for RESERVAYA system
+    if (paymentSystem === systemType.RESERVAYA) {
+      const user_name = generateUsername(company.name as string);
+      const password = generatePassword();
+
+      await createReservaYaAdmin(
+        company.name as string,
+        user_name,
+        password,
+        (company as any).phone,
+        company._id.toString()
+      );
+
+      try {
+        await sendCredentialsEmail({
+          to: companyCreator.email,
+          user_name,
+          password,
+          company_name: company.name as string,
+        });
+      } catch (error) {
+        console.error("⚠️ No se pudo enviar credenciales de ReservaYa:", error);
+      }
+    }
   } else {
-    const today = new Date();
-    const baseDate: Date =
-      company.subscription_expires_at && company.subscription_expires_at > today
+    // Update existing subscription
+    const sub = (company as any).subscriptions[subIndex];
+    const baseDate = sub.subscription_expires_at && sub.subscription_expires_at > today
+      ? sub.subscription_expires_at
+      : today;
+
+    (company as any).subscriptions[subIndex] = {
+      system: paymentSystem,
+      plan: payment.plan,
+      status: companyStatus.ACTIVE,
+      trial_expires_at: null,
+      subscription_expires_at: addMonths(baseDate, 1),
+      notified_before_expiration: false,
+    };
+  }
+
+  // Sync legacy top-level fields for MyManag backward compatibility
+  if (isMyManag) {
+    const isFirstTime = company.status === companyStatus.PENDING;
+    if (isFirstTime) {
+      company.status = companyStatus.ACTIVE;
+      company.plan = payment.plan;
+      company.trial_expires_at = null;
+      company.subscription_expires_at = addMonths(today, 1);
+      company.notified_before_expiration = false;
+    } else {
+      const baseDate = company.subscription_expires_at && company.subscription_expires_at > today
         ? company.subscription_expires_at
         : today;
-
-    if (isPlanChange || payment.amount > 0) {
       company.status = companyStatus.ACTIVE;
       company.plan = payment.plan;
       company.trial_expires_at = null;
@@ -186,17 +240,15 @@ export const approvePaymentLanding = async (
     }
   }
 
+  (company as any).markModified("subscriptions");
   await company.save();
 
   const updatePayment = await PaymentLanding.findById(paymentId)
     .populate("company")
     .lean<IPaymentLanding>();
 
-  if (!updatePayment) {
-    throw new Error("Pago no encontrado");
-  }
+  if (!updatePayment) throw new Error("Pago no encontrado");
 
-  // Enviar correo de aprobación de pago
   try {
     await sendPaymentApproveEmail({
       to: paymentCreator.email,
@@ -204,11 +256,7 @@ export const approvePaymentLanding = async (
       payment: updatePayment,
     });
   } catch (error) {
-    console.error(
-      "⚠️ No se pudo enviar el correo de aprobación de pago, pero el pago se aprobó correctamente:",
-      error
-    );
-    // Continuar con el flujo aunque falle el correo
+    console.error("⚠️ No se pudo enviar correo de aprobación:", error);
   }
 
   return updatePayment;
@@ -220,29 +268,19 @@ export const rejectPaymentLanding = async (
 ): Promise<IPaymentLanding> => {
   const user = await UserLanding.findById(userId);
 
-  if (!user) {
-    throw new Error("Usuario no encontrado");
-  }
-
+  if (!user) throw new Error("Usuario no encontrado");
   if (user.user_type !== userLandingType.ADMIN) {
     throw new Error("No tienes permisos para rechazar pagos");
   }
 
   const payment = await PaymentLanding.findById(paymentId);
-
-  if (!payment) {
-    throw new Error("Pago no encontrado");
-  }
-
+  if (!payment) throw new Error("Pago no encontrado");
   if (payment.status === paymentLandingStatus.APPROVED) {
     throw new Error("No se puede rechazar un pago ya aprobado");
   }
 
   const paymentCreator = await UserLanding.findById(payment.created_by);
-
-  if (!paymentCreator) {
-    throw new Error("Usuario creador del pago no encontrado");
-  }
+  if (!paymentCreator) throw new Error("Usuario creador del pago no encontrado");
 
   payment.status = paymentLandingStatus.REJECTED;
   await payment.save();
@@ -251,9 +289,7 @@ export const rejectPaymentLanding = async (
     .populate("company")
     .lean<IPaymentLanding>();
 
-  if (!updatePayment) {
-    throw new Error("Pago no encontrado");
-  }
+  if (!updatePayment) throw new Error("Pago no encontrado");
 
   await sendPaymentRejectedEmail({
     to: paymentCreator.email,
@@ -291,28 +327,21 @@ export const updatePaymentLanding = async (
     .sort({ paid_at: -1, createdAt: -1 })
     .limit(1);
 
-  if (!lastPayment) {
-    throw new Error("No se pudo determinar el último pago realizado.");
-  }
+  if (!lastPayment) throw new Error("No se pudo determinar el último pago realizado.");
 
   if (lastPayment._id.toString() !== payment._id.toString()) {
-    throw new Error(
-      "Solo puedes actualizar el comprobante del último pago realizado."
-    );
+    throw new Error("Solo puedes actualizar el comprobante del último pago realizado.");
   }
 
   payment.proof_url = proof_url;
   payment.status = paymentLandingStatus.REVIEW;
-
   await payment.save();
 
   const updatedPayment = await PaymentLanding.findById(paymentId)
     .populate("company")
     .lean<IPaymentLanding | null>();
 
-  if (!updatedPayment) {
-    throw new Error("Pago actualizado no encontrado");
-  }
+  if (!updatedPayment) throw new Error("Pago actualizado no encontrado");
 
   return updatedPayment;
 };

@@ -91,10 +91,10 @@ async function run() {
         correctStock = result[0]?.total ?? 0;
 
       } else if (product.stock_type === "serializado") {
-        // Contar seriales Disponible de este producto
+        // Disponible + Reservado: el reservado sigue en stock hasta que se aprueba la venta
         correctStock = await ProductSerial.countDocuments({
           product: product._id,
-          status: "Disponible",
+          status: { $in: ["Disponible", "Reservado"] },
         });
       }
 
