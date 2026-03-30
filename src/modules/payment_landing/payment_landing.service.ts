@@ -197,6 +197,8 @@ export const approvePaymentLanding = async (
           user_name,
           password,
           company_name: company.name as string,
+          loginUrl: process.env.RESERVAYA_CLIENT_URL || 'http://localhost:5173',
+          systemName: 'ReservaYa',
         });
       } catch (error) {
         console.error("⚠️ No se pudo enviar credenciales de ReservaYa:", error);

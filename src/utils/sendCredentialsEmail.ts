@@ -5,6 +5,8 @@ interface SendCredentialsParams {
   user_name: string;
   password: string;
   company_name: string;
+  loginUrl?: string;
+  systemName?: string;
 }
 
 export const sendCredentialsEmail = async ({
@@ -12,6 +14,8 @@ export const sendCredentialsEmail = async ({
   user_name,
   password,
   company_name,
+  loginUrl = process.env.MYMANAG_CLIENT_URL || "https://mymanag.vercel.app",
+  systemName = "Inventasys",
 }: SendCredentialsParams) => {
   try {
     const htmlContent = `
@@ -23,14 +27,14 @@ export const sendCredentialsEmail = async ({
         <li><strong>Contraseña:</strong> ${password}</li>
       </ul>
       <p>Puedes cambiar tu contraseña luego de iniciar sesión.</p>
-      <a href="https://mymanag.vercel.app" style="display:inline-block;padding:10px 20px;background:#1d4ed8;color:#fff;border-radius:5px;text-decoration:none;">Iniciar sesión</a>
+      <a href="${loginUrl}" style="display:inline-block;padding:10px 20px;background:#1d4ed8;color:#fff;border-radius:5px;text-decoration:none;">Iniciar sesión</a>
       <p style="font-size: 12px; color: #888; margin-top: 20px;">Este correo fue generado automáticamente. No respondas a este mensaje.</p>
     </div>
   `;
 
     const info = await sendEmailWithRetry({
       to,
-      subject: "Tus credenciales de acceso - Inventasys",
+      subject: `Tus credenciales de acceso - ${systemName}`,
       html: htmlContent,
     });
 
@@ -40,6 +44,7 @@ export const sendCredentialsEmail = async ({
       messageId,
       company_name,
       user_name,
+      systemName,
     });
 
     return info;
@@ -51,7 +56,6 @@ export const sendCredentialsEmail = async ({
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
-    // Lanzar el error para que se maneje en el servicio
     throw error;
   }
 };
