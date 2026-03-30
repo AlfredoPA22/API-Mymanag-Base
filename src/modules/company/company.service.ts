@@ -236,7 +236,7 @@ export const create = async (
         user_name,
         password,
         company_name: newCompany.name,
-        loginUrl: process.env.RESERVAYA_CLIENT_URL || 'http://localhost:5173',
+        loginUrl: `${process.env.RESERVAYA_CLIENT_URL || 'http://localhost:5173'}/login`,
         systemName: 'ReservaYa',
       });
     } catch (error) {

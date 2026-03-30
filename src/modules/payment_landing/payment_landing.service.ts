@@ -197,7 +197,7 @@ export const approvePaymentLanding = async (
           user_name,
           password,
           company_name: company.name as string,
-          loginUrl: process.env.RESERVAYA_CLIENT_URL || 'http://localhost:5173',
+          loginUrl: `${process.env.RESERVAYA_CLIENT_URL || 'http://localhost:5173'}/login`,
           systemName: 'ReservaYa',
         });
       } catch (error) {
