@@ -70,6 +70,15 @@ input UpdateCompanyInput {
   currency: String
 }
 
+input AdjustSubscriptionInput {
+  companyId: String!
+  system: String!
+  plan: String!
+  status: String!
+  subscription_expires_at: String
+  trial_expires_at: String
+}
+
 type Warehouse {
   _id: ID!
   name: String
@@ -598,6 +607,7 @@ type CompanyWithPayment {
   status: String
   trial_expires_at: String
   subscription_expires_at: String
+  subscriptions: [CompanySubscription]
   latest_payment: PaymentLanding
 }
 
@@ -614,6 +624,47 @@ input PreviewProductImport {
   max_stock: Float!
   isValid: Boolean!
   errors: [String!]!
+}
+
+type StockDiscrepancy {
+  productId: String!
+  code: String!
+  name: String!
+  stock_type: String!
+  companyId: String!
+  companyName: String!
+  stockActual: Int!
+  stockCorrecto: Int!
+  statusActual: String!
+  statusCorrecto: String!
+  diff: Int!
+}
+
+type StockAuditResult {
+  totalProducts: Int!
+  ok: Int!
+  discrepancies: [StockDiscrepancy!]!
+  errors: Int!
+}
+
+type StockChange {
+  productId: String!
+  name: String!
+  companyId: String!
+  companyName: String!
+  stock_type: String!
+  stockBefore: Int!
+  stockAfter: Int!
+  statusBefore: String!
+  statusAfter: String!
+}
+
+type StockReconcileResult {
+  totalProducts: Int!
+  updated: Int!
+  unchanged: Int!
+  errors: Int!
+  changes: [StockChange!]!
 }
 
 type Query {
@@ -691,11 +742,14 @@ type Query {
   generateCode(type: String!): String
 
   listPaymentLandingByCompany(companyId: String!): [PaymentLanding]
+
+  auditStock: StockAuditResult
 }
 
 type Mutation {
   createCompany(companyInput: CompanyInput!): CompanyOutput
   updateCompany(updateCompanyInput: UpdateCompanyInput!): Company
+  adjustSubscription(input: AdjustSubscriptionInput!): Company
 
   createPermission(permissionInput: PermissionInput!): Permission
 
@@ -813,4 +867,6 @@ type Mutation {
   updatePaymentLanding(paymentId: String!, proof_url: String!): PaymentLanding
 
   saveImportProducts(importProducts: [PreviewProductImport!]!): [Product]
+
+  reconcileStock: StockReconcileResult
 }

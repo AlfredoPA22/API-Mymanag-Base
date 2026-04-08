@@ -14,10 +14,19 @@ import { Role } from "../role/role.model";
 import { PERMISSIONS_MOCK } from "../permission/utils/permissionsMock";
 import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { sendCredentialsEmail } from "../../utils/sendCredentialsEmail";
-import { sendWelcomeEmail } from "../../utils/sendWelcomeEmail";
 import { UserLanding } from "../user_landing/user_landing.model";
 import { userLandingType } from "../../utils/enums/userLandingType.enum";
 import { createReservaYaAdmin } from "../../utils/reservayaClient";
+import { sendAdminNewCompanyEmail } from "../../utils/sendAdminNotificationEmail";
+
+export interface AdjustSubscriptionInput {
+  companyId: string;
+  system: string;
+  plan: string;
+  status: string;
+  subscription_expires_at?: string | null;
+  trial_expires_at?: string | null;
+}
 
 export const findAll = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -154,18 +163,31 @@ export const create = async (
     created_by: userId,
   });
 
-  try {
-    await sendWelcomeEmail({
-      to: userInfo.email,
-      company_name: newCompany.name,
-      plan: subscription.plan,
-    });
-  } catch (error) {
-    console.error(
-      "⚠️ No se pudo enviar el correo de bienvenida, pero la empresa se creó correctamente:",
-      error
-    );
+  // Enviar welcome email solo para planes de pago (los gratuitos solo reciben credenciales)
+  if (!isFreePlan) {
+    const { sendWelcomeEmail } = await import("../../utils/sendWelcomeEmail");
+    try {
+      await sendWelcomeEmail({
+        to: userInfo.email,
+        company_name: newCompany.name,
+        plan: subscription.plan,
+      });
+    } catch (error) {
+      console.error(
+        "⚠️ No se pudo enviar el correo de bienvenida, pero la empresa se creó correctamente:",
+        error
+      );
+    }
   }
+
+  // Notificar al administrador de Inventasys
+  await sendAdminNewCompanyEmail({
+    company_name: newCompany.name,
+    user_name: userInfo.fullName,
+    user_email: userInfo.email,
+    plan: subscription.plan,
+    system,
+  });
 
   // Only create MyManag admin user for free MyManag plan
   if (isFreePlan && isMyManag) {
@@ -330,4 +352,62 @@ export const update = async (
   ).lean<ICompany>();
 
   return updated!;
+};
+
+export const adjustSubscription = async (
+  adminUserId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  input: AdjustSubscriptionInput
+): Promise<ICompany> => {
+  const adminUser = await UserLanding.findById(adminUserId);
+  if (!adminUser) throw new Error("Usuario no encontrado");
+  if (adminUser.user_type !== userLandingType.ADMIN) {
+    throw new Error("Acceso denegado: solo para administradores");
+  }
+
+  const company = await Company.findById(input.companyId);
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const system = input.system as systemType;
+  const isMyManag = system === systemType.MYMANAG;
+
+  const expiresAt = input.subscription_expires_at
+    ? new Date(input.subscription_expires_at)
+    : null;
+  const trialExpiresAt = input.trial_expires_at
+    ? new Date(input.trial_expires_at)
+    : null;
+
+  // Update or create subscription in subscriptions array
+  const subIndex = (company as any).subscriptions.findIndex(
+    (s: any) => s.system === system
+  );
+
+  const updatedSub = {
+    system,
+    plan: input.plan,
+    status: input.status,
+    trial_expires_at: trialExpiresAt,
+    subscription_expires_at: expiresAt,
+    notified_before_expiration: false,
+  };
+
+  if (subIndex === -1) {
+    (company as any).subscriptions.push(updatedSub);
+  } else {
+    (company as any).subscriptions[subIndex] = updatedSub;
+  }
+
+  // Sync legacy top-level fields for MyManag backward compatibility
+  if (isMyManag) {
+    company.plan = input.plan as companyPlan;
+    company.status = input.status as companyStatus;
+    company.subscription_expires_at = expiresAt;
+    company.trial_expires_at = trialExpiresAt;
+    company.notified_before_expiration = false;
+  }
+
+  (company as any).markModified("subscriptions");
+  await company.save();
+
+  return company.toObject() as ICompany;
 };

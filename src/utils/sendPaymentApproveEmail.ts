@@ -6,12 +6,14 @@ interface SendPaymentApproveParams {
   to: string;
   user_name: string;
   payment: IPaymentLanding;
+  isFirstActivation?: boolean;
 }
 
 export const sendPaymentApproveEmail = async ({
   to,
   user_name,
   payment,
+  isFirstActivation = false,
 }: SendPaymentApproveParams) => {
   try {
 
@@ -39,7 +41,10 @@ export const sendPaymentApproveEmail = async ({
       </ul>
 
       <p>Tu empresa ahora está activa y puedes comenzar a utilizar el sistema Inventasys.</p>
-        <p>📩 En un siguiente correo te enviaremos tus credenciales de acceso para que puedas iniciar sesión.</p>
+      ${isFirstActivation
+        ? '<p>📩 En breve recibirás otro correo con tus credenciales de acceso para iniciar sesión.</p>'
+        : '<p>Tu suscripción ha sido renovada exitosamente. Puedes seguir usando el sistema con normalidad.</p>'
+      }
 
       <p style="font-size: 12px; color: #888; margin-top: 20px;">
         Este correo fue generado automáticamente. No respondas a este mensaje.

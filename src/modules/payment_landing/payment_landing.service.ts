@@ -19,6 +19,7 @@ import { generatePassword, generateUsername } from "../company/company.service";
 import { User } from "../user/user.model";
 import { sendCredentialsEmail } from "../../utils/sendCredentialsEmail";
 import { createReservaYaAdmin } from "../../utils/reservayaClient";
+import { sendAdminNewPaymentEmail } from "../../utils/sendAdminNotificationEmail";
 
 export const createPaymentLanding = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -60,6 +61,22 @@ export const createPaymentLanding = async (
   const populatedPayment = await PaymentLanding.findById(
     newPayment._id
   ).populate("company");
+
+  // Notificar al administrador de Inventasys
+  const companyDoc = await Company.findById(paymentLandingInput.company);
+  const userDoc = await UserLanding.findById(userId);
+  if (companyDoc && userDoc) {
+    await sendAdminNewPaymentEmail({
+      company_name: companyDoc.name as string,
+      user_name: userDoc.fullName,
+      user_email: userDoc.email,
+      plan: paymentLandingInput.plan,
+      system: (paymentLandingInput.system as string) || systemType.MYMANAG,
+      amount: paymentLandingInput.amount,
+      currency: paymentLandingInput.currency,
+      method: paymentLandingInput.method,
+    });
+  }
 
   return populatedPayment;
 };
@@ -134,8 +151,26 @@ export const approvePaymentLanding = async (
 
   const today = new Date();
 
+  // Determinar si es la primera activación de esta suscripción.
+  // Al registrar la empresa con plan de pago ya se crea la suscripción en PENDING,
+  // por eso no podemos usar subIndex === -1. En cambio verificamos:
+  // - MyManag: si aún no existe ningún usuario en la empresa
+  // - ReservaYa: si la suscripción actual está en PENDING (nunca fue activada)
+  const existingSubStatus: string | null = subIndex !== -1
+    ? (company as any).subscriptions[subIndex].status
+    : null;
+
+  const existingMyManagUser = isMyManag
+    ? await User.findOne({ company: company._id })
+    : null;
+
+  const isFirstActivation =
+    subIndex === -1 ||
+    (isMyManag && !existingMyManagUser) ||
+    (!isMyManag && existingSubStatus === companyStatus.PENDING);
+
   if (subIndex === -1) {
-    // New subscription for this system
+    // La suscripción no existía en el array — agregarla
     (company as any).subscriptions.push({
       system: paymentSystem,
       plan: payment.plan,
@@ -144,8 +179,26 @@ export const approvePaymentLanding = async (
       subscription_expires_at: addMonths(today, 1),
       notified_before_expiration: false,
     });
+  } else {
+    // La suscripción ya existía (puede ser PENDING primera vez, o ACTIVE/EXPIRED para renovación)
+    const sub = (company as any).subscriptions[subIndex];
+    const baseDate =
+      !isFirstActivation && sub.subscription_expires_at && sub.subscription_expires_at > today
+        ? sub.subscription_expires_at
+        : today;
 
-    // Create MyManag user only for MYMANAG system
+    (company as any).subscriptions[subIndex] = {
+      system: paymentSystem,
+      plan: payment.plan,
+      status: companyStatus.ACTIVE,
+      trial_expires_at: null,
+      subscription_expires_at: addMonths(baseDate, 1),
+      notified_before_expiration: false,
+    };
+  }
+
+  // Si es la primera activación: crear usuario y enviar credenciales
+  if (isFirstActivation) {
     if (isMyManag) {
       const role = await Role.create({
         company: company._id,
@@ -174,11 +227,10 @@ export const approvePaymentLanding = async (
           company_name: company.name,
         });
       } catch (error) {
-        console.error("⚠️ No se pudo enviar credenciales:", error);
+        console.error("⚠️ No se pudo enviar credenciales de MyManag:", error);
       }
     }
 
-    // Create ReservaYa admin for RESERVAYA system
     if (paymentSystem === systemType.RESERVAYA) {
       const user_name = generateUsername(company.name as string);
       const password = generatePassword();
@@ -204,21 +256,6 @@ export const approvePaymentLanding = async (
         console.error("⚠️ No se pudo enviar credenciales de ReservaYa:", error);
       }
     }
-  } else {
-    // Update existing subscription
-    const sub = (company as any).subscriptions[subIndex];
-    const baseDate = sub.subscription_expires_at && sub.subscription_expires_at > today
-      ? sub.subscription_expires_at
-      : today;
-
-    (company as any).subscriptions[subIndex] = {
-      system: paymentSystem,
-      plan: payment.plan,
-      status: companyStatus.ACTIVE,
-      trial_expires_at: null,
-      subscription_expires_at: addMonths(baseDate, 1),
-      notified_before_expiration: false,
-    };
   }
 
   // Sync legacy top-level fields for MyManag backward compatibility
@@ -256,6 +293,7 @@ export const approvePaymentLanding = async (
       to: paymentCreator.email,
       user_name: paymentCreator.fullName,
       payment: updatePayment,
+      isFirstActivation,
     });
   } catch (error) {
     console.error("⚠️ No se pudo enviar correo de aprobación:", error);

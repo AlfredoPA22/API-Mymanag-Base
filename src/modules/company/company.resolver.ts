@@ -3,6 +3,7 @@ import {
   ICompanyWithPayment,
 } from "../../interfaces/company.interface";
 import {
+  adjustSubscription,
   create,
   detailCompany,
   findAll,
@@ -42,6 +43,9 @@ export const companyResolver = {
     async updateCompany(_: any, args: Record<string, any>, context: any): Promise<ICompany> {
       checkAbility(context.ability, "update", "Company");
       return await update(context.user.companyId, args.updateCompanyInput);
+    },
+    async adjustSubscription(_: any, args: Record<string, any>, context: any): Promise<ICompany> {
+      return await adjustSubscription(context.user.id, args.input);
     },
   },
 };
