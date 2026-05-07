@@ -418,6 +418,7 @@ type SaleOrder {
   payment_method: String
   contado_payment_method: String
   is_paid: Boolean
+  has_return: Boolean
 }
 
 input SaleOrderInput {
@@ -540,6 +541,26 @@ type ReportMonthlySales {
 type SaleOrderByProduct {
   saleOrder: SaleOrder
   saleOrderDetail: SaleOrderDetail
+}
+
+type SaleReturn {
+  _id: ID!
+  code: String
+  sale_order: SaleOrder
+  date: String
+  reason: String
+  total: Float
+  created_by: User
+}
+
+type SaleReturnDetail {
+  _id: ID!
+  sale_return: SaleReturn
+  sale_order_detail: SaleOrderDetail
+  product: Product
+  quantity: Int
+  sale_price: Float
+  subtotal: Float
 }
 
 type PurchaseOrderByProduct {
@@ -711,12 +732,12 @@ type Query {
   findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
   reportSaleOrderByClient(startDate: Date, endDate: Date): [ReportSaleOrderByClient]
   reportSaleOrderBySeller(startDate: Date, endDate: Date): [ReportSaleOrderBySeller]
-  reportSaleOrderByCategory: [ReportSaleOrderByCategory]
+  reportSaleOrderByCategory(startDate: Date, endDate: Date): [ReportSaleOrderByCategory]
   reportSaleOrderByProduct(startDate: Date, endDate: Date): [ReportSaleOrderByProduct]
   reportMonthlySales: [ReportMonthlySales]
-  reportSaleOrderByMonth: [SaleOrder]
+  reportSaleOrderByMonth(startDate: Date, endDate: Date): [SaleOrder]
   reportCuentasCobrar(startDate: Date, endDate: Date): [SaleOrder]
-  generalData: GeneralData
+  generalData(startDate: Date, endDate: Date): GeneralData
   listSaleOrderByProduct(productId: ID!): [SaleOrderByProduct]
 
   listSalePayment: [SalePayment]
@@ -744,6 +765,11 @@ type Query {
   listPaymentLandingByCompany(companyId: String!): [PaymentLanding]
 
   auditStock: StockAuditResult
+
+  listSaleReturn: [SaleReturn]
+  findSaleReturn(saleReturnId: String!): SaleReturn
+  listSaleReturnDetail(saleReturnId: String!): [SaleReturnDetail]
+  findSaleReturnBySaleOrder(saleOrderId: String!): SaleReturn
 }
 
 type Mutation {
@@ -869,4 +895,11 @@ type Mutation {
   saveImportProducts(importProducts: [PreviewProductImport!]!): [Product]
 
   reconcileStock: StockReconcileResult
+
+  createSaleReturn(saleOrderId: String!, reason: String!, items: [SaleReturnItemInput!]!): SaleReturn
+}
+
+input SaleReturnItemInput {
+  saleOrderDetailId: String!
+  quantity: Int!
 }

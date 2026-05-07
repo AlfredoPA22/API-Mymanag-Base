@@ -104,7 +104,7 @@ export const saleOrderResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<ISalesReportBySeller[]> {
-      checkAbility(context.ability, "read", "ReportByClient");
+      checkAbility(context.ability, "read", "ReportBySeller");
       return await reportSaleOrderBySeller(
         context.user.companyId,
         context.user.id,
@@ -120,7 +120,9 @@ export const saleOrderResolver = {
       checkAbility(context.ability, "read", "ReportByCategory");
       return await reportSaleOrderByCategory(
         context.user.companyId,
-        context.user.id
+        context.user.id,
+        args.startDate,
+        args.endDate
       );
     },
     async reportSaleOrderByProduct(
@@ -128,7 +130,7 @@ export const saleOrderResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<ISalesReportByProduct[]> {
-      checkAbility(context.ability, "read", "ReportByClient");
+      checkAbility(context.ability, "read", "ReportByProduct");
       return await reportSaleOrderByProduct(
         context.user.companyId,
         context.user.id,
@@ -141,7 +143,7 @@ export const saleOrderResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IReportMonthlySales[]> {
-      checkAbility(context.ability, "read", "ReportByClient");
+      checkAbility(context.ability, "read", "ReportByMonth");
       return await reportMonthlySales(
         context.user.companyId,
         context.user.id
@@ -155,7 +157,9 @@ export const saleOrderResolver = {
       checkAbility(context.ability, "read", "ReportByMonth");
       return await reportSaleOrderByMonth(
         context.user.companyId,
-        context.user.id
+        context.user.id,
+        args.startDate,
+        args.endDate
       );
     },
     async saleOrderReport(

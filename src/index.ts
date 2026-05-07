@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import { Types as MongooseTypes } from "mongoose";
 import multer from "multer";
 import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
+import { initLowStockCron } from "./cron/checkLowStock";
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
 import { Company } from "./modules/company/company.model";
@@ -90,6 +91,7 @@ const bootstrapServer = async () => {
   });
 
   initCompanyExpirationCron();
+  initLowStockCron();
 
   const server = new ApolloServer({
     typeDefs,

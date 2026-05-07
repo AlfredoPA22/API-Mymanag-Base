@@ -138,7 +138,7 @@ export const productResolver = {
       context: any
     ): Promise<IGeneralData> {
       checkAbility(context.ability, "read", "GeneralData");
-      return await generalData(context.user.companyId, context.user.id);
+      return await generalData(context.user.companyId, context.user.id, args.startDate, args.endDate);
     },
     async productReport(
       _: any,

@@ -18,6 +18,7 @@ import { companyResolver } from "../modules/company/company.resolver";
 import { userLandingResolver } from "../modules/user_landing/user_landing.resolver";
 import { paymentLandingResolver } from "../modules/payment_landing/payment_landing.resolver";
 import { stockResolver } from "../modules/stock/stock.resolver";
+import { saleReturnResolver } from "../modules/sale_return/saleReturn.resolver";
 
 const schemaPath = path.join(__dirname, "./schema.graphql");
 
@@ -52,6 +53,7 @@ export const resolvers = {
     ...paymentLandingResolver.Query,
     ...ProductTransferResolver.Query,
     ...stockResolver.Query,
+    ...saleReturnResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,
@@ -71,5 +73,6 @@ export const resolvers = {
     ...userLandingResolver.Mutation,
     ...paymentLandingResolver.Mutation,
     ...stockResolver.Mutation,
+    ...saleReturnResolver.Mutation,
   },
 };

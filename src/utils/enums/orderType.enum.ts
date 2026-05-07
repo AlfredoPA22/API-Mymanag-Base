@@ -5,4 +5,5 @@ export enum codeType {
   CLIENT = "client",
   PROVIDER = "provider",
   PRODUCT_TRANSFER = "product_transfer",
+  SALE_RETURN = "sale_return",
 }

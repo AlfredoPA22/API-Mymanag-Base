@@ -15,6 +15,7 @@ export const generate = async (
       [codeType.CLIENT]: "CLIE_",
       [codeType.PROVIDER]: "PROV_",
       [codeType.PRODUCT_TRANSFER]: "TRAN_",
+      [codeType.SALE_RETURN]: "DEV_",
     };
 
     currentCode = await CodeGenerator.create({

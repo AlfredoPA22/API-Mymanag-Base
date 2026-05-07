@@ -327,7 +327,9 @@ export const searchProduct = async (
 
 export const generalData = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
-  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
 ): Promise<IGeneralData> => {
   const foundUser: IUser | null = await User.findOne({
     _id: userId,
@@ -336,6 +338,14 @@ export const generalData = async (
   if (!foundUser) {
     throw new Error("Usuario no encontrado");
   }
+
+  const currentYear = new Date().getFullYear();
+  const dateFrom = startDate
+    ? new Date(startDate)
+    : new Date(`${currentYear}-01-01T00:00:00.000`);
+  const dateTo = endDate
+    ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+    : new Date(`${currentYear + 1}-01-01T00:00:00.000`);
 
   const total_products_number: number = await Product.countDocuments({
     company: companyId,
@@ -378,6 +388,7 @@ export const generalData = async (
       $match: {
         "order.status": saleOrderStatus.APROBADO,
         "order.company": new MongooseTypes.ObjectId(`${companyId}`),
+        "order.date": { $gte: dateFrom, $lte: dateTo },
         ...(foundUser.is_global
           ? {}
           : { "order.created_by": new MongooseTypes.ObjectId(`${userId}`) }),
@@ -426,6 +437,7 @@ export const generalData = async (
   const total_sales_number: number = await SaleOrder.countDocuments({
     company: companyId,
     status: saleOrderStatus.APROBADO,
+    date: { $gte: dateFrom, $lte: dateTo },
     ...(foundUser.is_global ? {} : { created_by: userId }),
   });
 
@@ -434,6 +446,7 @@ export const generalData = async (
       $match: {
         company: new MongooseTypes.ObjectId(`${companyId}`),
         status: saleOrderStatus.APROBADO,
+        date: { $gte: dateFrom, $lte: dateTo },
         ...(foundUser.is_global
           ? {}
           : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
@@ -457,6 +470,7 @@ export const generalData = async (
     status: saleOrderStatus.APROBADO,
     payment_method: paymentMethod.CREDITO,
     is_paid: false,
+    date: { $gte: dateFrom, $lte: dateTo },
     ...(foundUser.is_global ? {} : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
   };
 

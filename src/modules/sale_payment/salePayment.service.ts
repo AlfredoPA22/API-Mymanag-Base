@@ -7,6 +7,7 @@ import {
 } from "../../interfaces/salePayment.interface";
 import { IUser } from "../../interfaces/user.interface";
 import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
+import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { User } from "../user/user.model";
 import { SalePayment } from "./sale_payment.model";
@@ -105,7 +106,7 @@ export const detailSalePaymentBySaleOrder = async (
     sale_order: saleOrder,
     total_amount: saleOrder.total,
     total_paid: totalPaid,
-    total_pending: saleOrder.total - totalPaid,
+    total_pending: parseFloat((saleOrder.total - totalPaid).toFixed(2)),
   };
 };
 
@@ -148,6 +149,10 @@ export const createPayment = async (
 
   if (foundSaleOrder.payment_method !== paymentMethod.CREDITO) {
     throw new Error("No se pueden agregar pagos a esta venta");
+  }
+
+  if (foundSaleOrder.status === saleOrderStatus.DEVUELTO) {
+    throw new Error("No se pueden agregar pagos a una venta devuelta");
   }
 
   const payments = await SalePayment.aggregate([

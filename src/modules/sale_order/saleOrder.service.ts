@@ -1265,7 +1265,9 @@ export const reportSaleOrderBySeller = async (
 
 export const reportSaleOrderByCategory = async (
   companyId: MongooseTypes.ObjectId,
-  userId: MongooseTypes.ObjectId // Usa MongooseTypes.ObjectId
+  userId: MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
 ) => {
   const foundUser: IUser | null = await User.findOne({
     _id: userId,
@@ -1277,14 +1279,17 @@ export const reportSaleOrderByCategory = async (
   }
 
   const currentYear = new Date().getFullYear();
+  const dateFrom = startDate
+    ? new Date(startDate)
+    : new Date(`${currentYear}-01-01T00:00:00.000`);
+  const dateTo = endDate
+    ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+    : new Date(`${currentYear + 1}-01-01T00:00:00.000`);
 
   const matchStage: any = {
     "orderData.company": new MongooseTypes.ObjectId(companyId),
     "orderData.status": saleOrderStatus.APROBADO,
-    "orderData.date": {
-      $gte: new Date(`${currentYear}-01-01`),
-      $lt: new Date(`${currentYear + 1}-01-01`),
-    },
+    "orderData.date": { $gte: dateFrom, $lte: dateTo },
   };
 
   if (!foundUser.is_global) {
@@ -1482,7 +1487,9 @@ export const reportCuentasCobrar = async (
 
 export const reportSaleOrderByMonth = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
-  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
 ): Promise<ISaleOrder[]> => {
   const foundUser: IUser | null = await User.findOne({
     _id: userId,
@@ -1494,22 +1501,16 @@ export const reportSaleOrderByMonth = async (
   }
 
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    0,
-    23,
-    59,
-    59
-  );
+  const dateFrom = startDate
+    ? new Date(startDate)
+    : new Date(now.getFullYear(), now.getMonth(), 1);
+  const dateTo = endDate
+    ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+    : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
   const filter: any = {
     company: companyId,
-    date: {
-      $gte: startOfMonth,
-      $lte: endOfMonth,
-    },
+    date: { $gte: dateFrom, $lte: dateTo },
     status: saleOrderStatus.APROBADO,
   };
 
@@ -1518,9 +1519,9 @@ export const reportSaleOrderByMonth = async (
   }
 
   return await SaleOrder.find(filter)
-    .sort({ date: -1 }) // Ordena por fecha de manera descendente (más recientes primero)
-    .limit(10) // Limita a las últimas 10 ventas
     .populate("client")
-    .populate("created_by") // Llenar información del cliente
+    .populate("created_by")
+    .sort({ date: -1 })
+    .limit(10)
     .lean<ISaleOrder[]>();
 };

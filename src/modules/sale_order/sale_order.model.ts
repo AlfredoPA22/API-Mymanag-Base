@@ -24,6 +24,7 @@ const saleOrderSchema = new mongoose.Schema(
     },
     contado_payment_method: { type: String, required: false },
     is_paid: { type: Boolean, required: true, default: false },
+    has_return: { type: Boolean, default: false },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
