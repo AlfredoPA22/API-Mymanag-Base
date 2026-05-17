@@ -32,6 +32,7 @@ import {
   reportCuentasCobrar,
   saleOrderReport,
   updateSaleOrderDetail,
+  updateSaleOrderDiscount,
 } from "./saleOrder.service";
 
 export const saleOrderResolver = {
@@ -278,6 +279,18 @@ export const saleOrderResolver = {
         ["update", "Sale"],
       ]);
       return await approve(context.user.companyId, args.saleOrderId);
+    },
+    async updateSaleOrderDiscount(_: any, args: Record<string, any>, context: any) {
+      checkAnyAbility(context.ability, [
+        ["create", "Sale"],
+        ["update", "Sale"],
+      ]);
+      return await updateSaleOrderDiscount(
+        context.user.companyId,
+        args.saleOrderId,
+        args.updateSaleOrderDiscountInput?.discount_type,
+        args.updateSaleOrderDiscountInput?.discount_value
+      );
     },
   },
 };

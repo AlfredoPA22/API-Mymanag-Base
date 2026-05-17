@@ -25,6 +25,9 @@ const saleOrderDetailSchema = new mongoose.Schema(
     sale_price: { type: Number, required: true },
     quantity: { type: Number, required: true },
     serials: { type: Number, required: true, default: 0 },
+    discount_type: { type: String, required: false, default: null },
+    discount_value: { type: Number, required: false, default: 0 },
+    discount_amount: { type: Number, required: false, default: 0 },
     subtotal: { type: Number, required: true, default: 0 },
     company: {
       type: MongooseSchema.Types.ObjectId,

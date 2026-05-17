@@ -21,6 +21,9 @@ export interface ISaleOrderDetail {
   quantity: number;
   serials: number;
   inventory_usage: IInventoryUsage[];
+  discount_type?: string | null;
+  discount_value?: number;
+  discount_amount?: number;
   subtotal: number;
   company: ICompany;
 }
@@ -38,6 +41,8 @@ export interface SaleOrderDetailInput {
       | MongooseTypes.ObjectId;
     quantity: number;
   }[];
+  discount_type?: string | null;
+  discount_value?: number;
 }
 
 export interface UpdateSaleOrderDetailInput {
@@ -51,6 +56,8 @@ export interface UpdateSaleOrderDetailInput {
       | MongooseTypes.ObjectId;
     quantity: number;
   }[];
+  discount_type?: string | null;
+  discount_value?: number;
 }
 
 export interface AddSerialToSaleOrderDetailInput {

@@ -419,6 +419,9 @@ type SaleOrder {
   contado_payment_method: String
   is_paid: Boolean
   has_return: Boolean
+  discount_type: String
+  discount_value: Float
+  discount_amount: Float
 }
 
 input SaleOrderInput {
@@ -442,6 +445,9 @@ type SaleOrderDetail {
   sale_price: Float
   quantity: Int
   serials: Int
+  discount_type: String
+  discount_value: Float
+  discount_amount: Float
   subtotal: Float
 }
 
@@ -501,11 +507,20 @@ input SaleOrderDetailInput {
   product: String!
   quantity: Int!
   warehouse: String
+  discount_type: String
+  discount_value: Float
 }
 
 input UpdateSaleOrderDetailInput {
   sale_price: Float!
   quantity: Int!
+  discount_type: String
+  discount_value: Float
+}
+
+input UpdateSaleOrderDiscountInput {
+  discount_type: String
+  discount_value: Float
 }
 
 input addSerialToSaleOrderDetailInput {
@@ -864,6 +879,10 @@ type Mutation {
     saleOrderDetailId: String!
     updateSaleOrderDetailInput: UpdateSaleOrderDetailInput!
   ): SaleOrderDetail
+  updateSaleOrderDiscount(
+    saleOrderId: String!
+    updateSaleOrderDiscountInput: UpdateSaleOrderDiscountInput!
+  ): SaleOrder
 
   createSalePayment(salePaymentInput: SalePaymentInput!): SalePayment
   deleteSalePayment(salePaymentId: String!): DeleteResponse

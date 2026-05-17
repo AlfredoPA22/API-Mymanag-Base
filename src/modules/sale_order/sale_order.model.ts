@@ -12,6 +12,9 @@ const saleOrderSchema = new mongoose.Schema(
       required: true,
     },
     total: { type: Number, required: true, default: 0 },
+    discount_type: { type: String, required: false, default: null },
+    discount_value: { type: Number, required: false, default: 0 },
+    discount_amount: { type: Number, required: false, default: 0 },
     status: {
       type: String,
       required: true,

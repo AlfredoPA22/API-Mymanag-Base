@@ -21,6 +21,9 @@ export interface ISaleOrder {
   is_paid: boolean;
   created_by: IUser;
   company: ICompany;
+  discount_type?: string | null;
+  discount_value?: number;
+  discount_amount?: number;
 }
 
 export interface ISaleOrderByClient {

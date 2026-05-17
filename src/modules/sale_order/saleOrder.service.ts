@@ -290,6 +290,45 @@ export const create = async (
   return newSaleOrder;
 };
 
+const calcDetailDiscount = (
+  gross: number,
+  discountType?: string | null,
+  discountValue?: number
+): { discountAmount: number; subtotal: number } => {
+  let discountAmount = 0;
+  if (discountType === "PORCENTUAL" && discountValue) {
+    discountAmount = parseFloat((gross * (discountValue / 100)).toFixed(2));
+  } else if (discountType === "FIJO" && discountValue) {
+    discountAmount = parseFloat(Math.min(discountValue, gross).toFixed(2));
+  }
+  const subtotal = parseFloat((gross - discountAmount).toFixed(2));
+  return { discountAmount, subtotal };
+};
+
+const updateOrderTotal = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderId: any
+) => {
+  const order = await SaleOrder.findOne({ _id: saleOrderId, company: companyId });
+  if (!order) return;
+  const details = await SaleOrderDetail.find({ sale_order: saleOrderId, company: companyId });
+  const sumSubtotals = parseFloat(
+    details.reduce((acc, d) => acc + (d.subtotal || 0), 0).toFixed(2)
+  );
+  let discountAmount = 0;
+  if (order.discount_type === "PORCENTUAL" && order.discount_value) {
+    discountAmount = parseFloat((sumSubtotals * (order.discount_value / 100)).toFixed(2));
+  } else if (order.discount_type === "FIJO" && order.discount_value) {
+    discountAmount = parseFloat(Math.min(order.discount_value, sumSubtotals).toFixed(2));
+  }
+  const newTotal = parseFloat((sumSubtotals - discountAmount).toFixed(2));
+  await SaleOrder.findOneAndUpdate(
+    { _id: saleOrderId, company: companyId },
+    { total: newTotal, discount_amount: discountAmount }
+  );
+  return newTotal;
+};
+
 export const createDetail = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createSaleOrderDetailInput: SaleOrderDetailInput
@@ -394,12 +433,14 @@ export const createDetail = async (
     delete createSaleOrderDetailInput.warehouse;
   }
 
-  const subtotal: number =
-    Math.round(
-      createSaleOrderDetailInput.quantity *
-        createSaleOrderDetailInput.sale_price *
-        100
-    ) / 100;
+  const gross = Math.round(
+    createSaleOrderDetailInput.quantity * createSaleOrderDetailInput.sale_price * 100
+  ) / 100;
+  const { discountAmount, subtotal } = calcDetailDiscount(
+    gross,
+    createSaleOrderDetailInput.discount_type,
+    createSaleOrderDetailInput.discount_value
+  );
 
   let newSaleOrderDetail;
   try {
@@ -408,20 +449,13 @@ export const createDetail = async (
         await SaleOrderDetail.create({
           company: companyId,
           ...createSaleOrderDetailInput,
+          discount_amount: discountAmount,
           subtotal,
         })
       ).populate("sale_order")
     ).populate("product");
 
-    const updatedTotal = parseFloat((foundOrder.total + subtotal).toFixed(2));
-
-    await SaleOrder.findOneAndUpdate(
-      { _id: createSaleOrderDetailInput.sale_order, company: companyId },
-      {
-        total: updatedTotal,
-      },
-      { new: true }
-    );
+    await updateOrderTotal(companyId, createSaleOrderDetailInput.sale_order);
   } catch (createError) {
     if (
       foundProduct.stock_type === stockType.INDIVIDUAL &&
@@ -661,23 +695,10 @@ export const deleteProductToOrder = async (
   });
 
   if (deleteProductToSaleOrderDetail.deletedCount > 0) {
-    const updatedTotal = parseFloat(
-      (foundSaleOrder.total - foundSaleOrderDetail.subtotal).toFixed(2)
-    );
-
-    await SaleOrder.updateOne(
-      { _id: foundSaleOrder._id, company: companyId },
-      {
-        total: updatedTotal,
-      }
-    );
-    return {
-      success: true,
-    };
+    await updateOrderTotal(companyId, foundSaleOrder._id);
+    return { success: true };
   } else {
-    return {
-      success: false,
-    };
+    return { success: false };
   }
 };
 
@@ -1092,26 +1113,46 @@ export const updateSaleOrderDetail = async (
     );
   }
 
+  const gross = Math.round(
+    updateSaleOrderInput.sale_price * updateSaleOrderInput.quantity * 100
+  ) / 100;
+  const { discountAmount, subtotal } = calcDetailDiscount(
+    gross,
+    updateSaleOrderInput.discount_type,
+    updateSaleOrderInput.discount_value
+  );
+
   findSaleOrderDetail.sale_price = updateSaleOrderInput.sale_price;
   findSaleOrderDetail.quantity = updateSaleOrderInput.quantity;
-  findSaleOrderDetail.subtotal =
-    Math.round(
-      updateSaleOrderInput.sale_price * updateSaleOrderInput.quantity * 100
-    ) / 100;
+  findSaleOrderDetail.discount_type = updateSaleOrderInput.discount_type ?? null;
+  findSaleOrderDetail.discount_value = updateSaleOrderInput.discount_value ?? 0;
+  findSaleOrderDetail.discount_amount = discountAmount;
+  findSaleOrderDetail.subtotal = subtotal;
   await findSaleOrderDetail.save();
 
-  const saleOrderDetails = await SaleOrderDetail.find({
-    company: companyId,
-    sale_order: findSaleOrder._id,
-  });
-  let newTotal = 0;
-  saleOrderDetails.forEach((detail) => {
-    newTotal += detail.subtotal;
-  });
-  findSaleOrder.total = parseFloat(newTotal.toFixed(2));
-  await findSaleOrder.save();
+  await updateOrderTotal(companyId, findSaleOrder._id);
 
   return findSaleOrderDetail;
+};
+
+export const updateSaleOrderDiscount = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  discountType?: string | null,
+  discountValue?: number
+) => {
+  const foundOrder = await SaleOrder.findOne({ _id: saleOrderId, company: companyId });
+  if (!foundOrder) throw new Error("Orden de venta no encontrada");
+
+  foundOrder.discount_type = discountType ?? null;
+  foundOrder.discount_value = discountValue ?? 0;
+  await foundOrder.save();
+
+  await updateOrderTotal(companyId, saleOrderId);
+
+  return await SaleOrder.findOne({ _id: saleOrderId, company: companyId })
+    .populate("client")
+    .lean();
 };
 
 export const reportSaleOrderByClient = async (
