@@ -106,6 +106,9 @@ export function buildAbility(permissions: string[]): AppAbility {
       case "SALE_ORDER_REPORT":
         can("read", "SaleReport");
         break;
+      case "PROFITABILITY_REPORT":
+        can("read", "ProfitabilityReport");
+        break;
 
       // ── Almacenes ───────────────────────────────────────────────────────────
       case "ALL_WAREHOUSES":
@@ -145,6 +148,9 @@ export function buildAbility(permissions: string[]): AppAbility {
         break;
       case "LIST_PRODUCT_INVENTORY_BY_PRODUCT":
         can("listInventory", "Product");
+        break;
+      case "LIST_KARDEX_BY_PRODUCT":
+        can("listKardex", "Product");
         break;
       case "DELETE_PRODUCT":
         can("delete", "Product");

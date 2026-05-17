@@ -703,6 +703,57 @@ type StockReconcileResult {
   changes: [StockChange!]!
 }
 
+input FilterProfitabilityInput {
+  startDate: Date
+  endDate: Date
+}
+
+type ProfitabilityByProduct {
+  product_id: String
+  product_code: String
+  product_name: String
+  category_name: String
+  brand_name: String
+  units_sold: Int
+  revenue: Float
+  cost: Float
+  gross_profit: Float
+  margin_percent: Float
+}
+
+type ProfitabilityByCategory {
+  category_id: String
+  category_name: String
+  units_sold: Int
+  revenue: Float
+  cost: Float
+  gross_profit: Float
+  margin_percent: Float
+}
+
+type ProfitabilityReport {
+  by_product: [ProfitabilityByProduct]
+  by_category: [ProfitabilityByCategory]
+  total_revenue: Float
+  total_cost: Float
+  total_gross_profit: Float
+  total_margin_percent: Float
+}
+
+type KardexEntry {
+  _id: ID!
+  date: Float
+  type: String
+  reference_code: String
+  reference_id: String
+  quantity: Int
+  unit_price: Float
+  subtotal: Float
+  balance: Int
+  created_by: String
+  entity_name: String
+}
+
 type Query {
   listCompany: [CompanyWithPayment]
   listCompanyAdmin: [CompanyWithPayment]
@@ -785,6 +836,10 @@ type Query {
   findSaleReturn(saleReturnId: String!): SaleReturn
   listSaleReturnDetail(saleReturnId: String!): [SaleReturnDetail]
   findSaleReturnBySaleOrder(saleOrderId: String!): SaleReturn
+
+  listKardexByProduct(productId: String!): [KardexEntry]
+
+  profitabilityReport(filterInput: FilterProfitabilityInput): ProfitabilityReport
 }
 
 type Mutation {

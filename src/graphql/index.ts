@@ -19,6 +19,8 @@ import { userLandingResolver } from "../modules/user_landing/user_landing.resolv
 import { paymentLandingResolver } from "../modules/payment_landing/payment_landing.resolver";
 import { stockResolver } from "../modules/stock/stock.resolver";
 import { saleReturnResolver } from "../modules/sale_return/saleReturn.resolver";
+import { kardexResolver } from "../modules/kardex/kardex.resolver";
+import { profitabilityResolver } from "../modules/profitability/profitability.resolver";
 
 const schemaPath = path.join(__dirname, "./schema.graphql");
 
@@ -54,6 +56,8 @@ export const resolvers = {
     ...ProductTransferResolver.Query,
     ...stockResolver.Query,
     ...saleReturnResolver.Query,
+    ...kardexResolver.Query,
+    ...profitabilityResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,

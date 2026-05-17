@@ -57,6 +57,7 @@ export const PERMISSIONS_TREE: IPermission[] = [
       { label: "Reporte de productos", name: "productReport", value: "PRODUCT_REPORT" },
       { label: "Reporte de compras", name: "purchaseOrderReport", value: "PURCHASE_ORDER_REPORT" },
       { label: "Reporte de ventas", name: "saleOrderReport", value: "SALE_ORDER_REPORT" },
+      { label: "Reporte de rentabilidad", name: "profitabilityReport", value: "PROFITABILITY_REPORT" },
     ],
   },
   {
@@ -81,6 +82,7 @@ export const PERMISSIONS_TREE: IPermission[] = [
       { label: "Ver costo del producto", name: "viewProductCost", value: "VIEW_PRODUCT_COST" },
       { label: "Listar seriales de producto", name: "listProductSerialByProduct", value: "LIST_PRODUCT_SERIAL_BY_PRODUCT" },
       { label: "Listar inventario de producto", name: "listProductInventoryByProduct", value: "LIST_PRODUCT_INVENTORY_BY_PRODUCT" },
+      { label: "Ver Kardex del producto", name: "listKardexByProduct", value: "LIST_KARDEX_BY_PRODUCT" },
       { label: "Eliminar productos", name: "deleteProduct", value: "DELETE_PRODUCT" },
       { label: "Actualizar productos", name: "updateProduct", value: "UPDATE_PRODUCT" },
     ],
