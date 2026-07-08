@@ -112,6 +112,7 @@ export const login = async (loginInput: LoginInput) => {
       username: user.user_name,
       role: user.role.name,
       company: user.company.name,
+      companyLogo: user.company.image,
       companyId: user.company._id,
       currency: user.company.currency,
       permissions: user.role.permission,
