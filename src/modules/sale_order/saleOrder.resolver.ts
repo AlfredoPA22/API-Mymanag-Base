@@ -33,6 +33,7 @@ import {
   saleOrderReport,
   updateSaleOrderDetail,
   updateSaleOrderDiscount,
+  addManySerialsToOrder,
 } from "./saleOrder.service";
 
 export const saleOrderResolver = {
@@ -290,6 +291,20 @@ export const saleOrderResolver = {
         args.saleOrderId,
         args.updateSaleOrderDiscountInput?.discount_type,
         args.updateSaleOrderDiscountInput?.discount_value
+      );
+    },
+    async addManySerialsToSaleOrderDetail(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ) {
+      checkAnyAbility(context.ability, [
+        ["create", "Sale"],
+        ["update", "Sale"],
+      ]);
+      return await addManySerialsToOrder(
+        context.user.companyId,
+        args.addManySerialsToSaleOrderDetailInput
       );
     },
   },

@@ -38,3 +38,9 @@ export interface AddSerialToPurchaseOrderDetailInput {
   serial: string;
   warehouse: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
 }
+
+export interface AddManySerialsToPurchaseOrderDetailInput {
+  purchase_order_detail: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  warehouse: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  serials: string[];
+}

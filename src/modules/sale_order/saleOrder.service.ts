@@ -19,6 +19,7 @@ import {
   ISaleOrderDetailToPDF,
   SaleOrderDetailInput,
   UpdateSaleOrderDetailInput,
+  AddManySerialsToSaleOrderDetailInput
 } from "../../interfaces/saleOrderDetail.interface";
 import { IUser } from "../../interfaces/user.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
@@ -1565,4 +1566,138 @@ export const reportSaleOrderByMonth = async (
     .sort({ date: -1 })
     .limit(10)
     .lean<ISaleOrder[]>();
+};
+
+export const addManySerialsToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  input: AddManySerialsToSaleOrderDetailInput
+) => {
+  const { sale_order_detail, serials } = input;
+
+  if (!serials || serials.length === 0) {
+    throw new Error("Debe enviar al menos un serial");
+  }
+
+  const uniqueSerials = new Set(serials.map((s) => s.trim()));
+  if (uniqueSerials.size !== serials.length) {
+    throw new Error("Existen seriales repetidos en la lista enviada");
+  }
+
+  const foundSaleOrderDetail = await SaleOrderDetail.findOne({
+    _id: sale_order_detail,
+    company: companyId,
+  });
+
+  if (!foundSaleOrderDetail) {
+    throw new Error("No existe el detalle en la venta");
+  }
+
+  const foundProduct = await Product.findOne({
+    _id: foundSaleOrderDetail.product,
+    company: companyId,
+  });
+
+  if (!foundProduct) {
+    throw new Error("Producto no encontrado");
+  }
+
+  if (foundProduct.stock_type === stockType.INDIVIDUAL) {
+    throw new Error("No se pueden agregar seriales a este producto");
+  }
+
+  const remainingSlots =
+    foundSaleOrderDetail.quantity - foundSaleOrderDetail.serials;
+
+  if (remainingSlots <= 0) {
+    throw new Error("El detalle ya tiene asignado todos sus seriales");
+  }
+
+  if (serials.length > remainingSlots) {
+    throw new Error(
+      `Solo puede agregar ${remainingSlots} serial(es) más para completar la cantidad de la venta`
+    );
+  }
+
+  // Buscamos todos los seriales de golpe para validar de forma masiva
+  const foundProductSerials = await ProductSerial.find({
+    company: companyId,
+    serial: { $in: Array.from(uniqueSerials) },
+  });
+
+  const foundBySerial = new Map(
+    foundProductSerials.map((ps) => [ps.serial, ps])
+  );
+
+  const missing: string[] = [];
+  const wrongProduct: string[] = [];
+  const alreadySold: string[] = [];
+  const alreadyReserved: string[] = [];
+  const notAvailable: string[] = [];
+
+  for (const serial of uniqueSerials) {
+    const found = foundBySerial.get(serial);
+
+    if (!found) {
+      missing.push(serial);
+      continue;
+    }
+    if (found.product.toString() !== foundSaleOrderDetail.product.toString()) {
+      wrongProduct.push(serial);
+      continue;
+    }
+    if (found.status === productSerialStatus.VENDIDO) {
+      alreadySold.push(serial);
+      continue;
+    }
+    if (found.status === productSerialStatus.RESERVADO) {
+      alreadyReserved.push(serial);
+      continue;
+    }
+    if (found.status === productSerialStatus.BORRADOR) {
+      notAvailable.push(serial);
+      continue;
+    }
+  }
+
+  const errors: string[] = [];
+  if (missing.length) errors.push(`No existen: ${missing.join(", ")}`);
+  if (wrongProduct.length)
+    errors.push(`No pertenecen al producto: ${wrongProduct.join(", ")}`);
+  if (alreadySold.length) errors.push(`Ya vendidos: ${alreadySold.join(", ")}`);
+  if (alreadyReserved.length)
+    errors.push(`Ya reservados en otra venta: ${alreadyReserved.join(", ")}`);
+  if (notAvailable.length)
+    errors.push(`No disponibles (borrador): ${notAvailable.join(", ")}`);
+
+  if (errors.length > 0) {
+    throw new Error(
+      `No se pudo completar la operación. ${errors.join(". ")}`
+    );
+  }
+
+  const idsToReserve = Array.from(uniqueSerials).map(
+    (serial) => foundBySerial.get(serial)!._id
+  );
+
+  await ProductSerial.updateMany(
+    { _id: { $in: idsToReserve }, company: companyId },
+    {
+      $set: {
+        sale_order_detail: sale_order_detail,
+        status: productSerialStatus.RESERVADO,
+      },
+    }
+  );
+
+  await SaleOrderDetail.updateOne(
+    { _id: sale_order_detail, company: companyId },
+    { $inc: { serials: idsToReserve.length } }
+  );
+
+  const updatedProductSerials = await ProductSerial.find({
+    _id: { $in: idsToReserve },
+    company: companyId,
+  });
+
+  return updatedProductSerials;
 };

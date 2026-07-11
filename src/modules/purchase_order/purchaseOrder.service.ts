@@ -15,6 +15,7 @@ import {
   IPurchaseOrderDetailToPDF,
   PurchaseOrderDetailInput,
   UpdatePurchaseOrderDetailInput,
+  AddManySerialsToPurchaseOrderDetailInput,
 } from "../../interfaces/purchaseOrderDetail.interface";
 import { IUser } from "../../interfaces/user.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
@@ -897,4 +898,101 @@ export const updatePurchaseOrderDetail = async (
   await findPurchaseOrder.save();
 
   return findPurchaseOrderDetail;
+};
+
+export const addManySerialsToOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  input: AddManySerialsToPurchaseOrderDetailInput
+) => {
+  const { purchase_order_detail, warehouse, serials } = input;
+
+  if (!serials || serials.length === 0) {
+    throw new Error("Debe enviar al menos un serial");
+  }
+
+  // Evitar duplicados dentro del mismo arreglo enviado desde el front
+  const uniqueSerials = new Set(serials.map((s) => s.trim()));
+  if (uniqueSerials.size !== serials.length) {
+    throw new Error("Existen seriales repetidos en la lista enviada");
+  }
+
+  const foundPurchaseOrderDetail = await PurchaseOrderDetail.findOne({
+    _id: purchase_order_detail,
+    company: companyId,
+  });
+
+  if (!foundPurchaseOrderDetail) {
+    throw new Error("No existe el detalle en la compra");
+  }
+
+  const foundProduct = await Product.findOne({
+    _id: foundPurchaseOrderDetail.product,
+    company: companyId,
+  });
+
+  if (!foundProduct) {
+    throw new Error("Producto no encontrado");
+  }
+
+  if (foundProduct.stock_type === stockType.INDIVIDUAL) {
+    throw new Error("No se pueden agregar seriales a este producto");
+  }
+
+  const remainingSlots =
+    foundPurchaseOrderDetail.quantity - foundPurchaseOrderDetail.serials;
+
+  if (remainingSlots <= 0) {
+    throw new Error("El detalle ya tiene asignado todos sus seriales");
+  }
+
+  if (serials.length > remainingSlots) {
+    throw new Error(
+      `Solo puede agregar ${remainingSlots} serial(es) más para completar la cantidad de la compra`
+    );
+  }
+
+  // Verificar que ninguno de los seriales ya exista para la compañía
+  const existingSerials = await ProductSerial.find({
+    company: companyId,
+    serial: { $in: Array.from(uniqueSerials) },
+  }).lean();
+
+  if (existingSerials.length > 0) {
+    const existingValues = existingSerials.map((s) => s.serial).join(", ");
+    throw new Error(`Los siguientes seriales ya existen: ${existingValues}`);
+  }
+
+  const createdSerials: IProductSerial[] = [];
+
+  try {
+    for (const serial of uniqueSerials) {
+      const newSerial = await createProductSerial(companyId, {
+        purchase_order_detail,
+        warehouse,
+        product: foundPurchaseOrderDetail.product,
+        serial,
+      });
+      createdSerials.push(newSerial);
+    }
+
+    await PurchaseOrderDetail.updateOne(
+      { _id: purchase_order_detail, company: companyId },
+      { $inc: { serials: createdSerials.length } }
+    );
+
+    return createdSerials;
+  } catch (error) {
+    // Revertir lo creado si algo falla a mitad de camino
+    if (createdSerials.length > 0) {
+      await ProductSerial.deleteMany({
+        _id: { $in: createdSerials.map((s) => s._id) },
+        company: companyId,
+      });
+    }
+    throw new Error(
+      `Error al registrar los seriales: ${
+        error instanceof Error ? error.message : "error desconocido"
+      }. No se guardó ningún serial de esta operación.`
+    );
+  }
 };

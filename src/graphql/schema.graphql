@@ -380,6 +380,18 @@ input addSerialToPurchaseOrderDetailInput {
   warehouse: String!
 }
 
+input AddManySerialsToPurchaseOrderDetailInput {
+  purchase_order_detail: ID!
+  warehouse: ID!
+  serials: [String!]!
+}
+
+type Mutation {
+  addManySerialsToPurchaseOrderDetail(
+    addManySerialsToPurchaseOrderDetailInput: AddManySerialsToPurchaseOrderDetailInput!
+  ): [ProductSerial!]!
+}
+
 type DeleteResponse {
   success: Boolean!
 }
@@ -526,6 +538,17 @@ input UpdateSaleOrderDiscountInput {
 input addSerialToSaleOrderDetailInput {
   sale_order_detail: String!
   serial: String!
+}
+
+input AddManySerialsToSaleOrderDetailInput {
+  sale_order_detail: ID!
+  serials: [String!]!
+}
+
+type Mutation {
+  addManySerialsToSaleOrderDetail(
+    addManySerialsToSaleOrderDetailInput: AddManySerialsToSaleOrderDetailInput!
+  ): [ProductSerial!]!
 }
 
 type ReportSaleOrderByClient {

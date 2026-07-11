@@ -69,3 +69,8 @@ export interface ISaleOrderDetailToPDF {
   saleOrderDetail: ISaleOrderDetail;
   productSerial: IProductSerial[];
 }
+
+export interface AddManySerialsToSaleOrderDetailInput {
+  sale_order_detail: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
+  serials: string[];
+}

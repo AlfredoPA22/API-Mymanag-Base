@@ -6,6 +6,7 @@ import {
 import { IPurchaseOrderDetail } from "../../interfaces/purchaseOrderDetail.interface";
 import { checkAbility, checkAnyAbility } from "../../utils/ability";
 import {
+  addManySerialsToOrder,
   addSerialToOrder,
   approve,
   create,
@@ -190,6 +191,21 @@ export const purchaseOrderResolver = {
         ["update", "Purchase"],
       ]);
       return await approve(context.user.companyId, args.purchaseOrderId);
+    },
+
+    async addManySerialsToPurchaseOrderDetail(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ) {
+      checkAnyAbility(context.ability, [
+        ["create", "Purchase"],
+        ["update", "Purchase"],
+      ]);
+      return await addManySerialsToOrder(
+        context.user.companyId,
+        args.addManySerialsToPurchaseOrderDetailInput
+      );
     },
   },
 };
