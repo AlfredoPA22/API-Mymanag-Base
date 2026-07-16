@@ -215,7 +215,7 @@ const bootstrapServer = async () => {
     try {
       const company = await Company.findById(req.params.id)
         .select(
-          "_id name slug tagline description image address phone email country store_banner_image store_theme"
+          "_id name slug tagline description image address phone email country currency store_banner_image store_theme"
         )
         .lean();
       if (!company) return res.status(404).json({ message: "Empresa no encontrada" });
@@ -230,6 +230,7 @@ const bootstrapServer = async () => {
         phone: (company as any).phone || "",
         email: (company as any).email || "",
         country: (company as any).country || "",
+        currency: (company as any).currency || "Bs",
         store_banner_image: (company as any).store_banner_image || "",
         store_theme: (company as any).store_theme || null,
       });
