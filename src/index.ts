@@ -26,6 +26,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
+  "http://localhost:5176",
 ];
 
 const corsOptions = {
@@ -51,7 +52,7 @@ const corsOptions = {
   ],
 };
 
-// Rate limiting para login: máx 10 intentos por IP cada 15 minutos
+// Rate limiting para login de staff: máx 10 intentos por IP cada 15 minutos
 const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -60,10 +61,45 @@ const loginRateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiting propio para login/registro de clientes de la tienda,
+// completamente separado del de staff para que el tráfico de una tienda
+// (que puede tener muchos clientes desde la misma red/IP) nunca bloquee
+// el login del panel de MyManag.
+const storeAuthRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { message: "Demasiados intentos. Intenta de nuevo en 15 minutos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const STAFF_LOGIN_OPERATIONS = new Set(["Login", "loginLanding"]);
+const STORE_AUTH_OPERATIONS = new Set(["StoreLogin", "StoreRegister"]);
+
+function matchesOperation(body: any, operations: Set<string>): boolean {
+  if (body?.operationName && operations.has(body.operationName)) {
+    return true;
+  }
+  if (body?.query) {
+    const match = body.query.match(/^\s*(?:query|mutation)\s+(\w+)/);
+    if (match && operations.has(match[1])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const port = process.env.PORT || 3000;
 
 // Operaciones GraphQL públicas (no requieren token)
-const PUBLIC_OPERATIONS = new Set(["Login", "loginLanding"]);
+const PUBLIC_OPERATIONS = new Set([
+  "Login",
+  "loginLanding",
+  "StoreListProducts",
+  "StoreCreateOrder",
+  "StoreRegister",
+  "StoreLogin",
+]);
 
 /**
  * Detecta si el cuerpo del request es una operación pública.
@@ -108,10 +144,13 @@ const bootstrapServer = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Aplicar rate limiting solo a operaciones de login
+  // Aplicar rate limiting solo a operaciones de login (staff y clientes por separado)
   app.use("/graphql", (req, res, next) => {
-    if (isPublicOperation(req.body)) {
+    if (matchesOperation(req.body, STAFF_LOGIN_OPERATIONS)) {
       return loginRateLimiter(req, res, next);
+    }
+    if (matchesOperation(req.body, STORE_AUTH_OPERATIONS)) {
+      return storeAuthRateLimiter(req, res, next);
     }
     next();
   });
@@ -174,7 +213,9 @@ const bootstrapServer = async () => {
   app.get("/company/info/:id", async (req, res) => {
     try {
       const company = await Company.findById(req.params.id)
-        .select("_id name slug tagline description image address phone email country")
+        .select(
+          "_id name slug tagline description image address phone email country store_banner_image store_theme"
+        )
         .lean();
       if (!company) return res.status(404).json({ message: "Empresa no encontrada" });
       return res.json({
@@ -188,6 +229,8 @@ const bootstrapServer = async () => {
         phone: (company as any).phone || "",
         email: (company as any).email || "",
         country: (company as any).country || "",
+        store_banner_image: (company as any).store_banner_image || "",
+        store_theme: (company as any).store_theme || null,
       });
     } catch {
       return res.status(500).json({ message: "Error al buscar empresa" });

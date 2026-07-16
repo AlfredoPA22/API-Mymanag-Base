@@ -13,6 +13,15 @@ export interface ISubscription {
   notified_before_expiration: boolean;
 }
 
+export interface IStoreTheme {
+  primary?: string;
+  primaryDark?: string;
+  primaryForeground?: string;
+  dark?: string;
+  darkLight?: string;
+  light?: string;
+}
+
 export interface ICompanyWithPayment extends ICompany {
   latest_payment?: IPaymentLanding | null;
 }
@@ -31,6 +40,9 @@ export interface ICompany {
   country: string;
   image: string;
   currency: string;
+  store_enabled: boolean;
+  store_banner_image?: string;
+  store_theme?: IStoreTheme;
   plan: companyPlan;
   status: companyStatus;
   trial_expires_at: Date;
@@ -60,4 +72,7 @@ export interface UpdateCompanyInput {
   country?: string;
   image?: string;
   currency?: string;
+  store_enabled?: boolean;
+  store_banner_image?: string;
+  store_theme?: IStoreTheme;
 }

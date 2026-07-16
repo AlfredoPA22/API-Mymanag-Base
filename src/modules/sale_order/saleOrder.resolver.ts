@@ -7,6 +7,7 @@ import {
   ISalesReportBySeller,
   ISalesReportByProduct,
   IReportMonthlySales,
+  IStoreOrderStats,
 } from "../../interfaces/saleOrder.interface";
 import { ISaleOrderDetail } from "../../interfaces/saleOrderDetail.interface";
 import { checkAbility, checkAnyAbility } from "../../utils/ability";
@@ -22,6 +23,7 @@ import {
   findDetail,
   findSaleOrder,
   findSaleOrderToPDF,
+  getStoreOrderStats,
   listSaleOrderByProduct,
   reportSaleOrderByCategory,
   reportSaleOrderByClient,
@@ -33,6 +35,7 @@ import {
   saleOrderReport,
   updateSaleOrderDetail,
   updateSaleOrderDiscount,
+  updateSaleOrderPaymentMethod,
   addManySerialsToOrder,
 } from "./saleOrder.service";
 
@@ -45,6 +48,22 @@ export const saleOrderResolver = {
     ): Promise<ISaleOrder[]> {
       checkAbility(context.ability, "list", "Sale");
       return await findAll(context.user.companyId, context.user.id);
+    },
+    async listStoreOrders(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISaleOrder[]> {
+      checkAbility(context.ability, "list", "Sale");
+      return await findAll(context.user.companyId, context.user.id, "tienda_online");
+    },
+    async storeOrderStats(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IStoreOrderStats> {
+      checkAbility(context.ability, "list", "Sale");
+      return await getStoreOrderStats(context.user.companyId);
     },
     async listSaleOrderByProduct(
       _: any,
@@ -280,6 +299,18 @@ export const saleOrderResolver = {
         ["update", "Sale"],
       ]);
       return await approve(context.user.companyId, args.saleOrderId);
+    },
+    async updateSaleOrderPaymentMethod(_: any, args: Record<string, any>, context: any) {
+      checkAnyAbility(context.ability, [
+        ["create", "Sale"],
+        ["update", "Sale"],
+      ]);
+      return await updateSaleOrderPaymentMethod(
+        context.user.companyId,
+        args.saleOrderId,
+        args.updateSaleOrderPaymentMethodInput?.payment_method,
+        args.updateSaleOrderPaymentMethodInput?.contado_payment_method
+      );
     },
     async updateSaleOrderDiscount(_: any, args: Record<string, any>, context: any) {
       checkAnyAbility(context.ability, [

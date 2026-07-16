@@ -20,6 +20,24 @@ type CompanySubscription {
   notified_before_expiration: Boolean
 }
 
+type StoreTheme {
+  primary: String
+  primaryDark: String
+  primaryForeground: String
+  dark: String
+  darkLight: String
+  light: String
+}
+
+input StoreThemeInput {
+  primary: String
+  primaryDark: String
+  primaryForeground: String
+  dark: String
+  darkLight: String
+  light: String
+}
+
 type Company {
   _id: ID!
   name: String
@@ -34,6 +52,9 @@ type Company {
   country: String
   image: String
   currency: String
+  store_enabled: Boolean
+  store_banner_image: String
+  store_theme: StoreTheme
   plan: String
   status: String
   trial_expires_at: String
@@ -68,6 +89,9 @@ input UpdateCompanyInput {
   country: String
   image: String
   currency: String
+  store_enabled: Boolean
+  store_banner_image: String
+  store_theme: StoreThemeInput
 }
 
 input AdjustSubscriptionInput {
@@ -227,7 +251,11 @@ type Product {
   name: String
   description: String
   image: String
+  images: [String!]
+  show_in_store: Boolean
   sale_price: Float
+  store_price: Float
+  store_discount_price: Float
   stock: Int
   last_cost_price: Float
   brand: Brand
@@ -243,7 +271,11 @@ input ProductInput {
   name: String!
   description: String
   image: String
+  images: [String!]
+  show_in_store: Boolean
   sale_price: Float
+  store_price: Float
+  store_discount_price: Float
   category: String!
   brand: String!
   stock_type: StockType!
@@ -255,8 +287,12 @@ input UpdateProductInput {
   code: String!
   name: String!
   image: String!
+  images: [String!]
+  show_in_store: Boolean
   description: String!
   sale_price: Float!
+  store_price: Float
+  store_discount_price: Float
   category: String!
   brand: String!
   stock_type: StockType!
@@ -434,6 +470,7 @@ type SaleOrder {
   discount_type: String
   discount_value: Float
   discount_amount: Float
+  source: String
 }
 
 input SaleOrderInput {
@@ -528,6 +565,11 @@ input UpdateSaleOrderDetailInput {
   quantity: Int!
   discount_type: String
   discount_value: Float
+}
+
+input UpdateSaleOrderPaymentMethodInput {
+  payment_method: String!
+  contado_payment_method: String
 }
 
 input UpdateSaleOrderDiscountInput {
@@ -654,6 +696,7 @@ input PaymentLandingInput {
 type CompanyWithPayment {
   _id: ID!
   name: String
+  slug: String
   legal_name: String
   nit: String
   email: String
@@ -662,6 +705,9 @@ type CompanyWithPayment {
   country: String
   image: String
   currency: String
+  store_enabled: Boolean
+  store_banner_image: String
+  store_theme: StoreTheme
   plan: String
   status: String
   trial_expires_at: String
@@ -813,6 +859,8 @@ type Query {
   listProvider: [Provider]
 
   listSaleOrder: [SaleOrder]
+  listStoreOrders: [SaleOrder]
+  storeOrderStats: StoreOrderStats
   listSaleOrderDetail(saleOrderId: String!): [SaleOrderDetail]
   listProductSerialBySaleOrder(saleOrderDetailId: String!): [ProductSerial]
   listSaleOrderByClient(clientId: String!): SaleOrderByClient
@@ -957,6 +1005,10 @@ type Mutation {
     saleOrderDetailId: String!
     updateSaleOrderDetailInput: UpdateSaleOrderDetailInput!
   ): SaleOrderDetail
+  updateSaleOrderPaymentMethod(
+    saleOrderId: String!
+    updateSaleOrderPaymentMethodInput: UpdateSaleOrderPaymentMethodInput!
+  ): SaleOrder
   updateSaleOrderDiscount(
     saleOrderId: String!
     updateSaleOrderDiscountInput: UpdateSaleOrderDiscountInput!
@@ -999,4 +1051,140 @@ type Mutation {
 input SaleReturnItemInput {
   saleOrderDetailId: String!
   quantity: Int!
+}
+
+type StoreOrderStatsProduct {
+  product: String
+  quantity: Float
+  total: Float
+}
+
+type StoreOrderStats {
+  totalOrders: Int
+  pendingOrders: Int
+  approvedOrders: Int
+  totalRevenue: Float
+  averageTicket: Float
+  topProducts: [StoreOrderStatsProduct!]
+}
+
+# ── Tienda pública (storefront) ──────────────────────────────
+# Solo expone campos seguros de Product: nunca last_cost_price, min_stock ni max_stock.
+type StoreProduct {
+  _id: ID!
+  code: String
+  name: String
+  description: String
+  image: String
+  images: [String!]
+  sale_price: Float
+  regular_price: Float
+  stock: Int
+  brand: Brand
+  category: Category
+  status: String
+  stock_type: StockType
+}
+
+input StoreCartItemInput {
+  productId: String!
+  quantity: Int!
+}
+
+input StoreOrderInput {
+  fullName: String!
+  phoneNumber: String!
+  email: String
+  address: String
+  items: [StoreCartItemInput!]!
+}
+
+type StoreOrderResult {
+  code: String!
+  total: Float!
+  clientFullName: String!
+}
+
+type Query {
+  storeListProducts(companyId: ID!): [StoreProduct!]!
+}
+
+type Mutation {
+  storeCreateOrder(companyId: ID!, storeOrderInput: StoreOrderInput!): StoreOrderResult!
+}
+
+# ── Cuentas de cliente para la tienda ────────────────────────
+type StoreClient {
+  _id: ID!
+  fullName: String!
+  phoneNumber: String!
+  email: String
+  address: String
+}
+
+type StoreCartItem {
+  productId: ID!
+  name: String!
+  image: String
+  sale_price: Float!
+  stock: Int!
+  quantity: Int!
+}
+
+type StoreAuthResult {
+  token: String!
+  client: StoreClient!
+  cart: [StoreCartItem!]!
+}
+
+type StoreMeResult {
+  client: StoreClient!
+  cart: [StoreCartItem!]!
+}
+
+input StoreRegisterInput {
+  fullName: String!
+  phoneNumber: String!
+  email: String
+  address: String
+  password: String!
+}
+
+input StoreUpdateProfileInput {
+  fullName: String
+  email: String
+  address: String
+}
+
+type StoreOrderDetailItem {
+  productId: ID!
+  productName: String!
+  productImage: String
+  quantity: Int!
+  sale_price: Float!
+  subtotal: Float!
+}
+
+type StoreOrderDetailResult {
+  code: String!
+  date: String!
+  status: String!
+  total: Float!
+  is_paid: Boolean!
+  address: String
+  items: [StoreOrderDetailItem!]!
+}
+
+type Query {
+  storeMe: StoreMeResult
+  storeMyOrders: [SaleOrder!]!
+  storeOrderDetail(orderId: ID!): StoreOrderDetailResult!
+}
+
+type Mutation {
+  storeRegister(companyId: ID!, input: StoreRegisterInput!): StoreAuthResult!
+  storeLogin(companyId: ID!, phoneNumber: String!, password: String!): StoreAuthResult!
+  storeUpdateCart(items: [StoreCartItemInput!]!): [StoreCartItem!]!
+  storeCreateOrderForClient(items: [StoreCartItemInput!]!, address: String): StoreOrderResult!
+  storeUpdateProfile(input: StoreUpdateProfileInput!): StoreClient!
 }

@@ -21,6 +21,8 @@ import { stockResolver } from "../modules/stock/stock.resolver";
 import { saleReturnResolver } from "../modules/sale_return/saleReturn.resolver";
 import { kardexResolver } from "../modules/kardex/kardex.resolver";
 import { profitabilityResolver } from "../modules/profitability/profitability.resolver";
+import { storeResolver } from "../modules/store/store.resolver";
+import { storeAuthResolver } from "../modules/store_auth/storeAuth.resolver";
 
 const schemaPath = path.join(__dirname, "./schema.graphql");
 
@@ -58,6 +60,8 @@ export const resolvers = {
     ...saleReturnResolver.Query,
     ...kardexResolver.Query,
     ...profitabilityResolver.Query,
+    ...storeResolver.Query,
+    ...storeAuthResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,
@@ -78,5 +82,7 @@ export const resolvers = {
     ...paymentLandingResolver.Mutation,
     ...stockResolver.Mutation,
     ...saleReturnResolver.Mutation,
+    ...storeResolver.Mutation,
+    ...storeAuthResolver.Mutation,
   },
 };

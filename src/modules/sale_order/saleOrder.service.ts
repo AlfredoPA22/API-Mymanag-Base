@@ -11,6 +11,7 @@ import {
   ISalesReportBySeller,
   ISalesReportByProduct,
   IReportMonthlySales,
+  IStoreOrderStats,
   SaleOrderInput,
 } from "../../interfaces/saleOrder.interface";
 import {
@@ -44,7 +45,8 @@ import { companyPlan } from "../../utils/enums/companyPlan.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
-  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  source?: string
 ): Promise<ISaleOrder[]> => {
   const foundUser: IUser | null = await User.findOne({
     _id: userId,
@@ -55,9 +57,13 @@ export const findAll = async (
     throw new Error("Usuario no encontrado");
   }
 
-  const filter = foundUser.is_global
+  const filter: any = foundUser.is_global
     ? { company: companyId }
     : { company: companyId, created_by: userId };
+
+  if (source) {
+    filter.source = source;
+  }
 
   return await SaleOrder.find(filter)
     .sort({ date: -1 })
@@ -282,6 +288,7 @@ export const create = async (
       payment_method: createSaleOrderInput.payment_method,
       contado_payment_method: createSaleOrderInput.contado_payment_method,
       is_paid: isPaid,
+      source: createSaleOrderInput.source ?? "manual",
       created_by: userId,
     })
   ).populate("client");
@@ -1156,6 +1163,44 @@ export const updateSaleOrderDiscount = async (
     .lean();
 };
 
+export const updateSaleOrderPaymentMethod = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  paymentMethodInput: string,
+  contadoPaymentMethod?: string | null
+) => {
+  const foundOrder = await SaleOrder.findOne({ _id: saleOrderId, company: companyId });
+  if (!foundOrder) throw new Error("Orden de venta no encontrada");
+
+  if (foundOrder.status !== saleOrderStatus.BORRADOR) {
+    throw new Error("Solo se puede editar el método de pago de una venta en Borrador");
+  }
+
+  const existingPaymentsCount = await SalePayment.countDocuments({
+    sale_order: saleOrderId,
+    company: companyId,
+  });
+
+  if (existingPaymentsCount > 0) {
+    throw new Error(
+      "No se puede cambiar el método de pago porque ya existen pagos registrados para esta venta"
+    );
+  }
+
+  foundOrder.payment_method = paymentMethodInput;
+  foundOrder.contado_payment_method =
+    paymentMethodInput === paymentMethod.CONTADO
+      ? contadoPaymentMethod ?? undefined
+      : undefined;
+  foundOrder.is_paid = paymentMethodInput === paymentMethod.CONTADO;
+
+  await foundOrder.save();
+
+  return await SaleOrder.findOne({ _id: saleOrderId, company: companyId })
+    .populate("client")
+    .lean();
+};
+
 export const reportSaleOrderByClient = async (
   companyId: MongooseTypes.ObjectId,
   userId: MongooseTypes.ObjectId,
@@ -1698,6 +1743,100 @@ export const addManySerialsToOrder = async (
     _id: { $in: idsToReserve },
     company: companyId,
   });
-
   return updatedProductSerials;
+};
+
+export const getStoreOrderStats = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IStoreOrderStats> => {
+  const companyObjectId = new MongooseTypes.ObjectId(companyId.toString());
+
+  const [counts] = await SaleOrder.aggregate([
+    { $match: { company: companyObjectId, source: "tienda_online" } },
+    {
+      $group: {
+        _id: null,
+        totalOrders: { $sum: 1 },
+        pendingOrders: {
+          $sum: {
+            $cond: [{ $eq: ["$status", saleOrderStatus.BORRADOR] }, 1, 0],
+          },
+        },
+        approvedOrders: {
+          $sum: {
+            $cond: [{ $eq: ["$status", saleOrderStatus.APROBADO] }, 1, 0],
+          },
+        },
+        totalRevenue: {
+          $sum: {
+            $cond: [
+              { $eq: ["$status", saleOrderStatus.APROBADO] },
+              "$total",
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  const totalOrders = counts?.totalOrders ?? 0;
+  const pendingOrders = counts?.pendingOrders ?? 0;
+  const approvedOrders = counts?.approvedOrders ?? 0;
+  const totalRevenue = counts?.totalRevenue ?? 0;
+  const averageTicket = approvedOrders > 0 ? totalRevenue / approvedOrders : 0;
+
+  const topProducts = await SaleOrderDetail.aggregate([
+    {
+      $lookup: {
+        from: "sale_orders",
+        localField: "sale_order",
+        foreignField: "_id",
+        as: "order",
+      },
+    },
+    { $unwind: "$order" },
+    {
+      $match: {
+        "order.company": companyObjectId,
+        "order.source": "tienda_online",
+        "order.status": saleOrderStatus.APROBADO,
+      },
+    },
+    {
+      $group: {
+        _id: "$product",
+        quantity: { $sum: "$quantity" },
+        total: { $sum: "$subtotal" },
+      },
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "productData",
+      },
+    },
+    { $unwind: "$productData" },
+    {
+      $project: {
+        _id: 0,
+        product: "$productData.name",
+        quantity: 1,
+        total: 1,
+      },
+    },
+    { $sort: { quantity: -1 } },
+    { $limit: 5 },
+  ]);
+
+  return {
+    totalOrders,
+    pendingOrders,
+    approvedOrders,
+    totalRevenue,
+    averageTicket,
+    topProducts,
+  };
 };

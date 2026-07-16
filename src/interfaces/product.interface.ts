@@ -13,7 +13,11 @@ export interface IProduct {
   name: string;
   description: string;
   image: string;
+  images?: string[];
+  show_in_store?: boolean;
   sale_price: number;
+  store_price?: number | null;
+  store_discount_price?: number | null;
   stock: number;
   last_cost_price: number;
   category: ICategory;
@@ -30,7 +34,11 @@ export interface ProductInput {
   name: string;
   description?: string;
   image?: string;
+  images?: string[];
+  show_in_store?: boolean;
   sale_price?: number;
+  store_price?: number | null;
+  store_discount_price?: number | null;
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   brand: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   stock_type: stockType;
@@ -42,8 +50,12 @@ export interface UpdateProductInput {
   code: string;
   name: string;
   image: string;
+  images?: string[];
+  show_in_store?: boolean;
   description: string;
   sale_price: number;
+  store_price?: number | null;
+  store_discount_price?: number | null;
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   brand: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   stock_type: stockType;

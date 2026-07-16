@@ -24,6 +24,7 @@ export interface ISaleOrder {
   discount_type?: string | null;
   discount_value?: number;
   discount_amount?: number;
+  source: string;
 }
 
 export interface ISaleOrderByClient {
@@ -41,6 +42,7 @@ export interface SaleOrderInput {
   client: string;
   payment_method: string;
   contado_payment_method?: string;
+  source?: string;
 }
 
 export interface ISaleOrderToPDF {
@@ -78,4 +80,19 @@ export interface FilterSaleOrderInput {
   endDate?: Date;
   client?: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   status?: string;
+}
+
+export interface IStoreOrderStatsProduct {
+  product: string;
+  quantity: Number;
+  total: Number;
+}
+
+export interface IStoreOrderStats {
+  totalOrders: Number;
+  pendingOrders: Number;
+  approvedOrders: Number;
+  totalRevenue: Number;
+  averageTicket: Number;
+  topProducts: IStoreOrderStatsProduct[];
 }

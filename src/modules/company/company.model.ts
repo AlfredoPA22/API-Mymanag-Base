@@ -16,6 +16,18 @@ const subscriptionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const storeThemeSchema = new mongoose.Schema(
+  {
+    primary: { type: String, default: "" },
+    primaryDark: { type: String, default: "" },
+    primaryForeground: { type: String, default: "" },
+    dark: { type: String, default: "" },
+    darkLight: { type: String, default: "" },
+    light: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const companySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true },
@@ -30,6 +42,9 @@ const companySchema = new mongoose.Schema(
     country: { type: String, default: "" },
     image: { type: String, default: "" },
     currency: { type: String, default: "Bs" },
+    store_enabled: { type: Boolean, default: false },
+    store_banner_image: { type: String, default: "" },
+    store_theme: { type: storeThemeSchema, default: null },
     // Legacy fields (kept for MyManag backward compatibility)
     plan: {
       type: String,
