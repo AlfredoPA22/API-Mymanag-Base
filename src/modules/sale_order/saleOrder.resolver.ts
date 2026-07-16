@@ -54,7 +54,13 @@ export const saleOrderResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<ISaleOrder[]> {
-      checkAbility(context.ability, "list", "Sale");
+      // Acceso también permitido con el permiso de Empresa: quien administra
+      // la tienda online (aunque no tenga permiso de Ventas) debe poder ver
+      // sus propios pedidos, sin necesitar un permiso nuevo.
+      checkAnyAbility(context.ability, [
+        ["list", "Sale"],
+        ["update", "Company"],
+      ]);
       return await findAll(context.user.companyId, context.user.id, "tienda_online");
     },
     async storeOrderStats(
@@ -62,7 +68,10 @@ export const saleOrderResolver = {
       args: Record<string, any>,
       context: any
     ): Promise<IStoreOrderStats> {
-      checkAbility(context.ability, "list", "Sale");
+      checkAnyAbility(context.ability, [
+        ["list", "Sale"],
+        ["update", "Company"],
+      ]);
       return await getStoreOrderStats(context.user.companyId);
     },
     async listSaleOrderByProduct(
