@@ -23,6 +23,7 @@ const allowedOrigins = [
   "https://mymanag.vercel.app",
   "https://www.inventasys.site",
   "https://inventasys.vercel.app",
+  "https://mymanag-store.vercel.app",
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
