@@ -331,12 +331,16 @@ export const rejectPaymentLanding = async (
 
   if (!updatePayment) throw new Error("Pago no encontrado");
 
-  await sendPaymentRejectedEmail({
-    to: paymentCreator.email,
-    user_name: paymentCreator.fullName,
-    payment: updatePayment,
-    reason: "El pago no fue recibido o el comprobante es inválido",
-  });
+  try {
+    await sendPaymentRejectedEmail({
+      to: paymentCreator.email,
+      user_name: paymentCreator.fullName,
+      payment: updatePayment,
+      reason: "El pago no fue recibido o el comprobante es inválido",
+    });
+  } catch (error) {
+    console.error("⚠️ No se pudo enviar correo de rechazo de pago:", error);
+  }
 
   return updatePayment;
 };
