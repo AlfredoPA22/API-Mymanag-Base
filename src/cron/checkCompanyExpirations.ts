@@ -6,6 +6,7 @@ import { systemType } from "../utils/enums/systemType.enum";
 import { sendExpirationWarningEmail } from "../utils/sendExpirationWarningEmail";
 import { sendExpiredEmail } from "../utils/sendExpiredEmail";
 import { UserLanding } from "../modules/user_landing/user_landing.model";
+import { createNotification } from "../modules/notification/notification.service";
 
 const MILLISECONDS_IN_DAY = 1000 * 60 * 60 * 24;
 
@@ -34,12 +35,24 @@ export const checkCompanyExpirations = async () => {
           await sendExpirationWarningEmail(creator.email, company.name, legacyExpiration);
           company.notified_before_expiration = true;
           await company.save();
+          await createNotification(company._id, {
+            type: "payment_expiring",
+            title: "Tu plan está por vencer",
+            message: `Tu plan vence el ${legacyExpiration.toLocaleDateString("es-BO")}. Realiza el pago para evitar la interrupción del servicio.`,
+            link: "/configuracion",
+          });
         }
         if (legacyExpiration <= today) {
           company.status = companyStatus.EXPIRED;
           await company.save();
           console.log(`❌ Empresa expirada (MyManag): ${company.name}`);
           await sendExpiredEmail(creator.email, company.name);
+          await createNotification(company._id, {
+            type: "payment_expiring",
+            title: "Plan expirado",
+            message: "Tu plan ha expirado. Registra el pago para reactivar tu cuenta.",
+            link: "/configuracion",
+          });
         }
       }
 

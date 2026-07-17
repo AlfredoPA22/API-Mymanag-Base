@@ -32,6 +32,7 @@ import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
 import { assertStoreIsAvailable, getEffectiveSalePrice } from "../store/store.service";
 import { User } from "../user/user.model";
+import { createNotification } from "../notification/notification.service";
 
 const STORE_ORDER_SOURCE = "tienda_online";
 
@@ -352,6 +353,17 @@ export const createOrderForClient = async (
   await client.save();
 
   const finalOrder = await findSaleOrder(companyId, newOrder._id);
+
+  try {
+    await createNotification(companyId, {
+      type: "store_order",
+      title: "Nuevo pedido de la tienda",
+      message: `${finalOrder.client.fullName} hizo un pedido (${finalOrder.code}) por ${finalOrder.total}.`,
+      link: "/tienda/pedidos",
+    });
+  } catch (error) {
+    console.error("⚠️ No se pudo crear la notificación de nuevo pedido:", error);
+  }
 
   return {
     code: finalOrder.code,

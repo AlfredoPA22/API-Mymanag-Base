@@ -25,6 +25,7 @@ export interface ISaleOrder {
   discount_value?: number;
   discount_amount?: number;
   source: string;
+  payment_reminder_sent_at?: Date | null;
 }
 
 export interface ISaleOrderByClient {

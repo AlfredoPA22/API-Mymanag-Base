@@ -4,6 +4,7 @@ import { Product } from "../modules/product/product.model";
 import { UserLanding } from "../modules/user_landing/user_landing.model";
 import { companyStatus } from "../utils/enums/companyStatus.enum";
 import { sendLowStockEmail, LowStockProduct } from "../utils/sendLowStockEmail";
+import { createNotification } from "../modules/notification/notification.service";
 
 export const checkLowStock = async () => {
   // Solo empresas activas — no tiene sentido alertar a empresas expiradas o suspendidas
@@ -39,6 +40,14 @@ export const checkLowStock = async () => {
       }));
 
       await sendLowStockEmail((creator as any).email, (company as any).name, products);
+
+      await createNotification(company._id, {
+        type: "low_stock",
+        title: "Stock bajo",
+        message: `${products.length} producto${products.length > 1 ? "s" : ""} con stock bajo o agotado.`,
+        link: "/inventario/productos",
+      });
+
       totalAlertas++;
     } catch (error) {
       console.error(

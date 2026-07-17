@@ -18,6 +18,7 @@ import {
   findSaleOrder,
 } from "../sale_order/saleOrder.service";
 import { User } from "../user/user.model";
+import { createNotification } from "../notification/notification.service";
 
 const PUBLIC_PRODUCT_FIELDS =
   "code name description image images sale_price store_price store_discount_price stock stock_type brand category status";
@@ -167,6 +168,17 @@ export const createStoreOrder = async (
   }
 
   const finalOrder = await findSaleOrder(companyId, newOrder._id);
+
+  try {
+    await createNotification(companyId, {
+      type: "store_order",
+      title: "Nuevo pedido de la tienda",
+      message: `${finalOrder.client.fullName} hizo un pedido (${finalOrder.code}) por ${finalOrder.total}.`,
+      link: "/tienda/pedidos",
+    });
+  } catch (error) {
+    console.error("⚠️ No se pudo crear la notificación de nuevo pedido:", error);
+  }
 
   return {
     code: finalOrder.code,

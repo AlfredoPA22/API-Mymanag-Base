@@ -1188,3 +1188,24 @@ type Mutation {
   storeCreateOrderForClient(items: [StoreCartItemInput!]!, address: String): StoreOrderResult!
   storeUpdateProfile(input: StoreUpdateProfileInput!): StoreClient!
 }
+
+# ── Notificaciones internas ──────────────────────────────────
+type Notification {
+  _id: ID!
+  type: String!
+  title: String!
+  message: String!
+  link: String
+  read: Boolean!
+  createdAt: Date
+}
+
+type Query {
+  listNotifications: [Notification!]!
+  countUnreadNotifications: Int!
+}
+
+type Mutation {
+  markNotificationRead(notificationId: ID!): Notification!
+  markAllNotificationsRead: DeleteResponse!
+}
