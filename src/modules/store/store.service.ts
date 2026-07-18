@@ -2,6 +2,7 @@ import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { IProduct } from "../../interfaces/product.interface";
 import { IStoreOrderResult, StoreOrderInput } from "../../interfaces/store.interface";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { companyPlanLimits } from "../../utils/planLimits";
 import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
 import { salePaymentMethod } from "../../utils/enums/salePaymentMethod";
 import { productStatus } from "../../utils/enums/productStatus.enum";
@@ -59,7 +60,8 @@ const withEffectivePrice = <T extends PricedProduct>(
 const STORE_ORDER_SOURCE = "tienda_online";
 
 export const assertStoreIsAvailable = (company: { plan: string; store_enabled?: boolean } | null) => {
-  if (!company || company.plan !== companyPlan.PRO || !company.store_enabled) {
+  const hasStore = company && companyPlanLimits[company.plan as companyPlan]?.hasStore;
+  if (!company || !hasStore || !company.store_enabled) {
     throw new Error("Tienda no disponible");
   }
 };

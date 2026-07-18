@@ -12,7 +12,8 @@ import { Company } from "./company.model";
 import { User } from "../user/user.model";
 import { Role } from "../role/role.model";
 import { PERMISSIONS_MOCK } from "../permission/utils/permissionsMock";
-import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
+import mongoose, { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
+import { companyDataModels } from "../../utils/companyDataModels";
 import { sendCredentialsEmail } from "../../utils/sendCredentialsEmail";
 import { UserLanding } from "../user_landing/user_landing.model";
 import { userLandingType } from "../../utils/enums/userLandingType.enum";
@@ -410,4 +411,70 @@ export const adjustSubscription = async (
   await company.save();
 
   return company.toObject() as ICompany;
+};
+
+const assertLandingAdmin = async (
+  adminUserId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+) => {
+  const adminUser = await UserLanding.findById(adminUserId);
+  if (!adminUser) throw new Error("Usuario no encontrado");
+  if (adminUser.user_type !== userLandingType.ADMIN) {
+    throw new Error("Acceso denegado: solo para administradores");
+  }
+};
+
+const countCompanyData = async (companyId: string) => {
+  const counts = await Promise.all(
+    companyDataModels.map(({ model }) => model.countDocuments({ company: companyId }))
+  );
+  return Object.fromEntries(
+    companyDataModels.map(({ key }, i) => [key, counts[i]])
+  ) as Record<string, number>;
+};
+
+export const getCompanyDeletionReport = async (
+  adminUserId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  companyId: string
+) => {
+  await assertLandingAdmin(adminUserId);
+
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const counts = await countCompanyData(companyId);
+
+  return { companyName: company.name, ...counts };
+};
+
+export const deleteCompanyPermanently = async (
+  adminUserId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  companyId: string,
+  confirmationText: string
+) => {
+  await assertLandingAdmin(adminUserId);
+
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  if (confirmationText.trim() !== company.name) {
+    throw new Error(
+      "El texto de confirmación no coincide con el nombre de la empresa"
+    );
+  }
+
+  const counts = await countCompanyData(companyId);
+
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      for (const { model } of companyDataModels) {
+        await model.deleteMany({ company: companyId }, { session });
+      }
+      await Company.deleteOne({ _id: companyId }, { session });
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  return { success: true, deletedCounts: { companyName: company.name, ...counts } };
 };

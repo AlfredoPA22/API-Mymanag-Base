@@ -272,7 +272,7 @@ export const create = async (
     purchaseOrderCount >= planLimits.maxPurchaseOrder
   ) {
     throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxPurchaseOrder} órdenes de compra por mes}`
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxPurchaseOrder} órdenes de compra por mes`
     );
   }
 

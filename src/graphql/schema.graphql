@@ -1209,3 +1209,42 @@ type Mutation {
   markNotificationRead(notificationId: ID!): Notification!
   markAllNotificationsRead: DeleteResponse!
 }
+
+type CompanyDeletionReport {
+  companyName: String!
+  products: Int!
+  brands: Int!
+  categories: Int!
+  providers: Int!
+  clients: Int!
+  warehouses: Int!
+  roles: Int!
+  users: Int!
+  saleOrders: Int!
+  saleOrderDetails: Int!
+  purchaseOrders: Int!
+  purchaseOrderDetails: Int!
+  salePayments: Int!
+  saleReturns: Int!
+  saleReturnDetails: Int!
+  productTransfers: Int!
+  productTransferDetails: Int!
+  productInventory: Int!
+  productSerials: Int!
+  notifications: Int!
+  payments: Int!
+  codeGenerators: Int!
+}
+
+type DeleteCompanyResult {
+  success: Boolean!
+  deletedCounts: CompanyDeletionReport
+}
+
+type Query {
+  companyDeletionReport(companyId: ID!): CompanyDeletionReport!
+}
+
+type Mutation {
+  deleteCompanyPermanently(companyId: ID!, confirmationText: String!): DeleteCompanyResult!
+}

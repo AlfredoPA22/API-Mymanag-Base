@@ -134,7 +134,7 @@ export const createPayment = async (
     salePaymentCount >= planLimits.maxSalePayment
   ) {
     throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxSalePayment} pagos por mes}`
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxSalePayment} pagos por mes`
     );
   }
 

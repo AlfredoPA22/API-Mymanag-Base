@@ -14,16 +14,7 @@ export const companyPlanLimits: Record<
     maxSalePayment: number;
     maxUser: number;
     maxWarehouse: number;
-    features: {
-      dashboard: {
-        generalData: boolean;
-        reportSaleOrderByCategory: boolean;
-        reportSaleOrderByClient: boolean;
-        reportSaleOrderByMonth: boolean;
-        searchProduct: boolean;
-      };
-      reports: boolean;
-    };
+    hasStore: boolean;
   }
 > = {
   [companyPlan.FREE]: {
@@ -38,16 +29,7 @@ export const companyPlanLimits: Record<
     maxSalePayment: 3,
     maxUser: 1,
     maxWarehouse: 1,
-    features: {
-      dashboard: {
-        generalData: true,
-        reportSaleOrderByCategory: true,
-        reportSaleOrderByClient: false,
-        reportSaleOrderByMonth: false,
-        searchProduct: true,
-      },
-      reports: false,
-    },
+    hasStore: false,
   },
   [companyPlan.BASIC]: {
     maxBrand: 50,
@@ -61,16 +43,7 @@ export const companyPlanLimits: Record<
     maxSalePayment: 100,
     maxUser: 3,
     maxWarehouse: 3,
-    features: {
-      dashboard: {
-        generalData: true,
-        reportSaleOrderByCategory: true,
-        reportSaleOrderByClient: true,
-        reportSaleOrderByMonth: true,
-        searchProduct: true,
-      },
-      reports: true,
-    },
+    hasStore: false,
   },
   [companyPlan.PRO]: {
     maxBrand: Infinity,
@@ -84,15 +57,6 @@ export const companyPlanLimits: Record<
     maxSalePayment: Infinity,
     maxUser: Infinity,
     maxWarehouse: Infinity,
-    features: {
-      dashboard: {
-        generalData: true,
-        reportSaleOrderByCategory: true,
-        reportSaleOrderByClient: true,
-        reportSaleOrderByMonth: true,
-        searchProduct: true,
-      },
-      reports: true,
-    },
+    hasStore: true,
   },
 };

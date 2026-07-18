@@ -5,9 +5,11 @@ import {
 import {
   adjustSubscription,
   create,
+  deleteCompanyPermanently,
   detailCompany,
   findAll,
   findAllAdmin,
+  getCompanyDeletionReport,
   update,
 } from "./company.service";
 import { checkAbility } from "../../utils/ability";
@@ -35,6 +37,9 @@ export const companyResolver = {
     ): Promise<ICompany> {
       return await detailCompany(context.user.companyId);
     },
+    async companyDeletionReport(_: any, args: Record<string, any>, context: any) {
+      return await getCompanyDeletionReport(context.user.id, args.companyId);
+    },
   },
   Mutation: {
     async createCompany(_: any, args: Record<string, any>, context: any) {
@@ -46,6 +51,13 @@ export const companyResolver = {
     },
     async adjustSubscription(_: any, args: Record<string, any>, context: any): Promise<ICompany> {
       return await adjustSubscription(context.user.id, args.input);
+    },
+    async deleteCompanyPermanently(_: any, args: Record<string, any>, context: any) {
+      return await deleteCompanyPermanently(
+        context.user.id,
+        args.companyId,
+        args.confirmationText
+      );
     },
   },
 };

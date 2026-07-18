@@ -270,7 +270,7 @@ export const create = async (
 
   if (planLimits.maxSaleOrder && saleOrderCount >= planLimits.maxSaleOrder) {
     throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxSaleOrder} órdenes de venta por mes}`
+      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxSaleOrder} órdenes de venta por mes`
     );
   }
 
