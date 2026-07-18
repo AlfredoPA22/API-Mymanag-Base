@@ -36,7 +36,8 @@ import { ProductInventory } from "./product_inventory.model";
 import { ProductSerial } from "./product_serial.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
-import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { companyPlan, PLAN_LABELS } from "../../utils/enums/companyPlan.enum";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 import * as XLSX from "xlsx";
 import { stockType } from "../../utils/enums/stockType.enum";
 import { Brand } from "../brand/brand.model";
@@ -509,11 +510,7 @@ export const createProduct = async (
   const productCount = await Product.countDocuments({ company: companyId });
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (planLimits.maxProduct && productCount >= planLimits.maxProduct) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxProduct} productos`
-    );
-  }
+  assertPlanLimit(company.plan as companyPlan, "productos", productCount, planLimits.maxProduct);
 
   const productNameValidation = await Product.findOne({
     company: companyId,
@@ -764,8 +761,13 @@ export const previewImportProducts = async (
     planLimits.maxProduct &&
     productCount + data.length > planLimits.maxProduct
   ) {
+    const planLabel = PLAN_LABELS[company.plan as companyPlan] ?? company.plan;
+    const overLimitHint =
+      productCount >= planLimits.maxProduct
+        ? " (ya tenías más de lo que tu plan permite antes de esta importación, probablemente por un cambio de plan)"
+        : "";
     throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxProduct} productos. Ya tienes ${productCount} y estás intentando importar ${data.length}.`
+      `Tu plan actual (${planLabel}) solo permite hasta ${planLimits.maxProduct} productos. Ya tienes ${productCount} y estás intentando importar ${data.length}${overLimitHint}.`
     );
   }
 

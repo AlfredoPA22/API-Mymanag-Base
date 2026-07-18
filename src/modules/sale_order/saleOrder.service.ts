@@ -42,6 +42,7 @@ import { Company } from "../company/company.model";
 import dayjs from "dayjs";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -268,11 +269,13 @@ export const create = async (
 
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (planLimits.maxSaleOrder && saleOrderCount >= planLimits.maxSaleOrder) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxSaleOrder} órdenes de venta por mes`
-    );
-  }
+  assertPlanLimit(
+    company.plan as companyPlan,
+    "órdenes de venta",
+    saleOrderCount,
+    planLimits.maxSaleOrder,
+    { perMonth: true }
+  );
 
   const isPaid: boolean =
     createSaleOrderInput.payment_method === paymentMethod.CONTADO

@@ -18,6 +18,7 @@ import { User } from "../user/user.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -86,11 +87,7 @@ export const create = async (
 
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (planLimits.maxClient && clientCount >= planLimits.maxClient) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxClient} clientes`
-    );
-  }
+  assertPlanLimit(company.plan as companyPlan, "clientes", clientCount, planLimits.maxClient);
 
   const newClient = await Client.create({
     code: await generate(companyId, codeType.CLIENT),

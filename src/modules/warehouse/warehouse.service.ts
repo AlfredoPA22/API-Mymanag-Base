@@ -10,6 +10,7 @@ import { Warehouse } from "./warehouse.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -32,11 +33,7 @@ export const create = async (
 
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (planLimits.maxWarehouse && warehouseCount >= planLimits.maxWarehouse) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxWarehouse} almacenes`
-    );
-  }
+  assertPlanLimit(company.plan as companyPlan, "almacenes", warehouseCount, planLimits.maxWarehouse);
 
   const warehouse = await Warehouse.findOne({
     company: companyId,

@@ -35,6 +35,7 @@ import { PurchaseOrderDetail } from "./purchase_order_detail.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 import dayjs from "dayjs";
 
 export const findAll = async (
@@ -267,14 +268,13 @@ export const create = async (
 
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (
-    planLimits.maxPurchaseOrder &&
-    purchaseOrderCount >= planLimits.maxPurchaseOrder
-  ) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxPurchaseOrder} órdenes de compra por mes`
-    );
-  }
+  assertPlanLimit(
+    company.plan as companyPlan,
+    "órdenes de compra",
+    purchaseOrderCount,
+    planLimits.maxPurchaseOrder,
+    { perMonth: true }
+  );
 
   const newPurchaseOrder = await (
     await PurchaseOrder.create({

@@ -16,6 +16,8 @@ import { Company } from "./modules/company/company.model";
 import { previewImportProducts } from "./modules/product/product.service";
 import { verifyEmailConnection } from "./utils/emailTransporter";
 import { buildAbility } from "./utils/ability";
+import { companyPlanLimits } from "./utils/planLimits";
+import { companyPlan } from "./utils/enums/companyPlan.enum";
 
 dotenv.config();
 const app = express();
@@ -217,10 +219,12 @@ const bootstrapServer = async () => {
     try {
       const company = await Company.findById(req.params.id)
         .select(
-          "_id name slug tagline description image address phone email country currency store_banner_image store_theme"
+          "_id name slug tagline description image address phone email country currency store_banner_image store_theme plan store_enabled"
         )
         .lean();
       if (!company) return res.status(404).json({ message: "Empresa no encontrada" });
+      const hasStorePlan =
+        companyPlanLimits[(company as any).plan as companyPlan]?.hasStore ?? false;
       return res.json({
         companyId: company._id,
         name: (company as any).name,
@@ -235,6 +239,10 @@ const bootstrapServer = async () => {
         currency: (company as any).currency || "Bs",
         store_banner_image: (company as any).store_banner_image || "",
         store_theme: (company as any).store_theme || null,
+        // Solo lo consume el storefront de MyManag para mostrar un mensaje
+        // claro cuando el plan no incluye tienda o está desactivada, en vez
+        // de un error crudo al cargar el catálogo.
+        store_available: hasStorePlan && !!(company as any).store_enabled,
       });
     } catch {
       return res.status(500).json({ message: "Error al buscar empresa" });

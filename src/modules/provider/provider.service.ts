@@ -11,6 +11,7 @@ import { Provider } from "./provider.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -33,11 +34,7 @@ export const create = async (
 
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (planLimits.maxProvider && providerCount >= planLimits.maxProvider) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxProvider} proveedores`
-    );
-  }
+  assertPlanLimit(company.plan as companyPlan, "proveedores", providerCount, planLimits.maxProvider);
 
   const newProvider = await Provider.create({
     company: companyId,

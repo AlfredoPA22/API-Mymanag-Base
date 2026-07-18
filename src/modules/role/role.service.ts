@@ -1,6 +1,7 @@
 import { IRole, RoleInput } from "../../interfaces/role.interface";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { companyPlanLimits } from "../../utils/planLimits";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 import { Company } from "../company/company.model";
 import { User } from "../user/user.model";
 import { Role } from "./role.model";
@@ -40,11 +41,7 @@ export const create = async (
 
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (planLimits.maxRole && roleCount >= planLimits.maxRole) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxRole} roles`
-    );
-  }
+  assertPlanLimit(company.plan as companyPlan, "roles", roleCount, planLimits.maxRole);
 
   const role = await Role.findOne({
     company: companyId,

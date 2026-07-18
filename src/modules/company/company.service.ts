@@ -6,6 +6,7 @@ import {
   UpdateCompanyInput,
 } from "../../interfaces/company.interface";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { companyPlanLimits } from "../../utils/planLimits";
 import { companyStatus } from "../../utils/enums/companyStatus.enum";
 import { systemType } from "../../utils/enums/systemType.enum";
 import { Company } from "./company.model";
@@ -405,6 +406,13 @@ export const adjustSubscription = async (
     company.subscription_expires_at = expiresAt;
     company.trial_expires_at = trialExpiresAt;
     company.notified_before_expiration = false;
+
+    // Si el plan nuevo no incluye tienda online, se apaga de verdad — así,
+    // si más adelante vuelve a subir a un plan con tienda, queda apagada
+    // hasta que el admin la reactive manualmente (no se reactiva sola).
+    if (!companyPlanLimits[input.plan as companyPlan]?.hasStore) {
+      company.store_enabled = false;
+    }
   }
 
   (company as any).markModified("subscriptions");

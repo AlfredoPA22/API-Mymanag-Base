@@ -16,6 +16,7 @@ import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { companyStatus } from "../../utils/enums/companyStatus.enum";
+import { assertPlanLimit } from "../../utils/assertPlanLimit";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -39,11 +40,7 @@ export const create = async (
 
   const planLimits = companyPlanLimits[company.plan as companyPlan];
 
-  if (planLimits.maxUser && userCount >= planLimits.maxUser) {
-    throw new Error(
-      `Tu plan actual (${company.plan}) solo permite hasta ${planLimits.maxUser} usuarios`
-    );
-  }
+  assertPlanLimit(company.plan as companyPlan, "usuarios", userCount, planLimits.maxUser);
 
   const user = await User.findOne({
     company: companyId,

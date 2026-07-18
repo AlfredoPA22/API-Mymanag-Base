@@ -12,6 +12,8 @@ import { sendPaymentApproveEmail } from "../../utils/sendPaymentApproveEmail";
 import { sendPaymentRejectedEmail } from "../../utils/sendPaymentRejectEmail";
 import { companyStatus } from "../../utils/enums/companyStatus.enum";
 import { systemType } from "../../utils/enums/systemType.enum";
+import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { companyPlanLimits } from "../../utils/planLimits";
 import { addMonths } from "date-fns";
 import { Role } from "../role/role.model";
 import { PERMISSIONS_MOCK } from "../permission/utils/permissionsMock";
@@ -276,6 +278,13 @@ export const approvePaymentLanding = async (
       company.trial_expires_at = null;
       company.subscription_expires_at = addMonths(baseDate, 1);
       company.notified_before_expiration = false;
+    }
+
+    // Si el plan aprobado no incluye tienda online, se apaga de verdad —
+    // igual criterio que en adjustSubscription (no se reactiva sola al
+    // volver a subir de plan, hay que reactivarla a mano).
+    if (!companyPlanLimits[payment.plan as companyPlan]?.hasStore) {
+      company.store_enabled = false;
     }
   }
 
