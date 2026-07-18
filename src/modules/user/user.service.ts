@@ -15,6 +15,7 @@ import { SalePayment } from "../sale_payment/sale_payment.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
+import { companyStatus } from "../../utils/enums/companyStatus.enum";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -99,6 +100,15 @@ export const login = async (loginInput: LoginInput) => {
 
   if (!isMatch) {
     throw new Error("Credenciales invalidos");
+  }
+
+  if (user.company.status === companyStatus.EXPIRED) {
+    throw new Error(
+      "La suscripción de tu empresa venció. Contacta al administrador para renovarla."
+    );
+  }
+  if (user.company.status === companyStatus.SUSPENDED) {
+    throw new Error("Tu empresa está suspendida. Contacta a soporte.");
   }
 
   const secret = process.env.JWT_SECRET;
