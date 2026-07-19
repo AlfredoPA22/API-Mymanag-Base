@@ -43,6 +43,7 @@ import dayjs from "dayjs";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
+import { round2 } from "../../utils/money";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -308,11 +309,11 @@ const calcDetailDiscount = (
 ): { discountAmount: number; subtotal: number } => {
   let discountAmount = 0;
   if (discountType === "PORCENTUAL" && discountValue) {
-    discountAmount = parseFloat((gross * (discountValue / 100)).toFixed(2));
+    discountAmount = round2(gross * (discountValue / 100));
   } else if (discountType === "FIJO" && discountValue) {
-    discountAmount = parseFloat(Math.min(discountValue, gross).toFixed(2));
+    discountAmount = round2(Math.min(discountValue, gross));
   }
-  const subtotal = parseFloat((gross - discountAmount).toFixed(2));
+  const subtotal = round2(gross - discountAmount);
   return { discountAmount, subtotal };
 };
 
@@ -323,16 +324,16 @@ const updateOrderTotal = async (
   const order = await SaleOrder.findOne({ _id: saleOrderId, company: companyId });
   if (!order) return;
   const details = await SaleOrderDetail.find({ sale_order: saleOrderId, company: companyId });
-  const sumSubtotals = parseFloat(
-    details.reduce((acc, d) => acc + (d.subtotal || 0), 0).toFixed(2)
+  const sumSubtotals = round2(
+    details.reduce((acc, d) => acc + (d.subtotal || 0), 0)
   );
   let discountAmount = 0;
   if (order.discount_type === "PORCENTUAL" && order.discount_value) {
-    discountAmount = parseFloat((sumSubtotals * (order.discount_value / 100)).toFixed(2));
+    discountAmount = round2(sumSubtotals * (order.discount_value / 100));
   } else if (order.discount_type === "FIJO" && order.discount_value) {
-    discountAmount = parseFloat(Math.min(order.discount_value, sumSubtotals).toFixed(2));
+    discountAmount = round2(Math.min(order.discount_value, sumSubtotals));
   }
-  const newTotal = parseFloat((sumSubtotals - discountAmount).toFixed(2));
+  const newTotal = round2(sumSubtotals - discountAmount);
   await SaleOrder.findOneAndUpdate(
     { _id: saleOrderId, company: companyId },
     { total: newTotal, discount_amount: discountAmount }
@@ -444,9 +445,9 @@ export const createDetail = async (
     delete createSaleOrderDetailInput.warehouse;
   }
 
-  const gross = Math.round(
-    createSaleOrderDetailInput.quantity * createSaleOrderDetailInput.sale_price * 100
-  ) / 100;
+  const gross = round2(
+    createSaleOrderDetailInput.quantity * createSaleOrderDetailInput.sale_price
+  );
   const { discountAmount, subtotal } = calcDetailDiscount(
     gross,
     createSaleOrderDetailInput.discount_type,
@@ -1124,9 +1125,9 @@ export const updateSaleOrderDetail = async (
     );
   }
 
-  const gross = Math.round(
-    updateSaleOrderInput.sale_price * updateSaleOrderInput.quantity * 100
-  ) / 100;
+  const gross = round2(
+    updateSaleOrderInput.sale_price * updateSaleOrderInput.quantity
+  );
   const { discountAmount, subtotal } = calcDetailDiscount(
     gross,
     updateSaleOrderInput.discount_type,
@@ -1281,7 +1282,7 @@ export const reportSaleOrderByClient = async (
     { $limit: 10 },
   ]);
 
-  return topClients as ISalesReportByClient[];
+  return topClients.map((c: any) => ({ ...c, total: round2(c.total) })) as ISalesReportByClient[];
 };
 
 export const reportSaleOrderBySeller = async (
@@ -1350,7 +1351,7 @@ export const reportSaleOrderBySeller = async (
     { $limit: 10 },
   ]);
 
-  return topSellers as ISalesReportBySeller[];
+  return topSellers.map((s: any) => ({ ...s, total: round2(s.total) })) as ISalesReportBySeller[];
 };
 
 export const reportSaleOrderByCategory = async (
@@ -1433,7 +1434,7 @@ export const reportSaleOrderByCategory = async (
     },
   ]);
 
-  return topCategories as ISalesReportByCategory[];
+  return topCategories.map((c: any) => ({ ...c, total: round2(c.total) })) as ISalesReportByCategory[];
 };
 
 export const reportSaleOrderByProduct = async (
@@ -1499,7 +1500,7 @@ export const reportSaleOrderByProduct = async (
     { $limit: 10 },
   ]);
 
-  return topProducts;
+  return topProducts.map((p: any) => ({ ...p, total: round2(p.total) }));
 };
 
 export const reportMonthlySales = async (
@@ -1536,7 +1537,7 @@ export const reportMonthlySales = async (
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const result = monthNames.map((name, i) => {
     const found = monthlyData.find((m: any) => m._id === i + 1);
-    return { month: name, total: found ? found.total : 0 };
+    return { month: name, total: found ? round2(found.total) : 0 };
   });
 
   return result;
@@ -1786,8 +1787,8 @@ export const getStoreOrderStats = async (
   const totalOrders = counts?.totalOrders ?? 0;
   const pendingOrders = counts?.pendingOrders ?? 0;
   const approvedOrders = counts?.approvedOrders ?? 0;
-  const totalRevenue = counts?.totalRevenue ?? 0;
-  const averageTicket = approvedOrders > 0 ? totalRevenue / approvedOrders : 0;
+  const totalRevenue = round2(counts?.totalRevenue ?? 0);
+  const averageTicket = approvedOrders > 0 ? round2(totalRevenue / approvedOrders) : 0;
 
   const topProducts = await SaleOrderDetail.aggregate([
     {
@@ -1840,6 +1841,6 @@ export const getStoreOrderStats = async (
     approvedOrders,
     totalRevenue,
     averageTicket,
-    topProducts,
+    topProducts: topProducts.map((p: any) => ({ ...p, total: round2(p.total) })),
   };
 };

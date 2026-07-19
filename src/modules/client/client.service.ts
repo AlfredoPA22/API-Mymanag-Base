@@ -19,6 +19,7 @@ import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
+import { round2 } from "../../utils/money";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -62,11 +63,13 @@ export const findAllSaleOrderByClient = async (
     .populate("company")
     .lean<ISaleOrder[]>();
 
-  const total: number = allSalesOrderByClient
-    .filter(
-      (saleOrder: ISaleOrder) => saleOrder.status === saleOrderStatus.APROBADO
-    )
-    .reduce((sum, saleOrder) => sum + Number(saleOrder.total || 0), 0);
+  const total: number = round2(
+    allSalesOrderByClient
+      .filter(
+        (saleOrder: ISaleOrder) => saleOrder.status === saleOrderStatus.APROBADO
+      )
+      .reduce((sum, saleOrder) => sum + Number(saleOrder.total || 0), 0)
+  );
 
   const response: ISaleOrderByClient = {
     saleOrder: allSalesOrderByClient,

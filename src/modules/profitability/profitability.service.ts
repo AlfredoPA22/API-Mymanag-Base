@@ -9,6 +9,7 @@ import {
   IProfitabilityByProduct,
   IProfitabilityReport,
 } from "../../interfaces/profitability.interface";
+import { round2 } from "../../utils/money";
 
 export const profitabilityReport = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -122,8 +123,6 @@ export const profitabilityReport = async (
     c.cost += cost;
     c.gross_profit += profit;
   }
-
-  const round2 = (n: number) => Math.round(n * 100) / 100;
 
   const by_product = Array.from(byProduct.values())
     .map((p) => ({ ...p, revenue: round2(p.revenue), cost: round2(p.cost), gross_profit: round2(p.gross_profit), margin_percent: p.revenue > 0 ? round2((p.gross_profit / p.revenue) * 100) : 0 }))

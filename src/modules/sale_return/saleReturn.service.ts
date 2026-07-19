@@ -15,6 +15,7 @@ import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
 import { SalePayment } from "../sale_payment/sale_payment.model";
 import { SaleReturn } from "./sale_return.model";
 import { SaleReturnDetail } from "./sale_return_detail.model";
+import { round2 } from "../../utils/money";
 
 export interface SaleReturnItem {
   saleOrderDetailId: string;
@@ -157,7 +158,7 @@ export const createSaleReturn = async (
       { $match: { sale_order: saleOrder._id, company: companyId } },
       { $group: { _id: null, totalPaid: { $sum: "$amount" } } },
     ]);
-    const totalPaid = paymentAgg[0]?.totalPaid || 0;
+    const totalPaid = round2(paymentAgg[0]?.totalPaid || 0);
     setFields.is_paid = totalPaid >= newTotal;
   }
 

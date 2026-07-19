@@ -32,6 +32,7 @@ import { ProductSerial } from "../product/product_serial.model";
 import { User } from "../user/user.model";
 import { PurchaseOrder } from "./purchase_order.model";
 import { PurchaseOrderDetail } from "./purchase_order_detail.model";
+import { round2 } from "../../utils/money";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
@@ -337,12 +338,10 @@ export const createDetail = async (
     }
   }
 
-  const subtotal: number =
-    Math.round(
-      createPurchaseOrderDetailInput.quantity *
-        createPurchaseOrderDetailInput.purchase_price *
-        100
-    ) / 100;
+  const subtotal: number = round2(
+    createPurchaseOrderDetailInput.quantity *
+      createPurchaseOrderDetailInput.purchase_price
+  );
 
   const newPurchaseOrderDetail: IPurchaseOrderDetail = await (
     await (
@@ -354,7 +353,7 @@ export const createDetail = async (
     ).populate("purchase_order")
   ).populate("product");
 
-  const updatedTotal = parseFloat((foundOrder.total + subtotal).toFixed(2));
+  const updatedTotal = round2(foundOrder.total + subtotal);
 
   await PurchaseOrder.findOneAndUpdate(
     { _id: createPurchaseOrderDetailInput.purchase_order, company: companyId },
@@ -526,8 +525,8 @@ export const deleteProductToOrder = async (
     });
 
   if (deleteProductToPurchaseOrderDetail.deletedCount > 0) {
-    const updatedTotal = parseFloat(
-      (foundPurchaseOrder.total - foundPurchaseOrderDetail.subtotal).toFixed(2)
+    const updatedTotal = round2(
+      foundPurchaseOrder.total - foundPurchaseOrderDetail.subtotal
     );
 
     await PurchaseOrder.updateOne(
@@ -878,12 +877,10 @@ export const updatePurchaseOrderDetail = async (
   findPurchaseOrderDetail.purchase_price =
     updatePurchaseOrderInput.purchase_price;
   findPurchaseOrderDetail.quantity = updatePurchaseOrderInput.quantity;
-  findPurchaseOrderDetail.subtotal =
-    Math.round(
-      updatePurchaseOrderInput.purchase_price *
-        updatePurchaseOrderInput.quantity *
-        100
-    ) / 100;
+  findPurchaseOrderDetail.subtotal = round2(
+    updatePurchaseOrderInput.purchase_price *
+      updatePurchaseOrderInput.quantity
+  );
   await findPurchaseOrderDetail.save();
 
   const purchaseOrderDetails = await PurchaseOrderDetail.find({
@@ -894,7 +891,7 @@ export const updatePurchaseOrderDetail = async (
   purchaseOrderDetails.forEach((detail) => {
     newTotal += detail.subtotal;
   });
-  findPurchaseOrder.total = parseFloat(newTotal.toFixed(2));
+  findPurchaseOrder.total = round2(newTotal);
   await findPurchaseOrder.save();
 
   return findPurchaseOrderDetail;

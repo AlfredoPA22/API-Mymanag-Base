@@ -38,6 +38,7 @@ import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan, PLAN_LABELS } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
+import { round2 } from "../../utils/money";
 import * as XLSX from "xlsx";
 import { stockType } from "../../utils/enums/stockType.enum";
 import { Brand } from "../brand/brand.model";
@@ -463,7 +464,7 @@ export const generalData = async (
 
   const total_sales_value: number =
     total_sales_value_aggregate.length > 0
-      ? total_sales_value_aggregate[0].total
+      ? round2(total_sales_value_aggregate[0].total)
       : 0;
 
   const creditPendingMatch: any = {
@@ -471,17 +472,33 @@ export const generalData = async (
     status: saleOrderStatus.APROBADO,
     payment_method: paymentMethod.CREDITO,
     is_paid: false,
-    date: { $gte: dateFrom, $lte: dateTo },
     ...(foundUser.is_global ? {} : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
   };
 
+  // No se filtra por date range: una deuda pendiente sigue siendo "por cobrar"
+  // sin importar cuándo se originó la venta, así coincide con la página de Pagos.
   const creditPendingAgg = await SaleOrder.aggregate([
     { $match: creditPendingMatch },
-    { $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } } },
+    {
+      $lookup: {
+        from: "sale_payments",
+        localField: "_id",
+        foreignField: "sale_order",
+        as: "payments",
+      },
+    },
+    {
+      $addFields: {
+        pending: {
+          $max: [{ $subtract: ["$total", { $sum: "$payments.amount" }] }, 0],
+        },
+      },
+    },
+    { $group: { _id: null, total: { $sum: "$pending" }, count: { $sum: 1 } } },
   ]);
 
   const total_credit_pending: number =
-    creditPendingAgg.length > 0 ? parseFloat(creditPendingAgg[0].total.toFixed(2)) : 0;
+    creditPendingAgg.length > 0 ? round2(creditPendingAgg[0].total) : 0;
   const total_credit_pending_count: number =
     creditPendingAgg.length > 0 ? creditPendingAgg[0].count : 0;
 

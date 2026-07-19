@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
+import { round2 } from "../../utils/money";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -36,7 +37,12 @@ export const findAll = async (
 
   return await SalePayment.find(filter)
     .sort({ date: -1 })
-    .populate("sale_order")
+    .populate({
+      path: "sale_order",
+      populate: {
+        path: "client",
+      },
+    })
     .populate("created_by")
     .populate("company")
     .lean<ISalePayment[]>();
@@ -101,13 +107,13 @@ export const detailSalePaymentBySaleOrder = async (
     }
   }
 
-  const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalPaid = round2(payments.reduce((sum, payment) => sum + payment.amount, 0));
 
   return {
     sale_order: saleOrder,
     total_amount: saleOrder.total,
     total_paid: totalPaid,
-    total_pending: parseFloat((saleOrder.total - totalPaid).toFixed(2)),
+    total_pending: round2(saleOrder.total - totalPaid),
   };
 };
 
@@ -170,10 +176,10 @@ export const createPayment = async (
     },
   ]);
 
-  const totalPaid = payments[0]?.totalPaid || 0;
-  const saldoPendiente = foundSaleOrder.total - totalPaid;
+  const totalPaid = round2(payments[0]?.totalPaid || 0);
+  const saldoPendiente = round2(foundSaleOrder.total - totalPaid);
 
-  if (salePaymentInput.amount > saldoPendiente) {
+  if (round2(salePaymentInput.amount) > saldoPendiente) {
     throw new Error(
       `El monto excede el saldo pendiente. Saldo actual: ${saldoPendiente}`
     );
@@ -185,7 +191,7 @@ export const createPayment = async (
     company: companyId,
   });
 
-  const nuevoTotalPagado = totalPaid + salePaymentInput.amount;
+  const nuevoTotalPagado = round2(totalPaid + salePaymentInput.amount);
   foundSaleOrder.is_paid = nuevoTotalPagado >= foundSaleOrder.total;
 
   await foundSaleOrder.save();
@@ -229,13 +235,13 @@ export const deleteSalePayment = async (
     { $group: { _id: null, totalPaid: { $sum: "$amount" } } },
   ]);
 
-  const totalPaid = remainingPayments[0]?.totalPaid || 0;
+  const totalPaid = round2(remainingPayments[0]?.totalPaid || 0);
   const isStillPaid = totalPaid >= foundSaleOrder.total;
 
   foundSaleOrder.is_paid = isStillPaid;
   await foundSaleOrder.save();
 
   return {
-    success: false,
+    success: true,
   };
 };
