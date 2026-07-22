@@ -698,10 +698,18 @@ export const update = async (
       company: companyId,
       product: productId,
     });
+    // Una compra pendiente ya "decidió" cómo se va a manejar el stock de este
+    // producto (serial vs. inventario por almacén) al momento de agregarlo.
+    // Si se cambia el tipo después, esos detalles quedan desincronizados y la
+    // compra no podrá aprobarse ("Faltan registros de inventario...").
+    const purchaseOrderDetailCount = await PurchaseOrderDetail.countDocuments({
+      company: companyId,
+      product: productId,
+    });
 
-    if (serialCount > 0 || inventoryCount > 0) {
+    if (serialCount > 0 || inventoryCount > 0 || purchaseOrderDetailCount > 0) {
       throw new Error(
-        "No se puede cambiar el tipo de stock porque ya existen registros relacionados."
+        "No se puede cambiar el tipo de stock porque ya existen registros relacionados (compras, seriales o inventario)."
       );
     }
   }
