@@ -1,7 +1,12 @@
-import { loginLanding } from "./user_landing.service";
+import { listUserLandingAdmin, loginLanding } from "./user_landing.service";
 
 
 export const userLandingResolver = {
+  Query: {
+    async listUserLandingAdmin(_: any, args: Record<string, any>, context: any) {
+      return await listUserLandingAdmin(context.user.id);
+    },
+  },
 
   Mutation: {
     async loginLanding(_: any, args: Record<string, any>) {

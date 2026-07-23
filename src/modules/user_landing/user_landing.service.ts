@@ -1,6 +1,8 @@
 import { OAuth2Client } from "google-auth-library";
+import { Schema as MongooseSchema, Types as MongooseTypes } from "mongoose";
 import { LoginLandingInput } from "../../interfaces/userLanding.interface";
 import { UserLanding } from "./user_landing.model";
+import { userLandingType } from "../../utils/enums/userLandingType.enum";
 import jwt from "jsonwebtoken";
 
 export const loginLanding = async (loginLandingInput: LoginLandingInput) => {
@@ -76,4 +78,28 @@ export const loginLanding = async (loginLandingInput: LoginLandingInput) => {
   const tokenWithBearer = `Bearer ${token}`;
 
   return tokenWithBearer;
+};
+
+export const listUserLandingAdmin = async (
+  adminUserId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+) => {
+  const adminUser = await UserLanding.findById(adminUserId);
+  if (!adminUser) throw new Error("Usuario no encontrado");
+  if (adminUser.user_type !== userLandingType.ADMIN) {
+    throw new Error("Acceso denegado: solo para administradores");
+  }
+
+  const users = await UserLanding.aggregate([
+    {
+      $lookup: {
+        from: "companies",
+        localField: "_id",
+        foreignField: "created_by",
+        as: "companies",
+      },
+    },
+    { $sort: { createdAt: -1 } },
+  ]);
+
+  return users;
 };

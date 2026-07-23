@@ -64,6 +64,7 @@ export const resolvers = {
     ...storeResolver.Query,
     ...storeAuthResolver.Query,
     ...notificationResolver.Query,
+    ...userLandingResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,

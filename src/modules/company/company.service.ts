@@ -30,6 +30,42 @@ export interface AdjustSubscriptionInput {
   trial_expires_at?: string | null;
 }
 
+// El último pago de una empresa depende de a qué sistema pertenece — una
+// empresa con MyManag y ReservaYa tiene un "último pago" distinto para cada
+// uno. Sin este scoping, un pago reciente de un sistema podía ocultar que el
+// otro sistema tenía un pago pendiente o rechazado sin resolver.
+const attachLatestPayments = (companies: any[]): ICompanyWithPayment[] => {
+  return companies.map((company) => {
+    const payments = (company.payments ?? []) as any[];
+    const sortedAsc = [...payments].sort((a, b) => {
+      const dateA = new Date(a.paid_at ?? a.createdAt).getTime();
+      const dateB = new Date(b.paid_at ?? b.createdAt).getTime();
+      return dateA - dateB;
+    });
+
+    const latestForSystem = (system: string) => {
+      for (let i = sortedAsc.length - 1; i >= 0; i--) {
+        const paymentSystem = sortedAsc[i].system || systemType.MYMANAG;
+        if (paymentSystem === system) return sortedAsc[i];
+      }
+      return null;
+    };
+
+    const subscriptions = (company.subscriptions ?? []).map((sub: any) => ({
+      ...sub,
+      latest_payment: latestForSystem(sub.system),
+    }));
+
+    const { payments: _omit, ...rest } = company;
+
+    return {
+      ...rest,
+      subscriptions,
+      latest_payment: latestForSystem(systemType.MYMANAG),
+    };
+  });
+};
+
 export const findAll = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ICompanyWithPayment[]> => {
@@ -45,19 +81,9 @@ export const findAll = async (
         as: "payments",
       },
     },
-    {
-      $addFields: {
-        latest_payment: { $arrayElemAt: ["$payments", -1] },
-      },
-    },
-    {
-      $project: {
-        payments: 0,
-      },
-    },
   ]);
 
-  return listCompany;
+  return attachLatestPayments(listCompany);
 };
 
 export const findAllAdmin = async (
@@ -79,19 +105,9 @@ export const findAllAdmin = async (
         as: "payments",
       },
     },
-    {
-      $addFields: {
-        latest_payment: { $arrayElemAt: ["$payments", -1] },
-      },
-    },
-    {
-      $project: {
-        payments: 0,
-      },
-    },
   ]);
 
-  return listCompany;
+  return attachLatestPayments(listCompany);
 };
 
 export const create = async (
@@ -113,23 +129,28 @@ export const create = async (
   }
 
   const companyLimit = await Company.find({ created_by: userId });
+  const isLandingAdmin = userInfo.user_type === userLandingType.ADMIN;
 
-  // if (companyLimit.length >= 3) {
-  //   throw new Error("LLegaste al limite de empresas.");
-  // }
+  if (!isLandingAdmin && companyLimit.length >= 3) {
+    throw new Error("Llegaste al límite de empresas.");
+  }
 
   const system = (companyInput.system as systemType) || systemType.MYMANAG;
   const isMyManag = system === systemType.MYMANAG;
 
-  // Check free plan limit per system
-  // const alreadyHasFreeForSystem = companyLimit.some((c) => {
-  //   const sub = (c as any).subscriptions?.find((s: any) => s.system === system);
-  //   if (sub) return sub.plan === companyPlan.FREE;
-  //   return isMyManag && c.plan === companyPlan.FREE;
-  // });
-  // if (alreadyHasFreeForSystem && companyInput.plan === companyPlan.FREE) {
-  //   throw new Error("Solo puedes tener una empresa con plan gratuito para este sistema.");
-  // }
+  // Check free plan limit per system (los administradores de la Landing no
+  // están sujetos a este límite — lo necesitan para crear empresas de
+  // demostración/pruebas sin restricción).
+  if (!isLandingAdmin && companyInput.plan === companyPlan.FREE) {
+    const alreadyHasFreeForSystem = companyLimit.some((c) => {
+      const sub = (c as any).subscriptions?.find((s: any) => s.system === system);
+      if (sub) return sub.plan === companyPlan.FREE;
+      return isMyManag && c.plan === companyPlan.FREE;
+    });
+    if (alreadyHasFreeForSystem) {
+      throw new Error("Solo puedes tener una empresa con plan gratuito para este sistema.");
+    }
+  }
 
   const isFreePlan: boolean = companyInput.plan === companyPlan.FREE;
   const now = new Date();
@@ -316,6 +337,78 @@ export const generatePassword = (): string => {
   ).join("");
 };
 
+// Crea el rol Administrador + usuario de MyManag para una empresa que se
+// activa por primera vez, y le envía las credenciales. Compartido entre
+// approvePaymentLanding (aprobar un pago) y adjustSubscription (activación
+// manual desde el panel admin de Landing) para que ninguno de los dos
+// caminos deje a la empresa activa sin ningún usuario para entrar.
+export const activateFirstMyManagUser = async (
+  company: any,
+  creatorEmail: string
+): Promise<void> => {
+  const role = await Role.create({
+    company: company._id,
+    name: "Administrador",
+    description: "Rol administrador",
+    permission: PERMISSIONS_MOCK,
+  });
+
+  const user_name = generateUsername(company.name);
+  const password = generatePassword();
+
+  await User.create({
+    company: company._id,
+    user_name,
+    password,
+    role: role._id,
+    is_global: true,
+    is_admin: true,
+  });
+
+  try {
+    await sendCredentialsEmail({
+      to: creatorEmail,
+      user_name,
+      password,
+      company_name: company.name,
+    });
+  } catch (error) {
+    console.error("⚠️ No se pudo enviar credenciales de MyManag:", error);
+  }
+};
+
+// Equivalente para ReservaYa: crea el usuario administrador en el sistema
+// externo de ReservaYa y envía credenciales. Mismo motivo que la función
+// anterior — compartido entre approvePaymentLanding y adjustSubscription.
+export const activateFirstReservaYaUser = async (
+  company: any,
+  creatorEmail: string
+): Promise<void> => {
+  const user_name = generateUsername(company.name as string);
+  const password = generatePassword();
+
+  await createReservaYaAdmin(
+    company.name as string,
+    user_name,
+    password,
+    company.phone,
+    company._id.toString()
+  );
+
+  try {
+    await sendCredentialsEmail({
+      to: creatorEmail,
+      user_name,
+      password,
+      company_name: company.name as string,
+      loginUrl: `${process.env.RESERVAYA_CLIENT_URL || "http://localhost:5173"}/login`,
+      systemName: "ReservaYa",
+    });
+  } catch (error) {
+    console.error("⚠️ No se pudo enviar credenciales de ReservaYa:", error);
+  }
+};
+
 export const detailCompany = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<ICompany> => {
@@ -383,6 +476,8 @@ export const adjustSubscription = async (
   const subIndex = (company as any).subscriptions.findIndex(
     (s: any) => s.system === system
   );
+  const existingSubStatus: string | null =
+    subIndex !== -1 ? (company as any).subscriptions[subIndex].status : null;
 
   const updatedSub = {
     system,
@@ -397,6 +492,28 @@ export const adjustSubscription = async (
     (company as any).subscriptions.push(updatedSub);
   } else {
     (company as any).subscriptions[subIndex] = updatedSub;
+  }
+
+  // Si el admin activa manualmente una empresa que nunca pasó por un pago
+  // aprobado (o nunca tuvo esta suscripción), no existe todavía ningún
+  // usuario para entrar — se crea aquí con el mismo criterio que
+  // approvePaymentLanding, para que "Ajustar" nunca deje una empresa
+  // activa sin nadie que pueda usarla.
+  if (input.status === companyStatus.ACTIVE) {
+    const companyCreator = await UserLanding.findById(company.created_by);
+    if (companyCreator) {
+      if (isMyManag) {
+        const existingMyManagUser = await User.findOne({ company: company._id });
+        if (!existingMyManagUser) {
+          await activateFirstMyManagUser(company, companyCreator.email);
+        }
+      } else if (
+        system === systemType.RESERVAYA &&
+        (subIndex === -1 || existingSubStatus === companyStatus.PENDING)
+      ) {
+        await activateFirstReservaYaUser(company, companyCreator.email);
+      }
+    }
   }
 
   // Sync legacy top-level fields for MyManag backward compatibility

@@ -15,12 +15,11 @@ import { systemType } from "../../utils/enums/systemType.enum";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { addMonths } from "date-fns";
-import { Role } from "../role/role.model";
-import { PERMISSIONS_MOCK } from "../permission/utils/permissionsMock";
-import { generatePassword, generateUsername } from "../company/company.service";
+import {
+  activateFirstMyManagUser,
+  activateFirstReservaYaUser,
+} from "../company/company.service";
 import { User } from "../user/user.model";
-import { sendCredentialsEmail } from "../../utils/sendCredentialsEmail";
-import { createReservaYaAdmin } from "../../utils/reservayaClient";
 import { sendAdminNewPaymentEmail } from "../../utils/sendAdminNotificationEmail";
 
 export const createPaymentLanding = async (
@@ -202,61 +201,11 @@ export const approvePaymentLanding = async (
   // Si es la primera activación: crear usuario y enviar credenciales
   if (isFirstActivation) {
     if (isMyManag) {
-      const role = await Role.create({
-        company: company._id,
-        name: "Administrador",
-        description: "Rol administrador",
-        permission: PERMISSIONS_MOCK,
-      });
-
-      const user_name = generateUsername(company.name);
-      const password = generatePassword();
-
-      await User.create({
-        company: company._id,
-        user_name,
-        password,
-        role: role._id,
-        is_global: true,
-        is_admin: true,
-      });
-
-      try {
-        await sendCredentialsEmail({
-          to: companyCreator.email,
-          user_name,
-          password,
-          company_name: company.name,
-        });
-      } catch (error) {
-        console.error("⚠️ No se pudo enviar credenciales de MyManag:", error);
-      }
+      await activateFirstMyManagUser(company, companyCreator.email);
     }
 
     if (paymentSystem === systemType.RESERVAYA) {
-      const user_name = generateUsername(company.name as string);
-      const password = generatePassword();
-
-      await createReservaYaAdmin(
-        company.name as string,
-        user_name,
-        password,
-        (company as any).phone,
-        company._id.toString()
-      );
-
-      try {
-        await sendCredentialsEmail({
-          to: companyCreator.email,
-          user_name,
-          password,
-          company_name: company.name as string,
-          loginUrl: `${process.env.RESERVAYA_CLIENT_URL || 'http://localhost:5173'}/login`,
-          systemName: 'ReservaYa',
-        });
-      } catch (error) {
-        console.error("⚠️ No se pudo enviar credenciales de ReservaYa:", error);
-      }
+      await activateFirstReservaYaUser(company, companyCreator.email);
     }
   }
 
@@ -376,6 +325,7 @@ export const updatePaymentLanding = async (
 
   const lastPayment = await PaymentLanding.findOne({
     company: payment.company,
+    system: payment.system,
   })
     .sort({ paid_at: -1, createdAt: -1 })
     .limit(1);
