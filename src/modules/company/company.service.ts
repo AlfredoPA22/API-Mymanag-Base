@@ -486,3 +486,26 @@ export const deleteCompanyPermanently = async (
 
   return { success: true, deletedCounts: { companyName: company.name, ...counts } };
 };
+
+export const generateCompanyBackup = async (
+  adminUserId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  companyId: string
+) => {
+  await assertLandingAdmin(adminUserId);
+
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
+  const data: Record<string, any[]> = {};
+  for (const { key, model } of companyDataModels) {
+    data[key] = await model.find({ company: companyId }).lean();
+  }
+
+  const backup = {
+    generatedAt: new Date().toISOString(),
+    company,
+    data,
+  };
+
+  return JSON.stringify(backup);
+};

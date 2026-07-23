@@ -9,6 +9,7 @@ import {
   detailCompany,
   findAll,
   findAllAdmin,
+  generateCompanyBackup,
   getCompanyDeletionReport,
   update,
 } from "./company.service";
@@ -39,6 +40,9 @@ export const companyResolver = {
     },
     async companyDeletionReport(_: any, args: Record<string, any>, context: any) {
       return await getCompanyDeletionReport(context.user.id, args.companyId);
+    },
+    async companyBackup(_: any, args: Record<string, any>, context: any) {
+      return await generateCompanyBackup(context.user.id, args.companyId);
     },
   },
   Mutation: {

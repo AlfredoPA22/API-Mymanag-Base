@@ -1243,6 +1243,7 @@ type DeleteCompanyResult {
 
 type Query {
   companyDeletionReport(companyId: ID!): CompanyDeletionReport!
+  companyBackup(companyId: ID!): String!
 }
 
 type Mutation {
