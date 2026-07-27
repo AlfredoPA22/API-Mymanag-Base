@@ -42,6 +42,7 @@ const companySchema = new mongoose.Schema(
     country: { type: String, default: "" },
     image: { type: String, default: "" },
     currency: { type: String, default: "Bs" },
+    exchange_rate: { type: Number },
     store_enabled: { type: Boolean, default: false },
     store_banner_image: { type: String, default: "" },
     store_theme: { type: storeThemeSchema, default: null },

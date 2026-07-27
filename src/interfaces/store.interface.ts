@@ -12,6 +12,7 @@ export interface StoreOrderInput {
 }
 
 export interface IStoreOrderResult {
+  _id: string;
   code: string;
   total: number;
   clientFullName: string;

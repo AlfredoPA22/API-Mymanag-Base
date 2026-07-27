@@ -40,6 +40,7 @@ export interface ICompany {
   country: string;
   image: string;
   currency: string;
+  exchange_rate?: number;
   store_enabled: boolean;
   store_banner_image?: string;
   store_theme?: IStoreTheme;
@@ -60,6 +61,7 @@ export interface CompanyInput {
   country?: string;
   plan?: string;
   currency: string;
+  exchange_rate?: number;
   system?: string;
 }
 
@@ -72,6 +74,7 @@ export interface UpdateCompanyInput {
   country?: string;
   image?: string;
   currency?: string;
+  exchange_rate?: number;
   store_enabled?: boolean;
   store_banner_image?: string;
   store_theme?: IStoreTheme;

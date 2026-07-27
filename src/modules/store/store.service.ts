@@ -183,6 +183,7 @@ export const createStoreOrder = async (
   }
 
   return {
+    _id: finalOrder._id.toString(),
     code: finalOrder.code,
     total: finalOrder.total,
     clientFullName: finalOrder.client.fullName,

@@ -1,4 +1,5 @@
 import {
+  IQrPaymentInfo,
   ISaleOrder,
   ISaleOrderByProduct,
   ISaleOrderToPDF,
@@ -21,6 +22,7 @@ import {
   deleteSerialToOrder,
   findAll,
   findDetail,
+  findQrPaymentInfoBySaleOrder,
   findSaleOrder,
   findSaleOrderToPDF,
   getStoreOrderStats,
@@ -116,6 +118,14 @@ export const saleOrderResolver = {
       checkAbility(context.ability, "list", "Sale");
       return await findSaleOrderToPDF(context.user.companyId, args.saleOrderId);
     },
+    async findQrPaymentInfoBySaleOrder(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IQrPaymentInfo | null> {
+      checkAbility(context.ability, "list", "Sale");
+      return await findQrPaymentInfoBySaleOrder(context.user.companyId, args.saleOrderId);
+    },
     async reportSaleOrderByClient(
       _: any,
       args: Record<string, any>,
@@ -176,7 +186,9 @@ export const saleOrderResolver = {
       checkAbility(context.ability, "read", "ReportByMonth");
       return await reportMonthlySales(
         context.user.companyId,
-        context.user.id
+        context.user.id,
+        args.startDate,
+        args.endDate
       );
     },
     async reportSaleOrderByMonth(

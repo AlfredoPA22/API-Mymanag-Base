@@ -2,6 +2,7 @@ import { IPaymentLanding } from "../../interfaces/paymentLanding.interface";
 import {
   approvePaymentLanding,
   createPaymentLanding,
+  generateDepositQrForLanding,
   listPaymentLandingByCompany,
   rejectPaymentLanding,
   updatePaymentLanding,
@@ -54,6 +55,25 @@ export const paymentLandingResolver = {
         context.user.id,
         args.paymentId,
         args.proof_url
+      );
+    },
+
+    async generateDepositQrForLanding(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ) {
+      if (!context.user) throw new Error("No autorizado");
+      return await generateDepositQrForLanding(
+        context.user.id,
+        args.companyId,
+        args.plan,
+        args.system,
+        {
+          name: args.billing_name,
+          nit: args.billing_nit,
+          email: args.billing_email,
+        }
       );
     },
   },

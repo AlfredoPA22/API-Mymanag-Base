@@ -17,6 +17,7 @@ import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
 import { round2 } from "../../utils/money";
+import { createNotification } from "../notification/notification.service";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -228,6 +229,15 @@ export const deleteSalePayment = async (
 
   if (deleteSalePayment.deletedCount === 0) {
     return { success: false };
+  }
+
+  if (foundSalePayment.payment_method === "QR") {
+    await createNotification(companyId, {
+      type: "qr_payment_deleted",
+      title: "Se eliminó un pago cobrado por QR",
+      message: `Se eliminó un abono de ${foundSalePayment.amount} de la venta ${foundSaleOrder.code}, que había sido cobrado por QR. El dinero ya se recibió — si corresponde, gestiona el reembolso.`,
+      link: `/ventas/detalle/${foundSaleOrder._id}`,
+    });
   }
 
   const remainingPayments = await SalePayment.aggregate([

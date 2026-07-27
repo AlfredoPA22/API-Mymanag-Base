@@ -28,7 +28,7 @@ export interface PaymentLandingInput {
   amount: number;
   currency: string;
   method: string;
-  proof_url: string;
+  proof_url?: string;
   billing_name?: string;
   billing_nit?: string;
   billing_email?: string;

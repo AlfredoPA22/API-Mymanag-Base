@@ -24,6 +24,7 @@ import { profitabilityResolver } from "../modules/profitability/profitability.re
 import { storeResolver } from "../modules/store/store.resolver";
 import { storeAuthResolver } from "../modules/store_auth/storeAuth.resolver";
 import { notificationResolver } from "../modules/notification/notification.resolver";
+import { qrPaymentResolver } from "../modules/qr_payment/qr_payment.resolver";
 
 const schemaPath = path.join(__dirname, "./schema.graphql");
 
@@ -65,6 +66,7 @@ export const resolvers = {
     ...storeAuthResolver.Query,
     ...notificationResolver.Query,
     ...userLandingResolver.Query,
+    ...qrPaymentResolver.Query,
   },
   Mutation: {
     ...brandResolver.Mutation,
@@ -88,5 +90,6 @@ export const resolvers = {
     ...storeResolver.Mutation,
     ...storeAuthResolver.Mutation,
     ...notificationResolver.Mutation,
+    ...qrPaymentResolver.Mutation,
   },
 };

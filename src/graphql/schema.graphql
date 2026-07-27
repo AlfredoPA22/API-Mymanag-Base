@@ -25,6 +25,44 @@ type Query {
   listUserLandingAdmin: [UserLandingWithCompanies!]!
 }
 
+enum QrPaymentType {
+  venta_contado
+  abono_credito
+  landing_subscription
+}
+
+input GenerateDepositQrInput {
+  amount: Float!
+  referenceId: String!
+  description: String
+  saleOrderId: ID!
+  type: QrPaymentType!
+}
+
+type DepositQrResult {
+  transactionId: String!
+  transactionStatus: String!
+  calculatedFiatAmount: String!
+  qrCodeBase64: String!
+  referenceId: String!
+  fiatCurrency: String!
+}
+
+type Query {
+  """
+  true si las credenciales de Mesa de Pagos están configuradas en el
+  servidor — los frontends la usan para deshabilitar/ocultar la opción de
+  QR en vez de dejar que el usuario intente pagar y se encuentre con un
+  error recién al momento de generar el QR.
+  """
+  qrPaymentAvailable: Boolean!
+}
+
+type Mutation {
+  generateDepositQr(input: GenerateDepositQrInput!): DepositQrResult!
+  storeGenerateDepositQr(input: GenerateDepositQrInput!): DepositQrResult!
+}
+
 type CompanySubscription {
   system: String
   plan: String
@@ -67,6 +105,7 @@ type Company {
   country: String
   image: String
   currency: String
+  exchange_rate: Float
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreTheme
@@ -92,6 +131,7 @@ input CompanyInput {
   country: String
   plan: String!
   currency: String!
+  exchange_rate: Float
   system: String
 }
 
@@ -104,6 +144,7 @@ input UpdateCompanyInput {
   country: String
   image: String
   currency: String
+  exchange_rate: Float
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreThemeInput
@@ -560,9 +601,17 @@ type SaleOrderDetailToPDF {
   productSerial: [ProductSerial]
 }
 
+type QrPaymentInfo {
+  amount: Float
+  currency: String
+  amount_bob: Float
+  exchange_rate: Float
+}
+
 type SaleOrderToPDF {
   saleOrder: SaleOrder
   saleOrderDetail: [SaleOrderDetailToPDF]
+  qr_payment_info: QrPaymentInfo
 }
 
 input SaleOrderDetailInput {
@@ -673,6 +722,7 @@ type GeneralData {
   total_sales_value: Float!
   total_credit_pending: Float!
   total_credit_pending_count: Int!
+  total_credit_collected: Float!
 }
 
 type BillingInfo {
@@ -702,7 +752,7 @@ input PaymentLandingInput {
   amount: Float!
   currency: String!
   method: String!
-  proof_url: String!
+  proof_url: String
   billing_name: String
   billing_nit: String
   billing_email: String
@@ -720,6 +770,7 @@ type CompanyWithPayment {
   country: String
   image: String
   currency: String
+  exchange_rate: Float
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreTheme
@@ -882,11 +933,12 @@ type Query {
   saleOrderReport(filterSaleOrderInput: FilterSaleOrderInput!): [SaleOrder]
   findSaleOrder(saleOrderId: String!): SaleOrder
   findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
+  findQrPaymentInfoBySaleOrder(saleOrderId: String!): QrPaymentInfo
   reportSaleOrderByClient(startDate: Date, endDate: Date): [ReportSaleOrderByClient]
   reportSaleOrderBySeller(startDate: Date, endDate: Date): [ReportSaleOrderBySeller]
   reportSaleOrderByCategory(startDate: Date, endDate: Date): [ReportSaleOrderByCategory]
   reportSaleOrderByProduct(startDate: Date, endDate: Date): [ReportSaleOrderByProduct]
-  reportMonthlySales: [ReportMonthlySales]
+  reportMonthlySales(startDate: Date, endDate: Date): [ReportMonthlySales]
   reportSaleOrderByMonth(startDate: Date, endDate: Date): [SaleOrder]
   reportCuentasCobrar(startDate: Date, endDate: Date): [SaleOrder]
   generalData(startDate: Date, endDate: Date): GeneralData
@@ -1055,6 +1107,14 @@ type Mutation {
   approvePaymentLanding(paymentId: String!): PaymentLanding
   rejectPaymentLanding(paymentId: String!): PaymentLanding
   updatePaymentLanding(paymentId: String!, proof_url: String!): PaymentLanding
+  generateDepositQrForLanding(
+    companyId: ID!
+    plan: String!
+    system: String
+    billing_name: String
+    billing_nit: String
+    billing_email: String
+  ): DepositQrResult!
 
   saveImportProducts(importProducts: [PreviewProductImport!]!): [Product]
 
@@ -1115,6 +1175,7 @@ input StoreOrderInput {
 }
 
 type StoreOrderResult {
+  _id: ID!
   code: String!
   total: Float!
   clientFullName: String!
@@ -1133,6 +1194,7 @@ type StoreClient {
   _id: ID!
   fullName: String!
   phoneNumber: String!
+  phoneCountry: String
   email: String
   address: String
 }
@@ -1160,6 +1222,7 @@ type StoreMeResult {
 input StoreRegisterInput {
   fullName: String!
   phoneNumber: String!
+  phoneCountry: String
   email: String
   address: String
   password: String!
@@ -1181,13 +1244,17 @@ type StoreOrderDetailItem {
 }
 
 type StoreOrderDetailResult {
+  _id: ID!
   code: String!
   date: String!
   status: String!
   total: Float!
   is_paid: Boolean!
   address: String
+  payment_method: String
+  contado_payment_method: String
   items: [StoreOrderDetailItem!]!
+  qr_payment_info: QrPaymentInfo
 }
 
 type Query {
@@ -1200,7 +1267,7 @@ type Mutation {
   storeRegister(companyId: ID!, input: StoreRegisterInput!): StoreAuthResult!
   storeLogin(companyId: ID!, phoneNumber: String!, password: String!): StoreAuthResult!
   storeUpdateCart(items: [StoreCartItemInput!]!): [StoreCartItem!]!
-  storeCreateOrderForClient(items: [StoreCartItemInput!]!, address: String): StoreOrderResult!
+  storeCreateOrderForClient(items: [StoreCartItemInput!]!, address: String, contado_payment_method: String): StoreOrderResult!
   storeUpdateProfile(input: StoreUpdateProfileInput!): StoreClient!
 }
 

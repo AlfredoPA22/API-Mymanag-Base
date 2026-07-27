@@ -7,6 +7,8 @@ import rateLimit from "express-rate-limit";
 import jwt from "jsonwebtoken";
 import { Types as MongooseTypes } from "mongoose";
 import multer from "multer";
+import http from "http";
+import { initSocket } from "./socket";
 import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
 import { initLowStockCron } from "./cron/checkLowStock";
 import { initAccountsReceivableCron } from "./cron/checkAccountsReceivable";
@@ -18,6 +20,7 @@ import { verifyEmailConnection } from "./utils/emailTransporter";
 import { buildAbility } from "./utils/ability";
 import { companyPlanLimits } from "./utils/planLimits";
 import { companyPlan } from "./utils/enums/companyPlan.enum";
+import { handleMesaDePagosWebhook } from "./modules/qr_payment/qr_payment.service";
 
 dotenv.config();
 const app = express();
@@ -31,6 +34,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:5176",
+  "https://extends-cartoons-eau-charge.trycloudflare.com"
 ];
 
 const corsOptions = {
@@ -276,6 +280,25 @@ const bootstrapServer = async () => {
     }
   });
 
+  app.post("/webhooks/mesadepagos/:secret", async (req, res) => {
+    if (req.params.secret !== process.env.MESADEPAGOS_WEBHOOK_SECRET) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    try {
+      const { status, externalReference, details } = req.body || {};
+      await handleMesaDePagosWebhook({
+        status,
+        transactionId: details?.transactionId,
+        externalReference,
+      });
+      return res.status(200).json({ received: true });
+    } catch (error) {
+      console.error("❌ Error procesando webhook de Mesa de Pagos:", error);
+      return res.status(500).json({ message: "Error interno" });
+    }
+  });
+
   const upload = multer({ storage: multer.memoryStorage() });
 
   app.post("/upload-preview", upload.single("file"), async (req, res) => {
@@ -320,7 +343,10 @@ const bootstrapServer = async () => {
     }
   });
 
-  app.listen(port, () => {
+  const httpServer = http.createServer(app);
+  initSocket(httpServer, allowedOrigins);
+
+  httpServer.listen(port, () => {
     console.log(`server ready on port ${port}`);
   });
 };

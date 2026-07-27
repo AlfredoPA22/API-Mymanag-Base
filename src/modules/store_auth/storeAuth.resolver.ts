@@ -71,7 +71,13 @@ export const storeAuthResolver = {
       context: any
     ): Promise<IStoreOrderResult> {
       const { companyId, clientId } = requireClient(context);
-      return await createOrderForClient(companyId, clientId, args.items, args.address);
+      return await createOrderForClient(
+        companyId,
+        clientId,
+        args.items,
+        args.address,
+        args.contado_payment_method
+      );
     },
     async storeUpdateProfile(
       _: any,

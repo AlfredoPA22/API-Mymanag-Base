@@ -5,22 +5,20 @@ import {
 } from "../../interfaces/paymentLanding.interface";
 import { PaymentLanding } from "./payment_landing.model";
 import { paymentLandingStatus } from "../../utils/enums/paymentLandingStatus.enum";
+import { paymentLandingMethod } from "../../utils/enums/paymentLandingMethod.enum";
 import { UserLanding } from "../user_landing/user_landing.model";
 import { Company } from "../company/company.model";
 import { userLandingType } from "../../utils/enums/userLandingType.enum";
-import { sendPaymentApproveEmail } from "../../utils/sendPaymentApproveEmail";
 import { sendPaymentRejectedEmail } from "../../utils/sendPaymentRejectEmail";
-import { companyStatus } from "../../utils/enums/companyStatus.enum";
 import { systemType } from "../../utils/enums/systemType.enum";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
-import { companyPlanLimits } from "../../utils/planLimits";
-import { addMonths } from "date-fns";
-import {
-  activateFirstMyManagUser,
-  activateFirstReservaYaUser,
-} from "../company/company.service";
-import { User } from "../user/user.model";
 import { sendAdminNewPaymentEmail } from "../../utils/sendAdminNotificationEmail";
+import { applyPaymentLandingApproval } from "./payment_landing.activation";
+import { getLandingPlanPrice, LANDING_CURRENCY } from "../../utils/landingPlanPrices";
+import {
+  generateDepositQrForLandingPayment,
+} from "../qr_payment/qr_payment.service";
+import { GenerateDepositQrResult } from "../../utils/mesaDePagosClient";
 
 export const createPaymentLanding = async (
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -130,134 +128,74 @@ export const approvePaymentLanding = async (
     throw new Error("Este pago ya fue aprobado");
   }
 
-  const paymentCreator = await UserLanding.findById(payment.created_by);
-  if (!paymentCreator) throw new Error("Usuario creador del pago no encontrado");
-
-  const company = await Company.findById(payment.company._id);
+  const company = await Company.findById(payment.company);
   if (!company) throw new Error("Empresa no encontrada");
 
-  const companyCreator = await UserLanding.findById(company.created_by);
-  if (!companyCreator) throw new Error("Usuario creador de la empresa no encontrado");
+  return applyPaymentLandingApproval(payment, company);
+};
 
-  payment.status = paymentLandingStatus.APPROVED;
-  await payment.save();
+export const generateDepositQrForLanding = async (
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  companyId: string,
+  plan: companyPlan,
+  system: systemType = systemType.MYMANAG,
+  billing?: { name?: string; nit?: string; email?: string }
+): Promise<GenerateDepositQrResult> => {
+  const user = await UserLanding.findById(userId);
+  if (!user) throw new Error("Usuario no encontrado");
 
-  const paymentSystem = (payment as any).system as systemType || systemType.MYMANAG;
-  const isMyManag = paymentSystem === systemType.MYMANAG;
+  const isAdmin = user.user_type === userLandingType.ADMIN;
+  const company = isAdmin
+    ? await Company.findById(companyId)
+    : await Company.findOne({ _id: companyId, created_by: userId });
+  if (!company) throw new Error("Empresa no encontrada o no pertenece al usuario");
 
-  // Find or create the subscription for this system
-  const subIndex = (company as any).subscriptions.findIndex(
-    (s: any) => s.system === paymentSystem
+  if (plan !== companyPlan.BASIC && plan !== companyPlan.PRO) {
+    throw new Error("Plan inválido para pago");
+  }
+
+  const price = getLandingPlanPrice(system, plan);
+
+  let payment = await PaymentLanding.findOne({
+    company: companyId,
+    system,
+    status: paymentLandingStatus.REVIEW,
+  });
+
+  if (payment && payment.method !== paymentLandingMethod.QR) {
+    throw new Error(
+      "Ya tienes un pago en revisión para esta empresa y sistema. Contacta a soporte."
+    );
+  }
+
+  if (!payment) {
+    payment = await PaymentLanding.create({
+      company: companyId,
+      system,
+      plan,
+      amount: price,
+      currency: LANDING_CURRENCY,
+      method: paymentLandingMethod.QR,
+      status: paymentLandingStatus.REVIEW,
+      proof_url: "",
+      paid_at: null,
+      billing_info: {
+        name: billing?.name || "",
+        nit: billing?.nit || "",
+        email: billing?.email || user.email,
+      },
+      created_by: userId,
+    });
+  } else if (payment.plan !== plan) {
+    payment.plan = plan;
+    payment.amount = price;
+    await payment.save();
+  }
+
+  return generateDepositQrForLandingPayment(
+    payment,
+    `Suscripción ${system} — plan ${plan}`
   );
-
-  const today = new Date();
-
-  // Determinar si es la primera activación de esta suscripción.
-  // Al registrar la empresa con plan de pago ya se crea la suscripción en PENDING,
-  // por eso no podemos usar subIndex === -1. En cambio verificamos:
-  // - MyManag: si aún no existe ningún usuario en la empresa
-  // - ReservaYa: si la suscripción actual está en PENDING (nunca fue activada)
-  const existingSubStatus: string | null = subIndex !== -1
-    ? (company as any).subscriptions[subIndex].status
-    : null;
-
-  const existingMyManagUser = isMyManag
-    ? await User.findOne({ company: company._id })
-    : null;
-
-  const isFirstActivation =
-    subIndex === -1 ||
-    (isMyManag && !existingMyManagUser) ||
-    (!isMyManag && existingSubStatus === companyStatus.PENDING);
-
-  if (subIndex === -1) {
-    // La suscripción no existía en el array — agregarla
-    (company as any).subscriptions.push({
-      system: paymentSystem,
-      plan: payment.plan,
-      status: companyStatus.ACTIVE,
-      trial_expires_at: null,
-      subscription_expires_at: addMonths(today, 1),
-      notified_before_expiration: false,
-    });
-  } else {
-    // La suscripción ya existía (puede ser PENDING primera vez, o ACTIVE/EXPIRED para renovación)
-    const sub = (company as any).subscriptions[subIndex];
-    const baseDate =
-      !isFirstActivation && sub.subscription_expires_at && sub.subscription_expires_at > today
-        ? sub.subscription_expires_at
-        : today;
-
-    (company as any).subscriptions[subIndex] = {
-      system: paymentSystem,
-      plan: payment.plan,
-      status: companyStatus.ACTIVE,
-      trial_expires_at: null,
-      subscription_expires_at: addMonths(baseDate, 1),
-      notified_before_expiration: false,
-    };
-  }
-
-  // Si es la primera activación: crear usuario y enviar credenciales
-  if (isFirstActivation) {
-    if (isMyManag) {
-      await activateFirstMyManagUser(company, companyCreator.email);
-    }
-
-    if (paymentSystem === systemType.RESERVAYA) {
-      await activateFirstReservaYaUser(company, companyCreator.email);
-    }
-  }
-
-  // Sync legacy top-level fields for MyManag backward compatibility
-  if (isMyManag) {
-    const isFirstTime = company.status === companyStatus.PENDING;
-    if (isFirstTime) {
-      company.status = companyStatus.ACTIVE;
-      company.plan = payment.plan;
-      company.trial_expires_at = null;
-      company.subscription_expires_at = addMonths(today, 1);
-      company.notified_before_expiration = false;
-    } else {
-      const baseDate = company.subscription_expires_at && company.subscription_expires_at > today
-        ? company.subscription_expires_at
-        : today;
-      company.status = companyStatus.ACTIVE;
-      company.plan = payment.plan;
-      company.trial_expires_at = null;
-      company.subscription_expires_at = addMonths(baseDate, 1);
-      company.notified_before_expiration = false;
-    }
-
-    // Si el plan aprobado no incluye tienda online, se apaga de verdad —
-    // igual criterio que en adjustSubscription (no se reactiva sola al
-    // volver a subir de plan, hay que reactivarla a mano).
-    if (!companyPlanLimits[payment.plan as companyPlan]?.hasStore) {
-      company.store_enabled = false;
-    }
-  }
-
-  (company as any).markModified("subscriptions");
-  await company.save();
-
-  const updatePayment = await PaymentLanding.findById(paymentId)
-    .populate("company")
-    .lean<IPaymentLanding>();
-
-  if (!updatePayment) throw new Error("Pago no encontrado");
-
-  try {
-    await sendPaymentApproveEmail({
-      to: paymentCreator.email,
-      user_name: paymentCreator.fullName,
-      payment: updatePayment,
-      isFirstActivation,
-    });
-  } catch (error) {
-    console.error("⚠️ No se pudo enviar correo de aprobación:", error);
-  }
-
-  return updatePayment;
 };
 
 export const rejectPaymentLanding = async (

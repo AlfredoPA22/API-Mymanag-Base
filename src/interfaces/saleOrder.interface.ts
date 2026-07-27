@@ -46,9 +46,17 @@ export interface SaleOrderInput {
   source?: string;
 }
 
+export interface IQrPaymentInfo {
+  amount: number;
+  currency: string;
+  amount_bob?: number;
+  exchange_rate?: number;
+}
+
 export interface ISaleOrderToPDF {
   saleOrder: ISaleOrder;
   saleOrderDetail: ISaleOrderDetailToPDF[];
+  qr_payment_info?: IQrPaymentInfo | null;
 }
 
 export interface ISalesReportByClient {

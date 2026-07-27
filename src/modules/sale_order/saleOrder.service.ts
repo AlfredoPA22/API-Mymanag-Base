@@ -3,6 +3,7 @@ import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
   FilterSaleOrderInput,
+  IQrPaymentInfo,
   ISaleOrder,
   ISaleOrderByProduct,
   ISaleOrderToPDF,
@@ -37,6 +38,8 @@ import { ProductSerial } from "../product/product_serial.model";
 import { SalePayment } from "../sale_payment/sale_payment.model";
 import { User } from "../user/user.model";
 import { SaleOrder } from "./sale_order.model";
+import { QrPayment } from "../qr_payment/qr_payment.model";
+import { createNotification } from "../notification/notification.service";
 import { SaleOrderDetail } from "./sale_order_detail.model";
 import { Company } from "../company/company.model";
 import dayjs from "dayjs";
@@ -244,11 +247,46 @@ export const findSaleOrderToPDF = async (
     })
   );
 
+  const qrPaymentInfo: IQrPaymentInfo | null = saleOrder.is_paid
+    ? await getQrPaymentInfoForSaleOrder(companyId, saleOrderId)
+    : null;
+
   const response: ISaleOrderToPDF = {
     saleOrder,
     saleOrderDetail: saleOrderDetailToPDF,
+    qr_payment_info: qrPaymentInfo,
   };
   return response;
+};
+
+const getQrPaymentInfoForSaleOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IQrPaymentInfo | null> => {
+  const qrPayment = await QrPayment.findOne({
+    company: companyId,
+    sale_order: saleOrderId,
+    type: "venta_contado",
+    processed: true,
+  }).sort({ createdAt: -1 });
+
+  if (!qrPayment) return null;
+
+  return {
+    amount: qrPayment.amount,
+    currency: qrPayment.currency,
+    amount_bob: qrPayment.amount_bob ?? undefined,
+    exchange_rate: qrPayment.exchange_rate ?? undefined,
+  };
+};
+
+export const findQrPaymentInfoBySaleOrder = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IQrPaymentInfo | null> => {
+  const saleOrder = await SaleOrder.findOne({ _id: saleOrderId, company: companyId }).lean<ISaleOrder | null>();
+  if (!saleOrder || !saleOrder.is_paid) return null;
+  return getQrPaymentInfoForSaleOrder(companyId, saleOrderId);
 };
 
 export const create = async (
@@ -278,11 +316,9 @@ export const create = async (
     { perMonth: true }
   );
 
-  const isPaid: boolean =
-    createSaleOrderInput.payment_method === paymentMethod.CONTADO
-      ? true
-      : false;
-
+  // is_paid ya no se asume al crear la venta para ningún método — para
+  // Efectivo/Transferencia se confirma recién al aprobar la venta
+  // (ver approve()); para QR se confirma vía el webhook de Mesa de Pagos.
   const newSaleOrder = await (
     await SaleOrder.create({
       company: companyId,
@@ -291,7 +327,7 @@ export const create = async (
       client: createSaleOrderInput.client,
       payment_method: createSaleOrderInput.payment_method,
       contado_payment_method: createSaleOrderInput.contado_payment_method,
-      is_paid: isPaid,
+      is_paid: false,
       source: createSaleOrderInput.source ?? "manual",
       created_by: userId,
     })
@@ -824,6 +860,18 @@ export const deleteSaleOrder = async (
     });
 
     if (deleteSaleOrder.deletedCount > 0) {
+      if (
+        foundSaleOrder.payment_method === paymentMethod.CONTADO &&
+        foundSaleOrder.contado_payment_method === "QR" &&
+        foundSaleOrder.is_paid
+      ) {
+        await createNotification(companyId, {
+          type: "qr_payment_deleted",
+          title: "Se eliminó una venta cobrada por QR",
+          message: `Se eliminó la venta ${foundSaleOrder.code}, que había sido cobrada por QR (${foundSaleOrder.total}). El dinero ya se recibió — si corresponde, gestiona el reembolso.`,
+        });
+      }
+
       return {
         success: true,
       };
@@ -879,6 +927,18 @@ export const deleteSaleOrder = async (
     });
 
     if (deleteSaleOrder.deletedCount > 0) {
+      if (
+        foundSaleOrder.payment_method === paymentMethod.CONTADO &&
+        foundSaleOrder.contado_payment_method === "QR" &&
+        foundSaleOrder.is_paid
+      ) {
+        await createNotification(companyId, {
+          type: "qr_payment_deleted",
+          title: "Se eliminó una venta cobrada por QR",
+          message: `Se eliminó la venta ${foundSaleOrder.code} (Borrador), que ya había sido cobrada por QR (${foundSaleOrder.total}). El dinero ya se recibió — si corresponde, gestiona el reembolso.`,
+        });
+      }
+
       return {
         success: true,
       };
@@ -1000,6 +1060,17 @@ export const approve = async (
         }
       }
     }
+  }
+
+  // Efectivo/Transferencia se confirman como pagadas recién al aprobar la
+  // venta — no antes. QR se deja tal cual: solo el webhook de Mesa de Pagos
+  // marca is_paid (puede que ya esté en true si esta aprobación viene
+  // disparada por el propio webhook tras confirmarse el pago).
+  if (
+    foundOrder.payment_method === paymentMethod.CONTADO &&
+    foundOrder.contado_payment_method !== "QR"
+  ) {
+    foundOrder.is_paid = true;
   }
 
   foundOrder.status = saleOrderStatus.APROBADO;
@@ -1196,7 +1267,10 @@ export const updateSaleOrderPaymentMethod = async (
     paymentMethodInput === paymentMethod.CONTADO
       ? contadoPaymentMethod ?? undefined
       : undefined;
-  foundOrder.is_paid = paymentMethodInput === paymentMethod.CONTADO;
+  // La venta sigue en Borrador en este punto — is_paid se confirma recién
+  // al aprobar (Efectivo/Transferencia) o vía webhook de Mesa de Pagos (QR),
+  // nunca al solo cambiar el método.
+  foundOrder.is_paid = false;
 
   await foundOrder.save();
 
@@ -1505,19 +1579,25 @@ export const reportSaleOrderByProduct = async (
 
 export const reportMonthlySales = async (
   companyId: MongooseTypes.ObjectId,
-  userId: MongooseTypes.ObjectId
+  userId: MongooseTypes.ObjectId,
+  startDate?: Date | string,
+  endDate?: Date | string
 ) => {
   const foundUser: IUser | null = await User.findOne({ _id: userId, company: companyId });
   if (!foundUser) throw new Error("Usuario no encontrado");
 
   const currentYear = new Date().getFullYear();
+  const dateFrom = startDate
+    ? new Date(startDate)
+    : new Date(`${currentYear}-01-01T00:00:00.000`);
+  const dateTo = endDate
+    ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+    : new Date(`${currentYear}-12-31T23:59:59.999`);
+
   const matchStage: any = {
     company: new MongooseTypes.ObjectId(companyId),
     status: saleOrderStatus.APROBADO,
-    date: {
-      $gte: new Date(`${currentYear}-01-01T00:00:00.000`),
-      $lte: new Date(`${currentYear}-12-31T23:59:59.999`),
-    },
+    date: { $gte: dateFrom, $lte: dateTo },
   };
   if (!foundUser.is_global) {
     matchStage["created_by"] = new MongooseTypes.ObjectId(userId);

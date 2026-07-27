@@ -30,6 +30,7 @@ import {
 } from "../sale_order/saleOrder.service";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
+import { QrPayment } from "../qr_payment/qr_payment.model";
 import { assertStoreIsAvailable, getEffectiveSalePrice } from "../store/store.service";
 import { User } from "../user/user.model";
 import { createNotification } from "../notification/notification.service";
@@ -59,6 +60,7 @@ const toStoreClient = (client: any) => ({
   _id: client._id.toString(),
   fullName: client.fullName,
   phoneNumber: client.phoneNumber,
+  phoneCountry: client.phoneCountry || "BO",
   email: client.email,
   address: client.address,
 });
@@ -92,12 +94,22 @@ const populateCart = async (
   return result;
 };
 
+const PHONE_REGEX = /^\d{6,15}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const registerClient = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   input: StoreRegisterInput
 ): Promise<IStoreAuthResult> => {
   const company = await Company.findById(companyId).lean();
   assertStoreIsAvailable(company as any);
+
+  if (!PHONE_REGEX.test(input.phoneNumber)) {
+    throw new Error("Ingresa un número de teléfono válido (solo dígitos).");
+  }
+  if (input.email && !EMAIL_REGEX.test(input.email)) {
+    throw new Error("Ingresa un correo válido.");
+  }
 
   let client = await Client.findOne({
     company: companyId,
@@ -116,12 +128,14 @@ export const registerClient = async (
     client.email = input.email || client.email;
     client.address = input.address || client.address;
     client.password = hashedPassword;
+    (client as any).phoneCountry = input.phoneCountry || (client as any).phoneCountry || "BO";
     await client.save();
   } else {
     client = await Client.create({
       code: await generate(companyId, codeType.CLIENT),
       fullName: input.fullName,
       phoneNumber: input.phoneNumber,
+      phoneCountry: input.phoneCountry || "BO",
       email: input.email || "",
       address: input.address || "",
       password: hashedPassword,
@@ -182,6 +196,10 @@ export const updateProfile = async (
 ): Promise<IStoreClient> => {
   const client = await Client.findOne({ _id: clientId, company: companyId });
   if (!client) throw new Error("Cliente no encontrado");
+
+  if (input.email && !EMAIL_REGEX.test(input.email)) {
+    throw new Error("Ingresa un correo válido.");
+  }
 
   if (input.fullName) client.fullName = input.fullName;
   if (input.email !== undefined) client.email = input.email;
@@ -251,13 +269,35 @@ export const getOrderDetail = async (
     .populate("product")
     .lean();
 
+  let qrPaymentInfo = null;
+  if (order.is_paid) {
+    const qrPayment = await QrPayment.findOne({
+      company: companyId,
+      sale_order: orderId,
+      type: "venta_contado",
+      processed: true,
+    }).sort({ createdAt: -1 });
+
+    if (qrPayment) {
+      qrPaymentInfo = {
+        amount: qrPayment.amount,
+        currency: qrPayment.currency,
+        amount_bob: qrPayment.amount_bob ?? undefined,
+        exchange_rate: qrPayment.exchange_rate ?? undefined,
+      };
+    }
+  }
+
   return {
+    _id: order._id.toString(),
     code: order.code,
     date: order.date,
     status: order.status,
     total: order.total,
     is_paid: order.is_paid,
     address: order.client?.address || "",
+    payment_method: order.payment_method,
+    contado_payment_method: order.contado_payment_method,
     items: details.map((detail: any) => ({
       productId: detail.product?._id?.toString() ?? "",
       productName: detail.product?.name ?? "Producto eliminado",
@@ -266,20 +306,29 @@ export const getOrderDetail = async (
       sale_price: detail.sale_price,
       subtotal: detail.subtotal,
     })),
+    qr_payment_info: qrPaymentInfo,
   };
 };
+
+const STORE_PAYMENT_METHODS = [salePaymentMethod.EFECTIVO, salePaymentMethod.QR];
 
 export const createOrderForClient = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   clientId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   items: StoreCartItemInput[],
-  address?: string
+  address?: string,
+  contadoPaymentMethod?: string
 ): Promise<IStoreOrderResult> => {
   const company = await Company.findById(companyId).lean();
   assertStoreIsAvailable(company as any);
 
   if (!items || items.length === 0) {
     throw new Error("El carrito está vacío");
+  }
+
+  const paymentMethodToUse = contadoPaymentMethod || salePaymentMethod.EFECTIVO;
+  if (!STORE_PAYMENT_METHODS.includes(paymentMethodToUse as salePaymentMethod)) {
+    throw new Error("Método de pago no válido");
   }
 
   const client = await Client.findOne({ _id: clientId, company: companyId });
@@ -299,7 +348,7 @@ export const createOrderForClient = async (
     date: new Date(),
     client: client._id.toString(),
     payment_method: paymentMethod.CONTADO,
-    contado_payment_method: salePaymentMethod.EFECTIVO,
+    contado_payment_method: paymentMethodToUse,
     source: STORE_ORDER_SOURCE,
   } as any);
 
@@ -336,6 +385,10 @@ export const createOrderForClient = async (
         warehouseId = inventories[0].warehouse;
       }
 
+      // Para productos serializados no se asigna ningún serial aquí — el
+      // cliente de la tienda no puede elegirlo. La venta queda en Borrador
+      // (con is_paid=true en cuanto se confirme el QR) hasta que un admin
+      // asigne los seriales manualmente y apruebe la venta.
       await createSaleOrderDetail(companyId, {
         sale_order: newOrder._id,
         product: product._id,
@@ -366,6 +419,7 @@ export const createOrderForClient = async (
   }
 
   return {
+    _id: finalOrder._id.toString(),
     code: finalOrder.code,
     total: finalOrder.total,
     clientFullName: finalOrder.client.fullName,

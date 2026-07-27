@@ -16,6 +16,7 @@ import { SalePayment } from "../sale_payment/sale_payment.model";
 import { SaleReturn } from "./sale_return.model";
 import { SaleReturnDetail } from "./sale_return_detail.model";
 import { round2 } from "../../utils/money";
+import { createNotification } from "../notification/notification.service";
 
 export interface SaleReturnItem {
   saleOrderDetailId: string;
@@ -144,22 +145,31 @@ export const createSaleReturn = async (
     }
   }
 
-  // Marcar la orden de venta como con devolución, reducir el total y cancelar si queda en 0
   const newTotal = parseFloat((saleOrder.total - returnTotal).toFixed(2));
   const setFields: Record<string, any> = { has_return: true };
+
+  let refundAmount = 0;
+  let refundIsQr = false;
+
+  if (saleOrder.payment_method === paymentMethod.CONTADO) {
+    if (saleOrder.is_paid) {
+      refundAmount = returnTotal;
+      refundIsQr = saleOrder.contado_payment_method === "QR";
+    }
+  } else if (saleOrder.payment_method === paymentMethod.CREDITO) {
+    const payments = await SalePayment.find({ sale_order: saleOrder._id, company: companyId });
+    const totalPaid = round2(payments.reduce((sum, p) => sum + p.amount, 0));
+    refundAmount = round2(Math.max(totalPaid - Math.max(newTotal, 0), 0));
+    refundIsQr = payments.some((p) => p.payment_method === "QR");
+    if (newTotal > 0) {
+      setFields.is_paid = totalPaid >= newTotal;
+    }
+  }
 
   if (newTotal <= 0) {
     setFields.status = saleOrderStatus.DEVUELTO;
     setFields.total = 0;
-    setFields.is_paid = true; // total en 0, no hay nada que pagar
-  } else if (saleOrder.payment_method === paymentMethod.CREDITO) {
-    // Recalcular is_paid según pagos reales vs nuevo total
-    const paymentAgg = await SalePayment.aggregate([
-      { $match: { sale_order: saleOrder._id, company: companyId } },
-      { $group: { _id: null, totalPaid: { $sum: "$amount" } } },
-    ]);
-    const totalPaid = round2(paymentAgg[0]?.totalPaid || 0);
-    setFields.is_paid = totalPaid >= newTotal;
+    setFields.is_paid = true;
   }
 
   await SaleOrder.updateOne(
@@ -169,6 +179,17 @@ export const createSaleReturn = async (
       ...(newTotal > 0 ? { $inc: { total: -parseFloat(returnTotal.toFixed(2)) } } : {}),
     }
   );
+
+  if (refundAmount > 0) {
+    await createNotification(companyId, {
+      type: "refund_needed",
+      title: "Devolución con saldo a favor del cliente",
+      message: refundIsQr
+        ? `La devolución en la venta ${saleOrder.code} implica reembolsar ${refundAmount} al cliente, cobrados por QR.`
+        : `La devolución en la venta ${saleOrder.code} implica reembolsar ${refundAmount} al cliente.`,
+      link: `/ventas/detalle/${saleOrder._id}`,
+    });
+  }
 
   // 7. Crear o actualizar el encabezado de la devolución
   let saleReturnDocId: string;

@@ -10,6 +10,8 @@ import { companyPlanLimits } from "../../utils/planLimits";
 import { companyStatus } from "../../utils/enums/companyStatus.enum";
 import { systemType } from "../../utils/enums/systemType.enum";
 import { Company } from "./company.model";
+import { SaleOrder } from "../sale_order/sale_order.model";
+import { PurchaseOrder } from "../purchase_order/purchase_order.model";
 import { User } from "../user/user.model";
 import { Role } from "../role/role.model";
 import { PERMISSIONS_MOCK } from "../permission/utils/permissionsMock";
@@ -20,6 +22,8 @@ import { UserLanding } from "../user_landing/user_landing.model";
 import { userLandingType } from "../../utils/enums/userLandingType.enum";
 import { createReservaYaAdmin } from "../../utils/reservayaClient";
 import { sendAdminNewCompanyEmail } from "../../utils/sendAdminNotificationEmail";
+
+const ALLOWED_CURRENCIES = ["Bs", "$"];
 
 export interface AdjustSubscriptionInput {
   companyId: string;
@@ -120,6 +124,10 @@ export const create = async (
     throw new Error("usuario no encontrado");
   }
 
+  if (companyInput.currency && !ALLOWED_CURRENCIES.includes(companyInput.currency)) {
+    throw new Error("Moneda no válida. Solo se admite Bs o $.");
+  }
+
   const company = await Company.findOne({
     name: companyInput.name,
   });
@@ -179,6 +187,7 @@ export const create = async (
     address: companyInput.address,
     country: companyInput.country,
     currency: companyInput.currency,
+    exchange_rate: companyInput.exchange_rate,
     plan: isMyManag ? (companyInput.plan || companyPlan.FREE) : companyPlan.FREE,
     status: isMyManag ? subStatus : companyStatus.PENDING,
     trial_expires_at: isMyManag ? subTrialExpires : null,
@@ -431,6 +440,28 @@ export const update = async (
 
   if (!company) {
     throw new Error("No existe la empresa");
+  }
+
+  if (updateCompanyInput.currency && !ALLOWED_CURRENCIES.includes(updateCompanyInput.currency)) {
+    throw new Error("Moneda no válida. Solo se admite Bs o $.");
+  }
+
+  if (updateCompanyInput.currency && updateCompanyInput.currency !== company.currency) {
+    const [hasSaleOrder, hasPurchaseOrder] = await Promise.all([
+      SaleOrder.exists({ company: companyId }),
+      PurchaseOrder.exists({ company: companyId }),
+    ]);
+    if (hasSaleOrder || hasPurchaseOrder) {
+      throw new Error(
+        "No se puede cambiar la moneda: la empresa ya tiene ventas o compras registradas."
+      );
+    }
+  }
+
+  const nextCurrency = updateCompanyInput.currency ?? company.currency;
+  const nextExchangeRate = updateCompanyInput.exchange_rate ?? company.exchange_rate;
+  if (nextCurrency === "$" && (!nextExchangeRate || nextExchangeRate <= 0)) {
+    throw new Error("Configura un tipo de cambio válido para operar en dólares.");
   }
 
   const updateData: Partial<UpdateCompanyInput> = {};

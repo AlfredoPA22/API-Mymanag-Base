@@ -1,0 +1,77 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PERMISSIONS_MOCK = void 0;
+exports.PERMISSIONS_MOCK = [
+    // Marcas
+    "LIST_BRAND",
+    "CREATE_BRAND",
+    "DELETE_BRAND",
+    "UPDATE_BRAND",
+    // Categorías
+    "LIST_CATEGORY",
+    "CREATE_CATEGORY",
+    "DELETE_CATEGORY",
+    "UPDATE_CATEGORY",
+    // Clientes
+    "LIST_CLIENT",
+    "CREATE_CLIENT",
+    "LIST_SALE_ORDER_BY_CLIENT",
+    "DELETE_CLIENT",
+    "UPDATE_CLIENT",
+    // Inicio
+    "SEARCH_PRODUCT",
+    "GENERAL_DATA",
+    "REPORT_SALE_ORDER_BY_CLIENT",
+    "REPORT_SALE_ORDER_BY_SELLER",
+    "REPORT_SALE_ORDER_BY_CATEGORY",
+    "REPORT_SALE_ORDER_BY_MONTH",
+    // Almacenes
+    "LIST_WAREHOUSE",
+    "CREATE_WAREHOUSE",
+    "DELETE_WAREHOUSE",
+    "UPDATE_WAREHOUSE",
+    // Productos
+    "LIST_PRODUCT",
+    "CREATE_PRODUCT",
+    "FIND_PRODUCT",
+    "VIEW_PRODUCT_COST",
+    "LIST_PRODUCT_SERIAL_BY_PRODUCT",
+    "LIST_PRODUCT_INVENTORY_BY_PRODUCT",
+    "DELETE_PRODUCT",
+    "UPDATE_PRODUCT",
+    // Proveedores
+    "LIST_PROVIDER",
+    "CREATE_PROVIDER",
+    "DELETE_PROVIDER",
+    "UPDATE_PROVIDER",
+    // Compras
+    "LIST_PURCHASE",
+    "CREATE_PURCHASE",
+    "DETAIL_PURCHASE",
+    "EDIT_PURCHASE",
+    "DELETE_PURCHASE",
+    // Ventas
+    "LIST_SALE",
+    "CREATE_SALE",
+    "DETAIL_SALE",
+    "EDIT_SALE",
+    "DELETE_SALE",
+    // Usuarios y roles
+    "USER_AND_ROLE",
+    // Reportes
+    "PRODUCT_REPORT",
+    "SALE_ORDER_REPORT",
+    "PURCHASE_ORDER_REPORT",
+    // Pagos
+    "LIST_PAYMENT",
+    "CREATE_PAYMENT",
+    "DELETE_PAYMENT",
+    // Empresa
+    "UPDATE_COMPANY",
+    // Transferencias
+    "LIST_TRANSFER",
+    "CREATE_TRANSFER",
+    "DETAIL_TRANSFER",
+    "EDIT_TRANSFER",
+    "DELETE_TRANSFER",
+];

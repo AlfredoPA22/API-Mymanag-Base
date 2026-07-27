@@ -30,6 +30,7 @@ import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { PurchaseOrderDetail } from "../purchase_order/purchase_order_detail.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
+import { SalePayment } from "../sale_payment/sale_payment.model";
 import { User } from "../user/user.model";
 import { Product } from "./product.model";
 import { ProductInventory } from "./product_inventory.model";
@@ -472,11 +473,10 @@ export const generalData = async (
     status: saleOrderStatus.APROBADO,
     payment_method: paymentMethod.CREDITO,
     is_paid: false,
+    date: { $gte: dateFrom, $lte: dateTo },
     ...(foundUser.is_global ? {} : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
   };
 
-  // No se filtra por date range: una deuda pendiente sigue siendo "por cobrar"
-  // sin importar cuándo se originó la venta, así coincide con la página de Pagos.
   const creditPendingAgg = await SaleOrder.aggregate([
     { $match: creditPendingMatch },
     {
@@ -502,6 +502,20 @@ export const generalData = async (
   const total_credit_pending_count: number =
     creditPendingAgg.length > 0 ? creditPendingAgg[0].count : 0;
 
+  const creditCollectedAgg = await SalePayment.aggregate([
+    {
+      $match: {
+        company: new MongooseTypes.ObjectId(`${companyId}`),
+        date: { $gte: dateFrom, $lte: dateTo },
+        ...(foundUser.is_global ? {} : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
+      },
+    },
+    { $group: { _id: null, total: { $sum: "$amount" } } },
+  ]);
+
+  const total_credit_collected: number =
+    creditCollectedAgg.length > 0 ? round2(creditCollectedAgg[0].total) : 0;
+
   const response: IGeneralData = {
     best_product,
     stock,
@@ -512,6 +526,7 @@ export const generalData = async (
     best_product_sales_number,
     total_credit_pending,
     total_credit_pending_count,
+    total_credit_collected,
   };
 
   return response;
