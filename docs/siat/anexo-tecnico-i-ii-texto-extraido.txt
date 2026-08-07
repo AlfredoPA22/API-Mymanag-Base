@@ -1,0 +1,5909 @@
+
+
+-- 1 of 16 --
+
+www.impuestos.gob
+www.impuestos.gob.bo 	La Paz 21 de noviembre del 2018
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN VIRTUAL
+2
+ANEXO TÉCNICO I
+FACTURACIÓN ELECTRÓNICA
+I. GENERALIDADES
+El presente documento tiene la finalidad de proporcionar información operativa y
+técnica a todos aquellos contribuyentes que opten por implementar un Sistema
+de Facturación Electrónico, brindando las directrices de implementación efectiva
+de sus sistemas.
+ESQUEMA DE CONECTIVIDAD
+DEL SISTEMA DE FACTURACIÓN ELECTRÓNICO
+El esquema de conectividad del sistema de Facturación Electrónico y el Servicio de
+Impuestos Nacionales se rige básicamente por el siguiente esquema:
+Internet
+Fibra
+Óptica
+Servidores SIN
+Los Servicios Web de la Administración Tributaria serán puestos a disposición de
+los contribuyentes por INTERNET, línea dedica segura MPLS o punto a punto por
+FIBRA ÓPTICA.
+INTERNET
+Las características técnicas mínimas recomendadas para el uso de INTERNET en
+cualquiera de las modalidades establecidas en la Resolución Normativa Vigente
+son las siguientes:
+• Ancho de Banda mínimo de tres (3) Mbps o superior para un buen fun-
+cionamiento.
+• Cualquier otro ancho de banda conforme las necesidades de negocio en
+términos de velocidad y disponibilidad en la ubicación física de emisión de
+Documentos Fiscales Electrónicos.
+• El servicio de Internet deberá ser de uso exclusivo para el Sistema de
+Facturación.
+• Uso de protocolo HTTPS con cifrado basado en SSL, para asegurar que la
+información no sea susceptible de ser interferida u obtenida de manera
+parcial o total.
+FIBRA ÓPTICA
+Los Contribuyentes que, por su giro de negocio, posean múltiples puntos de venta
+y gran emisión de Documentos Fiscales Electrónicos de forma individual o masiva
+podrán utilizar un medio de comunicación punto a punto por FIBRA ÓPTICA.
+En el caso de actividades de Telecomunicaciones, Banca, Servicios Básicos (Agua,
+Luz), Hidrocarburos y otros sectores que vean la necesidad de contar con un punto
+de conexión directo a través de fibra óptica, deben coordinar con la Administración
+Tributaria la disponibilidad de puntos de acceso.
+Petroleras
+Anillo
+Fibra Óptica
+Bancos
+Telefónicas 	Servidores
+SIN
+Los contribuyentes que así lo deseen podrán utilizar la conexión punto a punto por
+FIBRA ÓPTICA de un tercero conectado a la Administración Tributaria siempre y
+cuando la calidad de servicio no se degrade (los bancos podrían usar la conexión
+de ASOBAN).
+MPLS
+En caso de imposibilidad física o logística para utilizar una conexión punto a pun-
+to por FIBRA ÓPTICA, los contribuyentes pueden optar por una conexión segura
+privada mediante MPLS (que debe ser contratado con las empresas de Telecomu-
+nicaciones).
+Internet
+Servidores SIN
+VPN
+Tunel Privado
+Todos los medios de comunicación descritos anteriormente deberán ser coordina-
+dos por el Contribuyente con la Administración Tributaria, antes de la Puesta en
+Producción de su Sistema de Facturación.
+FIRMAS DIGITALES
+Para los Sistemas de Facturación que implementen la Modalidad de Facturación
+Electrónica en Línea, será necesario el uso de la firma digital para asegurar la
+autenticidad e inalterabilidad de los diferentes Documentos Fiscales emitidos. Exis-
+ten varios dispositivos para soporte y utilización de firma digital entre los más
+conocidos se tiene:
+1. Token: Es el tipo más simple para el uso de la firma digital, consiste en
+un USB de PKI (Infraestructura de clave pública), que podría ser utilizado
+cuando se tenga baja emisión de Documentos Fiscales Electrónicos.
+Para cada Documento Fiscal Electrónico emitido el contribuyente debe
+autenticarse para firmarlo con su llave Privada.
+2. HSM: Este tipo de firmado se realiza a través de un hardware especia-
+lizado (Módulo de Seguridad de Hardware) de manejo y administración
+de firmas; podría ser utilizado por los contribuyentes que posean varias
+sucursales o puntos de venta, esto implicaría varias firmas digitales que
+son creadas y alojadas en el HSM.
+3. Software: Este tipo de firmado es similar al HSM con la diferencia que las
+firmas digitales son creadas y administradas por un software que reside
+en servidores del propio contribuyente. Podría ser utilizado para volúme-
+nes altos de facturación con varias firmas digitales. Se debe extremar
+medidas de seguridad para proteger de accesos no autorizados el lugar
+donde se halla almacenada la firma digital.
+El Contribuyente deberá obtener e implementar el uso de Firma Digital en su Siste-
+ma de Facturación conforme normativa vigente en el Territorio Nacional.
+ESQUEMA DE USO DE FIRMADO Y ENVÍO DE DOCUMENTOS FISCALES
+Si el contribuyente está obligado a la Modalidad de Facturación Electrónica En
+Línea, podrá utilizar los siguientes esquemas de firmado y envío de Documentos
+Fiscales Electrónicos:
+N-puntos de venta o sucursales con envío directo al SIN. En este esque-
+ma cada Documento Fiscal Electrónico debe estar: firmado por el responsable del
+punto de venta o sucursal y enviado de manera inmediata al Servicio de Impuestos
+Nacionales.
+Puntos de venta
+o Sucursales
+SIN
+N-puntos de venta o sucursales con envío a través de servidor(es) al
+SIN. En este esquema los Documentos Fiscales Electrónicos son: firmados en
+cada punto de venta o sucursal y enviados a través de uno o varios servidores
+definidos por el Sistema de Facturación del Contribuyente; centralizando el envío
+por un mismo canal.
+Servidor Envio
+Facturas
+Puntos de venta
+o Sucursales
+Servidor HSM
+o Software
+SIN
+Otras formas de firmado. El SIN aceptará cualquier otro esquema de firmado,
+siempre y cuando respete los principios de seguridad de la información (confi-
+dencialidad, integridad, disponibilidad, autenticación y no repudio). Considerando
+que cada Documento Fiscal Electrónico debe incluir la Firma Digital asociada al
+contribuyente.
+Para la modalidad de Facturación Computarizada en Línea, los anteriores esquemas
+pueden ser aplicados sin tomar en cuenta el firmado de los Documentos Fiscales
+Electrónicos emitidos.
+CERTIFICADOS, CUENTAS Y SERVICIOS DEL SIN.
+Los Servicios Expuestos en el Internet por el SIN serán accesibles a través de
+canales seguros, para ello se emplearán Certificados Digitales, mismos que serán
+proporcionados por el SIN durante el proceso de certificación de sistema y al mo-
+mento de entrar en operación.
+Considerando que los certificados pueden ser cambiados por causas técnicas o
+institucionales, se recomienda se utilicen archivos de configuración para manejar
+servicios, cuentas y certificados proporcionados por el SIN.
+II. 	CONSIDERACIONES TÉCNICAS PARA LA IMPLEMENTACIÓN
+DEL SISTEMA DE FACTURACIÓN
+ESQUEMA DE INTEROPERABILIDAD POR MODALIDAD DE FACTURACIÓN
+TIPOS DE DOCUMENTO POR SECTOR
+Los Tipos de Documento por Sector que serán utilizados dentro el Sistema de
+Facturación serán los siguientes:
+EMISORES
+Solicita código único de factura Diaria CUFD
+UNA SOLA VEZ AL DÍA
+POR FACTURA O PAQUETE DE FACTURAS
+Requisito: INTERNET
+Genera Documento Fiscal XML y Firma Digital
+SIN
+1
+Valida y devuelve código	
+2
+Devuelve código de recepción	
+4
+POR FACTURA O PAQUETE DE FACTURAS
+Solicita confirmación Documento Fiscal procesado
+Devuelve OK o Errores
+(Opcionalmente)
+	Imprime Documento Fiscal
+Documento
+	Fiscal en formato
+	XML 	+ 	=	Firma Digital
+MODALIDAD FACTURACIÓN ELECTRÓNICA EN LÍNEA
+DOCUMENTO
+	FISCAL
+	ELECTRÓNICO
+Valida y almacena XML
+	firmado
+8
+3
+7
+6
+5
+Facturación Electrónica En Línea
+EMISORES
+Solicita código único de factura Diaria CUFD
+UNA SOLA VEZ AL DÍA
+POR FACTURA O PAQUETE DE FACTURAS
+Requisito: INTERNET
+Genera Documento Fiscal XML
+SIN
+1
+Valida y devuelve código	
+2
+Devuelve código de recepción	
+4
+POR FACTURA O PAQUETE DE FACTURAS
+Solicita confirmación Documento Fiscal Procesado
+Devuelve OK o Errores
+(Opcionalmente)
+	Imprime Documento Fiscal
+Documento
+Fiscal en formato
+XML 	+ 	=
+Documento Fiscal en
+los servidores del SIN
+MODALIDAD FACTURACIÓN COMPUTARIZADA EN LÍNEA
+DOCUMENTO
+FISCAL
+ELECTRÓNICO
+Valida y almacena XML
+	firmado
+8
+3
+7
+6
+5
+Facturación Computarizada En Línea
+EMISORES
+Solicita Facturación Prevalorada Electrónica
+EMISIÓN POR SISTEMA DE FACTURACIÓN
+Genera Documento Fiscal Prevalorado XML
+SIN
+1 	Valida y devuelve CUAPE 	2
+Devuelve código de recepción 	4
+Solicita confirmación Documento Fiscal procesado
+Devuelve OK o Errores
+(Opcionalmente)
+	Imprime
+	Documento fiscal
+	prevalorado
+Valida y almacena XML
+	(para electrónica
+	firmado)	8
+3
+7
+6	5
+Requisito: INTERNET
+Facturación Prevalorada Electrónica
+EMISORES
+Solicita Facturación por Portal Web
+EMISIÓN POR PORTAL WEB
+Genera Documento Fiscal Electrónico
+SIN
+1 Valida y autoriza ingreso a Facturación Portal Web 2
+4
+(Opcionalmente)
+	Imprime Documento Fiscal Electrónico
+Valida y
+	almacena
+	XML	3
+6 	5
+Requisito: INTERNET
+Envía Documento Fiscal Electrónico a Comprador (cuando
+	corresponda) y formato PDF para impresión opcional
+Facturación Portal Web
+Servidores SIN
+Internet
+TIPO
+DOCUMENTO
+SECTOR
+DESCRIPCIÓN
+1 	FACTURA ESTANDAR
+2 	FACTURA SECTORES EDUCATIVOS
+3 	FACTURA DE ALQUILER DE BIENES INMUEBLES
+4 	FACTURA DE COMERCIALIZACION DE HIDROCARBUROS
+5 	FACTURA DE SERVICIOS BASICOS
+6 	FACTURA DE EMBOTELLADORAS
+7 	FACTURA DE ENTIDADES FINANCIERAS
+8 	FACTURA DE HOTELES
+9 	FACTURAS DE HOSPITALES/CLINICAS
+10 	FACTURA DE JUEGOS DE AZAR
+11 	FACTURA DE ARTISTAS INTERNACIONALES
+12 	FACTURA COMERCIAL DE EXPORTACION
+13 	FACTURA COMERCIAL DE EXPORTACIÓN EN LIBRE
+CONSIGNACION
+14 	NOTA FISCAL DE TASA CERO
+15 	NOTA FISCAL DE EXPORTACIÓN DE SERVICIO TURÍSTICO
+Y HOSPEDAJE
+CONTRIBUYENTES 	IMPRENTA	
+Solicita Documentos Fiscales
+Se envía PIN de entrega
+Se valida la solicitud y se envía PIN de confirmación
+Se confirma solicitud mediante PIN
+Registra PIN, El
+	SIN devuelve
+	rango de
+	Documentos
+	fiscales, rango
+	CAED/ CAEDP y
+	guarda en Base
+	de Datos
+Solicita
+	Docu-
+	mentos
+	fiscales
+	medi-
+	ante
+	Portal
+Se entregan los Documentos
+	Fiscales previa confirmación de PIN
+SIN
+1
+2
+3
+4
+5
+7
+6
+Imprime
+	Documentos
+	fiscales
+Finaliza el
+	trabajo
+	de
+impresión
+	y solicita
+	PIN de
+	entrega
+8
+9
+Facturación Manual y Prevalorada Preimpresa
+
+-- 2 of 16 --
+
+www.impuestos.gob.bo
+LÍNEA GRATUITA DE CONSULTAS TRIBUTARIAS 800 10 34 44
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN ELECTRÓNICA3
+FORMATOS DE ARCHIVO DE DOUMENTOS FISCALES ELECTRÓNICOS
+Todos los Documentos Fiscales Electrónicos deberán ser generados utilizando el
+formato XML versión 1.0 UTF-8 considerando lo siguiente:
+• Cuando se requiera cifrado se deberá utilizar el algoritmo SHA2.
+• Cuando sea requiera firmar el archivo XML, se debe utilizar el estándar
+XML-Dsig.
+• Para la validación del formato XML se deberá utilizar un archivo esquema
+XSD.
+• Para la compresión de un Documento Fiscal Electrónico se utiliza el algo-
+ritmo de libre distribución .GZIP.
+• Para el envío de varios Documentos Fiscales Electrónicos se debe utilizar
+el formato .TAR.
+Los archivos XML de ejemplo por Tipo de Documento por Sector y archivos XSD
+relacionados serán publicados para su descarga, en la Página Web de la Adminis-
+tración Tributaria.
+PROCESO DE GENERACIÓN CUF
+El Código Único de Factura permite identificar como única una factura, debe ser
+enerado automáticamente por el aplicativo del sujeto pasivo o tercero responsable
+utilizando para ello los siguientes campos.
+Incorporar a la cadena (47 dígitos) resultante, un digito auto verificador utilizando
+Base 11. La cadena resultante debe ser codificada utilizando para ello Base 16
+dando como resultado el CUF buscado (Código Único de Factura).
+Para el proceso de firmado de un archivo XML se debe seguir los siguientes pasos:
+Para el caso de paquetes se debe considerar los siguientes pasos:
+Estos pasos pueden ser utilizados en las modalidades de Facturación Electrónica En
+Línea y Computarizada En Línea.
+SERVICIOS WEB DEL SISTEMA DE FACTURACIÓN
+Los Servicios Web publicados por la Administración Tributaria están estandarizados
+a través de canales con protocolos de seguridad y certificados SSL.
+El Sistema de Facturación del Contribuyente deberá invocar a los diferentes Servi-
+cios Web a través de las rutas proporcionadas por la Administración Tributaria, al
+momento de registrar la Solicitud de Certificación y antes del Pase a Producción.
+El envío y confirmación de un Documento Fiscal Electrónico es realizado de forma
+síncrona a través de dos métodos creados para el efecto.
+Los Documentos Fiscales Electrónicos rechazados pueden ser reenviados con la
+corrección de los errores que causaron el rechazo.
+CAMPO 	DESCRIPCION 	TIPO 	LONGITUD
+NIT (Emisor) 	NIT del contribuyente 	Numérico 	13
+FECHA/HORA
+(Emisión)
+Fecha y Hora del Emisor
+yyyymmddhhmmssmmm
+Numérico 	17
+SUCURSAL (de
+donde se emite la
+factura)
+0 = Casa Matriz
+1 = Sucursal 1
+2 = Sucursal 2
+N = Sucursal N
+Numérico 	4
+MODALIDAD 	1 = Electrónica
+2 = Computarizada
+3 = Portal Web
+4 = Prevalorado Electrónico
+Numérico 	1
+TIPOEMISION 	0 = Online
+1 = Offline
+Numérico 	1
+CÓDIGO
+DOCUMENTO
+FISCAL
+1 = Factura
+2 = Nota Debito/Crédito
+3 = Nota Fiscal
+4 = Documento Equivalente
+Numérico 	1
+2 Registrar la información de la
+factura en el XML Factura,
+tanto en la cabecera como en
+el (los) detalle(s).
+3 Realizar la validación del XML
+de la factura contra el XSD
+que el SIN proporcionará.
+XML
+</>
+Factura
+XML
+</>
+Cabecera
+XML
+</>
+Detalle(s)
+= 	+
+XML
+</>
+Factura
+XSD
+<O>
+TIPO
+DOCUMENTO
+SECTOR
+DESCRIPCIÓN
+16 	NOTA FISCAL DE ZONA FRANCA
+17 	NOTA FISCAL DE ARTISTAS NACIONALES
+18 	NOTA FISCAL DE COMERCIALIZACIÓN DE ALIMENTOS –
+SEGURIDAD ALIMENTARIA Y ABASTECIMIENTO
+19 	NOTA FISCAL DE COMPRA Y VENTA DE MONEDA
+EXTRANJERA
+20 	NOTA DE CREDITO-DEBITO
+21 	NOTA DE CONCILIACION
+22 	BOLETO AEREO
+CAMPO 	DESCRIPCION 	TIPO 	LONGITUD
+TIPO DOCUMENTO
+SECTOR
+1 = Factura Estándar
+2 = Factura Sectores
+Educativos
+3 = Factura de Alquiler de
+Bienes
+…
+…
+…
+22 = Boleto Aéreo
+Numérico 	2
+NRO FACTURA 	Numero de Factura 	Numérico 	8
+CÓDIGO
+AUTOVERIFICADOR
+Base 11 	Numérico 	1
+TOTAL 	48
+Nota: Todos los campos deben completarse conforme a la longitud indicada
+con ceros a la izquierda.
+PROCESO DE FIRMADO DOCUMENTOS FISCALES ELECTRÓNICOS
+SERVICIOS WEB DE LA MODALIDAD FACTURACIÓN ELECTRÓNICA EN LÍNEA
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+FACTURA
+ELECTRÓNICA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fechaEnvio (datetime)
+archivo (base64
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido,
+2= Código de Sistema no válido,
+3= Código de inicio no válido,
+4= Código diario no válido,
+5= Documento Fiscal Inválido,
+6= Código Emisión no válido,
+7= Modalidad no válida,
+8= Sucursal no válida,
+9= NIT no válido,
+10= archivo no válido
+Validaciones Previo al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=número Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor al definido en normativa
+19= Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+23=El campo Estudiante es requerido para este tipo
+de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+85=Tipo Documento Sector Inválido
+La factura enviada solo debe ser del
+tipo de emisión “en línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la factura.
+El NIT del contribuyente debe
+ser válido y este habilitado para
+facturación.
+La modalidad de facturación debe ser
+electrónica.
+La sucursal sea válida y este asociado
+al contribuyente en el padrón.
+El CUIS enviado corresponda a
+la sucursal donde se efectúa la
+transacción.
+El envío de la factura es de forma
+individual, para envío masivo o por lote
+se tiene otro método habilitado.
+El código de documento fiscal debe ser
+del tipo factura.
+La factura debe estar construida en
+base al XML definido en el presente
+documento.
+Aplicar al XML de la factura, el
+algoritmo de hash SHA2.
+Firmar el Hash resultante, el resultado
+debe ser incluido dentro del XML de la
+factura
+El XML de la factura debe ser
+comprimida en formato GZIP
+La factura y la firma deben ser
+incluidas en el XML de la solicitud en
+GZIP y convertida en formato base64.
+Una vez enviada la factura se debe
+recibir el código de recepción
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de la factura.
+La factura será válida solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación.
+Validar el XML de la factura contra el
+XSD.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+VALIDACIÓN
+FACTURA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+fechaRecepcion (Timestamp)
+listaMensajes (arreglo)
+1= Ambiente no válido,
+2= Código de Sistema no válido,
+3= Código de inicio no válido,
+4= Código diario no válido,
+5= Documento Fiscal Inválido,
+6= Código Emisión no válido,
+7= Modalidad no válida,
+8= Sucursal no válida,
+9= NIT no válido,
+10= archivo no válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+23=El campo Estudiante es requerido para este tipo
+de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+El código de sistema debe estar asociado al
+contribuyente y debe estar asociado a un sistema
+certificado.
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+La factura a ser validada solo debe ser
+del tipo de emisión “en línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la factura.
+El NIT del contribuyente debe
+ser válido y este habilitado para
+facturación.
+El código de documento fiscal debe ser
+del tipo “factura”.
+La sucursal sea válida y este asociado
+al contribuyente en el padrón.
+El Código de recepción de factura debe
+ser válido y estar registrado en nuestra
+base de datos.
+Validar el XML contra el XSD.
+En caso de error en la validación se
+procederá al marcado de la factura.
+
+-- 3 of 16 --
+
+www.impuestos.gob
+www.impuestos.gob.bo 	La Paz 21 de noviembre del 2018
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN VIRTUAL
+4
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+VALIDACIÓN
+FACTURA
+ELECTRÓNICA
+(Continuación)
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+85=Tipo Documento Sector Inválido
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+RECEPCIÓN
+ANULACIÓN
+FACTURA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+nit (numérico)
+numeroDocumentoFiscal
+(numérico)
+cuf (alfanumérico)
+email (alfanumérico)
+celular (numérico)
+codigoMotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido,
+2= Código de Sistema no válido,
+3= Código de inicio no válido,
+4= Código diario no válido,
+8= Sucursal no válida,
+9= NIT no válido,
+15 = Numero Documento Inexistente,
+20 = CUF Inválido,
+62 = Motivo de Anulación Inválido
+85=Tipo Documento Sector Inválido
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la factura.
+Tanto el número de factura como
+el CUF deben estar registrados en
+nuestros servidores.
+La anulación de la factura es de forma
+individual.
+La factura a ser anulada, debe ser con
+derecho a crédito fiscal.
+Una vez enviada la anulación de la
+factura se debe recibir el código de
+recepción de anulación.
+El código de recepción de anulación
+debe ser guardado en el sistema para
+realizar la verificación posterior.
+La anulación de una factura será directa
+solamente cuando se haya solicitado
+antes del tiempo determinado por
+normativa para dicho proceso.
+En caso de solicitar la anulación
+posterior al tiempo definido por
+normativa y el comprador no tenga
+NIT, se debe incluir en la solicitud
+el correo electrónico y el número
+de celular del comprador para su
+confirmación.
+La anulación de la factura se podrá
+realizar siempre y cuando la misma
+posea el estado de vigente y no haya
+sido ya previamente declarada por
+algún contribuyente o beneficiario.
+Si se requiere confirmación del
+comprador, la anulación no será válida
+hasta recibir la misma o luego del
+tiempo determinado por normativa
+para el silencio positivo.
+La anulación de la factura será válida
+solamente cuando se haya confirmado
+su procesamiento a través del método
+de validación.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+VALIDACIÓN
+ANULACIÓN
+FACTURA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido,
+8= Sucursal no válida,
+9= NIT no válido,
+15 =numero Documento Inexistente,
+13= Código de Recepción No Válido
+20 = CUF Inválido,
+62 = Motivo de Anulación Inválido
+85=Tipo Documento Sector Inválido
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben
+coincidir con los valores que tenemos
+registrados y estar asociados al NIT
+del emisor que solicita la anulación de
+la factura.
+La modalidad debe ser “Electrónica”.
+El NIT debe estar habilitado y poder
+emitir facturas.
+El Código Documento Fiscal debe ser
+Factura.
+La sucursal debe ser válida y asociada
+al NIT.
+El Código de recepción de factura debe
+ser válido y estar registrado en nuestra
+base de datos.
+Validar el XML contra el XSD.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+RECEPCIÓN
+NOTA CRÉDITO/
+DÉBITO
+ELECTRÓNICA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis(alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+14=numero Documento Duplicado
+20=CUF Inválido
+El tipo de emisión enviado debe
+corresponder a “En línea”.
+El ambiente que debe enviarse es
+“Producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota de débito/crédito.
+El envío de la nota de débito/crédito
+es de forma individual, para envío
+masivo o por lote se tiene otro método
+habilitado.
+El tipo de documento enviado
+corresponde a “Nota Debito/crédito”.
+La nota de débito/crédito debe estar
+construida en el XML definido en el
+presente documento.
+El XML de la nota de débito/crédito
+debe ser comprimido en formato GZIP.
+La nota de débito/crédito debe ser
+incluida en el XML de solicitud en
+formato base64.
+Una vez enviada la nota de débito/
+crédito se debe recibir el código de
+recepción.
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de la nota de débito/
+crédito.
+VALIDACIÓN
+NOTA CRÉDITO/
+DÉBITO
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmisión (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+El código de emisión debe ser del tipo
+“en línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota débito/crédito.
+La validación de la nota débito/crédito
+es de forma individual.
+El Código de recepción de factura debe
+ser válido y estar registrado en nuestra
+base de datos.
+El código de recepción de nota débito/
+crédito debe estar asociado a una sola
+nota débito/crédito.
+Validar el XML contra el XSD.
+RECEPCIÓN
+ANULACIÓN
+NOTA CRÉDITO
+/DÉBITO
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+nit (numérico)
+Numero de Documento Fiscal
+(numérico)
+cuf (alfanumérico)
+emailComprador
+(alfanumérico)
+celular(numérico)
+codigoMotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+15 = numero Documento Inexistente
+20 = CUF Inválido
+62 = Motivo de Anulación Inválido
+La nota de débito/crédito anulada
+solo debe ser de la modalidad de
+facturación electrónica en línea.
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota de débito/crédito.
+La anulación de la nota de débito/
+crédito es de forma individual.
+Una vez enviada la anulación de la
+nota de débito/crédito se debe recibir
+el código de recepción de anulación.
+El código de recepción de anulación
+debe ser guardado en el sistema para
+realizar la verificación posterior.
+La anulación de una nota de débito/
+crédito será directa solamente cuando
+se haya solicitado antes del tiempo
+determinado por normativa para dicho
+proceso.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+ANULACIÓN
+NOTA CRÉDITO
+/DÉBITO
+ELECTRÓNICA
+(Continuación)
+En caso de solicitar la anulación
+posterior al tiempo definido por
+normativa y el comprador no tenga
+NIT, se debe incluir en la solicitud
+el correo electrónico y el número
+de celular del comprador para su
+confirmación.
+La anulación de la nota de débito/
+crédito será válida solamente cuando
+se haya confirmado su procesamiento
+a través del método de validación.
+VALIDACIÓN
+ANULACIÓN
+NOTA CRÉDITO/
+DÉBITO
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+El ambiente que debe enviarse es
+“producción”
+El número de nota débito/crédito debe
+existir en nuestro servidor
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben
+coincidir con los valores que tenemos
+registrados y estar asociados al NIT del
+emisor que solicita la anulación de la
+nota débito/crédito.
+La anulación de la nota débito/crédito
+a se podrá realizar siempre y cuando
+la misma posea el estado de vigente.
+RECEPCIÓN
+NOTA FISCAL
+ELECTRÓNICA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+nitEmisor (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fechaEnvio
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo Cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=puerto destino es requerido en este tipo de
+factura
+27=tipo moneda id es requerido en este tipo de
+factura
+28=Tipo de Moneda Inválido
+29=precio valor bruto es requerido en este tipo de
+factura
+30=gastos transporte frontera es requerido en este
+tipo de factura
+31=gastos_seguro_frontera es requerido en este
+tipo de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+La nota fiscal enviada solo debe ser del
+tipo de emisión “en línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota fiscal.
+El envío de la nota fiscal es de forma
+individual, para envío masivo o por lote
+se tiene otro método habilitado.
+La nota fiscal debe ser sin derecho a
+crédito fiscal.
+La nota fiscal debe estar construida
+en el XML definido en el presente
+documento.
+Se deben enviar todos los campos
+marcados como mandatorios y de
+acuerdo al rubro aquellos marcados
+como opcionales.
+El XML de la nota fiscal debe ser
+comprimido en formato GZIP
+La nota fiscal debe ser incluida en el
+XML de solicitud en formato base64
+Enviada la nota fiscal se debe recibir el
+código de recepción
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de la nota fiscal.
+La nota fiscal será válida solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+VALIDACIÓN
+NOTA FISCAL
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres Inválidos
+El tipo de emisión debe ser “en línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota fiscal.
+La validación de la nota fiscal es de
+forma individual.
+El código de recepción de factura debe
+estar asociado a una sola nota fiscal.
+En caso de error en la emisión de la
+nota fiscal corresponde una anulación,
+para lo que se tiene un método
+habilitado.
+
+-- 4 of 16 --
+
+www.impuestos.gob.bo
+LÍNEA GRATUITA DE CONSULTAS TRIBUTARIAS 800 10 34 44
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN ELECTRÓNICA5
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+VALIDACIÓN
+NOTA FISCAL
+ELECTRÓNICA
+(Continuación)
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda Inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=gastos_seguro_frontera es requerido en este
+tipo de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+RECEPCIÓN
+ANULACIÓN
+NOTA FISCAL
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+nit (numérico)
+numeroDocumento
+(numérico)
+cuf (alfanumérico)
+emailComprador
+(alfanumérico)
+celular (numérico)
+codigoMotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+15 = numero Documento Inexistente
+20 = CUF Inválido
+62 = Motivo de Anulación Inválido
+85=Tipo Documento Sector Inválido
+La modalidad de facturación debe ser
+“electrónica en línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota fiscal.
+La anulación de la nota fiscal es de
+forma individual.
+El código de recepción de anulación
+recepcionado debe ser guardado en
+el sistema para realizar la verificación
+posterior.
+La anulación de una nota fiscal
+será directa solamente cuando se
+haya solicitado antes del tiempo
+determinado por normativa para dicho
+proceso.
+En caso de solicitar la anulación
+posterior al tiempo definido por
+normativa, se debe incluir en la
+solicitud el correo electrónico y el
+número de celular del comprador para
+su confirmación.
+En el caso de ser necesaria la
+confirmación la anulación no se
+considerará realizada hasta dicha
+confirmación o luego del tiempo
+determinado por normativa para
+silencio positivo.
+La anulación de la nota fiscal será
+válida solamente cuando se haya
+confirmado su procesamiento a través
+del método de validación.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+VALIDACIÓN
+ANULACIÓN
+NOTA FISCAL
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+85=Tipo Documento Sector Inválido
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben
+coincidir con los valores que tenemos
+registrados y estar asociados al NIT del
+emisor que solicita la anulación de la
+nota fiscal.
+La anulación de la nota fiscal se
+podrá realizar siempre y cuando la
+misma posea el estado de vigente.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+RECEPCIÓN
+ANULACIÓN
+BOLETA
+CONTINGENCIA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+numeroBoleta (numérico)
+cuf (alfanumérico)
+codigoMotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+El ambiente que debe enviarse es
+“producción”.
+La única modalidad aceptada será
+“Manual”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota de crédito/debito.
+La anulación de la Boleta de
+contingencia es de forma individual.
+Si la solicitud de anulación fue
+realizada antes del tiempo estipulado
+en 	normativa 	será 	procesada
+inmediatamente.
+Si el tiempo para solicitud de anulación
+es mayor al definido en normativa, se
+deberá enviar adicionalmente el correo
+electrónico o número de celular del
+comprador para su confirmación.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+ANULACIÓN
+BOLETA
+CONTINGENCIA
+ELECTRÓNICA
+(Continuación)
+Una vez enviada la solicitud
+de anulación se debe recibir el
+identificador de anulación.
+El Código de Recepción debe
+ser guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de la anulación de la
+Boleta de Contingencia computarizada.
+La anulación de la Boleta de
+Contingencia será válida solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación de anulación.
+VALIDACIÓN
+ANULACIÓN
+BOLETA
+CONTINGENCIA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+Otros=errores propios del archivo XML
+13= Código de Recepción No Válido
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la Nota Fiscal.
+La verificación de anulación de la
+Boleta de Contingencia es de forma
+individual.
+Se debe enviar el Código de Recepción
+para saber el estado actual de la
+anulación asociada.Se devolverá el
+estado de: 1) Observada, en caso
+que aún no se haya procesado o se
+tengan observaciones relacionadas a la
+anulación. 2) Procesada, en caso que
+se haya procedido con la anulación.
+Una vez enviada la solicitud de
+verificación de anulación se debe
+recibir las respuestas del punto
+anterior y en caso de error en la
+solicitud una lista con los errores.
+La anulación será válida solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación de anulación.
+RECEPCIÓN
+PAQUETE
+FACTURA
+ELECTRÓNICA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío (por factura)
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres Inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Código de Moneda Inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=gastos_seguro_frontera es requerido en este
+tipo de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+El paquete de facturas enviado solo
+debe ser del tipo de emisión “fuera
+de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+del paquete de facturas.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las facturas se
+empaquetarán en formato .TAR.
+El paquete de facturas debe ser
+comprimido en formato GZIP
+El paquete debe ser incluida en el XML
+de solicitud en formato base64
+Una vez enviado el paquete se debe
+recibir el código de recepción
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de las facturas.
+Las facturas del paquete serán válidas
+solamente cuando se haya confirmado
+su procesamiento en el SIN a través
+del método de validación.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+VALIDACIÓN
+PAQUETE
+FACTURA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(nmerico)
+tipoDocumentoSector
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+NumeroFactura (numérico)
+CUF (alfanumérico)
+ListaErrores (arreglo)
+2= Código de Sistema no válido
+4= Código diario no válido
+6= Código Emisión no válido
+El paquete de facturas a ser validado
+debe ser del tipo de emisión “fuera
+de línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las facturas.
+La validación de las facturas es de
+forma individual.
+
+-- 5 of 16 --
+
+www.impuestos.gob
+www.impuestos.gob.bo 	La Paz 21 de noviembre del 2018
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN VIRTUAL
+6
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+VALIDACIÓN
+PAQUETE
+FACTURA
+ELECTRÓNICA
+(Continuación)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres Inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda Inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+Las facturas deben ser con derecho a
+crédito fiscal.
+En caso de error en la validación de la
+recepción de la factura corresponde
+una nueva consulta.
+El código de recepción debe existir en
+la base de datos del SIN y ser válido.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+RECEPCIÓN
+PAQUETE
+NOTA FISCAL
+ELECTRÓNICA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+Archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres Inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda Inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+El paquete de notas fiscales enviado
+solo debe ser del tipo de emisión “fuera
+de línea”.
+El ambiente que debe enviarse es
+“producción” .
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+del paquete de notas fiscales.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las notas fiscales se
+empaquetarán en formato .TAR.
+El paquete de notas fiscales debe ser
+comprimido en formato GZIP.
+El paquete debe ser incluida en el XML
+de solicitud en formato base64.
+Una vez enviado el paquete se debe
+recibir el código de recepción.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE
+NOTA FISCAL
+ELECTRÓNICA
+(Continuación)
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=Código del producto no coincide con la actividad
+económica
+53=Código actividad económica Inválido
+54=Monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+El código de recepción debe ser
+guardado en el sistema de facturación
+para realizar la verificación posterior de
+la validación de las notas fiscales.
+Las notas fiscales del paquete serán
+válidas solamente cuando se haya
+confirmado su procesamiento en el
+SIN a través del método de validación.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+VALIDACIÓN
+PAQUETE
+NOTA FISCAL
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+NumeroFactura (numérico)
+CUF (alfanumérico)
+ListaErrores (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= Archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres Inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda Inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+El paquete de notas fiscales a ser
+validado debe ser del tipo de emisión
+“fuera de línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las notas fiscales.
+La validación de las notas fiscales es de
+forma individual.
+Las notas fiscales deben ser sin
+derecho a crédito fiscal.
+En caso de error en la validación de la
+nota fiscal corresponde el reenvío de
+la misma.
+En caso de error en la emisión de la
+nota fiscal corresponde una anulación,
+para lo que se tiene un método
+habilitado.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+RECEPCIÓN
+PAQUETE
+NOTA CRÉDITO/
+DÉBITO
+ELECTRÓNICA
+codigoSistema codigoSistema
+(numérico)
+codigoAmbiente (numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+14=numero Documento Duplicado
+20=CUF Inválido
+El paquete de notas de débito y crédito
+enviado solo debe ser del tipo de
+emisión “fuera de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+del paquete de notas de débito y
+crédito.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las notas de débito y
+crédito se empaquetarán en formato
+.TAR.
+El paquete de notas de débito y crédito
+debe ser comprimido en formato GZIP
+El paquete debe ser incluida en el XML
+de solicitud en formato base64.
+Una vez enviado el paquete se debe
+recibir el código de recepción.
+
+-- 6 of 16 --
+
+www.impuestos.gob.bo
+LÍNEA GRATUITA DE CONSULTAS TRIBUTARIAS 800 10 34 44
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN ELECTRÓNICA7
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE
+NOTA CRÉDITO/
+DÉBITO
+ELECTRÓNICA
+(Continuación)
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de las notas de débito
+y crédito.
+Las notas de débito y crédito del
+paquete serán válidas solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación.
+VALIDACIÓN
+PAQUETE
+NOTA CRÉDITO/
+DÉBITO
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+NumeroFactura (numérico)
+CUF (alfanumérico)
+ListaErrores (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida, 8= Sucursal no válida
+9= NIT no válido
+10 = Archivo no válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+20 = CUF Inválido
+El paquete de notas de débito/crédito
+a ser validado debe ser del tipo de
+emisión “fuera de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las notas de débito/crédito.
+La validación de las notas de débito/
+crédito es de forma individual.
+En caso de error en la validación de la
+notas de débito/crédito corresponde el
+reenvío de la misma.
+RECEPCIÓN
+PAQUETE
+FACTURA
+CONTINGENCIA
+ELECTRÓNICO
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+16=Nombre cajero con caracteres Inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda Inválido 18=Fecha emisión
+menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda Inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+El paquete de facturas de contingencia
+enviado solo debe ser del tipo de
+emisión “fuera de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema:
+Código de Sistema, CUIS y CUFD
+deben ser válidos y asociados al NIT
+del emisor del paquete de boletas de
+contingencia.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las boletas de
+contingencia se empaquetarán en
+formato .TAR.
+El paquete de facturas de contingencia
+debe ser comprimido en formato GZIP
+El paquete debe ser incluida en el XML
+de solicitud en formato base64
+Una vez enviado el paquete se debe
+recibir el código de recepción
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de las facturas de
+contingencia.
+Las facturas de contingencia del
+paquete serán válidas solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE
+FACTURA
+CONTINGENCIA
+ELECTRÓNICO
+(Continuación)
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+VALIDACIÓN
+PAQUETE
+FACTURA
+CONTINGENCIA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+codigoEmisión (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+NumeroFactura (numérico)
+CUF (alfanumérico)
+ListaErrores (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT Inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de
+factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo
+de factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de
+factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de
+factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto Inválido
+52=producto id no coincide con la actividad
+53=Código actividad inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Cálculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+El paquete de las facturas de
+contingencia a ser validado debe ser
+del tipo de emisión “fuera de línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: código
+de sistema, cuis y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las facturas de contingencia.
+La validación de las facturas de
+contingencia es de forma individual.
+En caso de error en la validación de las
+facturas de contingencia corresponde
+el reenvío de la misma.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+FACTURA
+COMPUTARI-
+ZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fecha envio (datetime)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+stado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido,
+2= Código de Sistema no válido,
+3= Código de inicio no válido,
+4= Código diario no válido,
+5= Documento Fiscal Inválido,
+6= Código Emisión no válido,
+7= Modalidad no válida,
+8= Sucursal no válida,
+9= NIT no válido,
+10= archivo no válido
+Validaciones Previo al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=número Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+La factura enviada solo debe ser del
+tipo de emisión “en línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la factura.
+El NIT del contribuyente debe ser válido
+y este habilitado para facturación.
+La modalidad de facturación debe ser
+COMPUTARIZADA.
+La sucursal sea válida y este asociado
+al contribuyente en el padrón.
+El CUIS enviado corresponda a
+la sucursal donde se efectúa la
+transacción.
+El envío de la factura es de forma
+individual, para envío masivo o por lote
+se tiene otro método habilitado.
+El tipo de documento fiscal debe ser del
+tipo factura.
+La factura debe estar construida en
+base al XML definido en el presente
+documento.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+FACTURA
+COMPUTARI-
+ZADA
+(Continuación)
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor al definido en normativa
+19= Código documento identidad Inválido 20=CUF
+Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+23=El campo Estudiante es requerido para este tipo
+de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+En caso de emitir un tipo de factura:
+Venta de combustible, pago de colegio
+o alquileres se debe considerar los
+campos adicionales para dichas
+facturas. Para los documentos de
+exportación, venta de libros, turismo
+receptivo, libre consignación, venta de
+moneda extranjera y otros sin derecho
+a crédito fiscal se usará el documento
+“Nota Fiscal”, para lo cual se tiene otro
+método.
+SERVICIOS WEB DE LA MODALIDAD FACTURACIÓN COMPUTARIZADA EN LÍNEA
+
+-- 7 of 16 --
+
+www.impuestos.gob
+www.impuestos.gob.bo 	La Paz 21 de noviembre del 2018
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN VIRTUAL
+8
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales
+VALIDACIÓN
+FACTURA
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+fechaRecepcion (Timestamp)
+listaMensajes (arreglo)
+1= Ambiente no válido,
+2= Código de Sistema no válido,
+3= Código de inicio no válido,
+4= Código diario no válido,
+5= Documento Fiscal Inválido,
+6= Código Emisión no válido,
+7= Modalidad no válida,
+8= Sucursal no válida,
+9= NIT no válido,
+10= archivo no válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+23=El campo Estudiante es requerido para este tipo
+de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+85=Tipo Documento Sector Inválido
+El código de sistema debe estar
+asociado al contribuyente y debe estar
+asociado a un sistema certificado.
+La factura a ser validada solo debe ser
+del tipo de emisión “en línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la factura.
+El NIT del contribuyente debe ser válido
+y este habilitado para facturación.
+El tipo de documento fiscal debe ser del
+tipo “factura”.
+La sucursal sea válida y este asociado
+al contribuyente en el padrón.
+El Código de recepción de factura debe
+ser válido y estar registrado en nuestra
+base de datos.
+Validar el XML contra el XSD.
+En caso de error en la validación se
+procederá al marcado de la factura.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+RECEPCIÓN
+ANULACIÓN
+FACTURA
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+nit (numérico)
+numeroDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+cuf (alfanumérico)
+email (alfanumérico)
+celular (numérico)
+codigomotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido,
+2= Código de Sistema no válido,
+3= Código de inicio no válido,
+4= Código diario no válido,
+8= Sucursal no válida,
+9= NIT no válido,
+15 = Numero Documento Inexistente,
+20 = CUF inválido,
+62 = Motivo de Anulación Inválido
+85=Tipo Documento Sector Inválido
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emis–or
+de la factura.
+Tanto el número de factura como
+el CUF deben estar registrados en
+nuestros servidores
+La anulación de la factura es de forma
+individual.
+La factura a ser anulada, debe ser con
+derecho a crédito fiscal.
+Una vez enviada la anulación de la
+factura se debe recibir el código de
+recepción de anulación.
+El código de recepción de anulación
+debe ser guardado en el sistema para
+realizar la verificación posterior.
+La anulación de una factura será directa
+solamente cuando se haya solicitado
+antes del tiempo determinado por
+normativa para dicho proceso.
+En caso de solicitar la anulación
+posterior al tiempo definido por
+normativa y el comprador no tenga NIT,
+se debe incluir en la solicitud el correo
+electrónico y el número de celular del
+comprador para su confirmación.
+La anulación de la factura se podrá
+realizar siempre y cuando la misma
+posea el estado de vigente y no haya
+sido ya previamente declarada por
+algún contribuyente o beneficiario.
+Si se requiere confirmación del
+comprador, la anulación no será válida
+hasta recibir la misma o luego del
+tiempo determinado por normativa
+para el silencio positivo.
+La anulación de la factura será válida
+solamente cuando se haya confirmado
+su procesamiento a través del método
+de validación.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+VALIDACIÓN
+ANULACIÓN
+FACTURA
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido,
+8= Sucursal no válida,
+9= NIT no válido,
+15 =numero Documento Inexistente,
+13= Código de Recepción No Válido
+20 = CUF inválido,
+62 = Motivo de Anulación Inválido
+85=Tipo Documento Sector Inválido
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben
+coincidir con los valores que tenemos
+registrados y estar asociados al NIT del
+emisor que solicita la anulación de la
+factura.
+La 	modalidad 	debe 	ser
+“COMPUTARIZADA”.
+El NIT debe estar habilitado y poder
+emitir facturas.
+El Documento Fiscal debe ser Factura.
+La sucursal debe ser válida y asociada
+al NIT.
+El código de recepción debe ser válida
+y estar registrado en la Base de Datos
+del SIN.
+El Código de recepción de factura debe
+ser válido y estar registrado en nuestra
+base de datos.
+Validar el XML contra el XSD.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+RECEPCIÓN
+NOTA
+CRÉDITO/
+DÉBITO
+COMPUTARI-
+ZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis(alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+El tipo de emisión enviado debe
+corresponder a “En línea”.
+El ambiente que debe enviarse es
+“Producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota de débito/crédito.
+El envío de la nota de débito/crédito
+es de forma individual, para envío
+masivo o por lote se tiene otro método
+habilitado.
+El tipo de documento enviado
+corresponde a “Nota Debito/crédito”.
+La nota de débito/crédito debe estar
+construida en el XML definido en el
+presente documento.
+El XML de la nota de débito/crédito
+debe ser comprimido en formato GZIP
+La nota de débito/crédito debe ser
+incluida en el XML de solicitud en
+formato base64.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+NOTA
+CRÉDITO/
+DÉBITO
+COMPUTARI-
+ZADA
+(Continuación)
+Validaciones Previas al Envío
+11= Firma Incorrecta
+14=numero Documento Duplicado
+20=CUF Inválido
+Una vez enviada la nota de débito/
+crédito se debe recibir el código de
+recepción
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de la nota de débito/
+crédito.
+La nota de débito/crédito será válida
+solamente cuando se haya confirmado
+su procesamiento en el SIN a través
+del método de validación.
+VALIDACIÓN
+NOTAS
+CRÉDITO/
+DÉBITO
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+El código de emisión debe ser del tipo
+“en línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota débito/crédito.
+La validación de la nota débito/crédito
+es de forma individual.
+El Código de recepción de factura
+debe ser válido y estar registrado en
+nuestra base de datos.
+El código de recepción de nota débito/
+crédito debe estar asociado a una sola
+nota débito/crédito.
+Validar el XML contra el XSD.
+RECEPCIÓN
+ANULACIÓN
+NOTA DÉBITO/
+CRÉDITO
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+nit (numérico)
+Numero de Documento Fiscal
+(numérico)
+cuf (alfanumérico)
+emailComprador
+(alfanumérico)
+celular(numérico)
+codigoMotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+15 = numero Documento Inexistente
+20 = CUF inválido
+62 = Motivo de Anulación Inválido
+La nota de débito/crédito anulada
+solo debe ser de la modalidad de
+facturación COMPUTARIZADA en línea.
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota de débito/crédito.
+La anulación de la nota de débito/
+crédito es de forma individual.
+Una vez enviada la anulación de la
+nota de débito/crédito se debe recibir
+el código de recepción de anulación.
+El código de recepción de anulación
+debe ser guardado en el sistema para
+realizar la verificación posterior.
+La anulación de una nota de débito/
+crédito será directa solamente cuando
+se haya solicitado antes del tiempo
+determinado por normativa para dicho
+proceso.
+En caso de solicitar la anulación
+posterior al tiempo definido por
+normativa y el comprador no tenga
+NIT, se debe incluir en la solicitud
+el correo electrónico y el número
+de celular del comprador para su
+confirmación.
+La anulación de la nota de débito/
+crédito será válida solamente cuando
+se haya confirmado su procesamiento
+a través del método de validación.
+VALIDACION
+ANULACIÓN
+NOTA CRÉDITO
+/DÉBITO
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+El ambiente que debe enviarse es
+“producción”
+El número de nota débito/crédito debe
+existir en nuestros servidores
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben
+coincidir con los valores que tenemos
+registrados y estar asociados al NIT del
+emisor que solicita la anulación de la
+nota débito/crédito.
+La anulación de la nota débito/crédito
+a se podrá realizar siempre y cuando
+la misma posea el estado de vigente.
+RECEPCIÓN
+NOTA FISCAL
+COMPUTARI-
+ZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+nitEmisor (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fechaEnvio
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo Cambio es requerido en este tipo de factura
+25=Incoterm es requerido en este tipo de factura
+26=puerto destino es requerido en este tipo de factura
+27=tipo moneda id es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=precio valor bruto es requerido en este tipo de
+factura
+30=gastos transporte frontera es requerido en este
+tipo de factura
+31=gastos_seguro_frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+La nota fiscal enviada solo debe ser
+del tipo de emisión “en línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota fiscal.
+El envío de la nota fiscal es de forma
+individual, para envío masivo o por
+lote se tiene otro método habilitado.
+La nota fiscal debe ser sin derecho a
+crédito fiscal.
+La nota fiscal debe estar construida
+en el XML definido en el presente
+documento.
+Se deben enviar todos los campos
+marcados como mandatorios y de
+acuerdo al rubro aquellos marcados
+como opcionales.
+El XML de la nota fiscal debe ser
+comprimido en formato GZIP.
+La nota fiscal debe ser incluida en el
+XML de solicitud en formato base64.
+Enviada la nota fiscal se debe recibir el
+código de recepción
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de la nota fiscal.
+La nota fiscal será válida solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación.
+
+-- 8 of 16 --
+
+www.impuestos.gob.bo
+LÍNEA GRATUITA DE CONSULTAS TRIBUTARIAS 800 10 34 44
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN ELECTRÓNICA9
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+VALIDACION
+ANULACIÓN
+NOTA FISCAL
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben
+coincidir con los valores que tenemos
+registrados y estar asociados al NIT del
+emisor que solicita la anulación de la
+nota fiscal.
+La anulación de la nota fiscal se podrá
+realizar siempre y cuando la misma
+posea el estado de vigente.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+RECEPCIÓN
+ANULACIÓN
+FACTURA
+CONTINGENCIA
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+numeroBoleta (numérico)
+cuf (alfanumérico)
+codigoMotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+El ambiente que debe enviarse es
+“producción”
+La única modalidad aceptada será
+“Manual”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor.
+La anulación de la Factura de
+contingencia es de forma individual.
+VALIDACIÓN
+ANULACIÓN
+FACTURA
+CONTINGENCIA
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nit (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+Otros=errores propios del archivo XML
+13= Código de Recepción No Válido
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor.
+La verificación de anulación de la
+Factura de Contingencia es de forma
+individual.
+RECEPCIÓN
+PAQUETE
+FACTURA
+COMPUTARI-
+ZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío (por factura)
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Código de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=gastos_seguro_frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+El paquete de facturas enviado solo
+debe ser del tipo de emisión “fuera
+de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+del paquete de facturas.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las facturas se
+empaquetarán en formato .TAR.
+El paquete de facturas debe ser
+comprimido en formato GZIP
+El paquete debe ser incluida en el XML
+de solicitud en formato base64
+Una vez enviado el paquete se debe
+recibir el código de recepción
+El código de recepción debe ser
+guardado en el sistema para realizar la
+verificación posterior del procesamiento
+de las facturas.
+Las facturas del paquete serán válidas
+solamente cuando se haya confirmado
+su procesamiento en el SIN a través del
+método de validación.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+NOTA FISCAL
+COMPUTARI-
+ZADA
+(Continuación)
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+VALIDACIÓN
+NOTA FISCAL
+COMPUTARIZI-
+ADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+5= Documento Fiscal Inválido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=gastos_seguro_frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+El tipo de emisión debe ser “en línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota fiscal.
+La validación de la nota fiscal es de
+forma individual.
+El código de recepción de factura debe
+estar asociado a una sola nota fiscal.
+En caso de error en la emisión de la
+nota fiscal corresponde una anulación,
+para lo que se tiene un método
+habilitado.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+RECEPCIÓN
+ANULACIÓN
+NOTA FISCAL
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+nit (numérico)
+numeroDocumento
+(numérico)
+cuf (alfanumérico)
+emailComprador
+(alfanumérico)
+celular (numérico)
+codigoMotivoAnulacion
+(numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+8= Sucursal no válida
+9= NIT no válido
+15 = numero Documento Inexistente
+20 = CUF inválido
+62 = Motivo de Anulación Inválido
+La modalidad de facturación debe ser
+“COMPUTARIZADA en línea”.
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de la nota fiscal.
+La anulación de la nota fiscal es de
+forma individual.
+El código de recepción de anulación
+recepcionado debe ser guardado en
+el sistema para realizar la verificación
+posterior.
+La anulación de una nota fiscal
+será directa solamente cuando se
+haya solicitado antes del tiempo
+determinado por normativa para dicho
+proceso.
+En caso de solicitar la anulación
+posterior al tiempo definido por
+normativa, se debe incluir en la
+solicitud el correo electrónico y el
+número de celular del comprador para
+su confirmación.
+En el caso de ser necesaria la
+confirmación la anulación no se
+considerará realizada hasta dicha
+confirmación o luego del tiempo
+determinado por normativa para
+silencio positivo.
+La anulación de la nota fiscal será
+válida solamente cuando se haya
+confirmado su procesamiento a través
+del método de validación.
+
+-- 9 of 16 --
+
+www.impuestos.gob
+www.impuestos.gob.bo 	La Paz 21 de noviembre del 2018
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN VIRTUAL
+10
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes
+inmuebles, venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/
+clínicas, juegos de azar, artistas internacionales.
+VALIDACIÓN
+PAQUETE
+FACTURA
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+NumeroFactura (numérico)
+CUF (alfanumérico)
+ListaErrores (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+El paquete de facturas a ser validado
+debe ser del tipo de emisión “fuera de
+línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las facturas.
+La validación de las facturas es de
+forma individual.
+Las facturas deben ser con derecho a
+crédito fiscal.
+En caso de error en la validación de la
+recepción de la factura corresponde
+una nueva consulta.
+El código de recepción debe existir en
+la base de datos del SIN y ser válido.
+La estructura de este servicio es válida para los siguientes tipos de documentos por sector: estándar, sectores educativos, alquiler de bienes inmuebles,
+venta de combustibles, comercialización de hidrocarburos, servicios básicos, embotelladoras, entidades financieras, hoteles, hospitales/clínicas, juegos
+de azar, artistas internacionales.
+RECEPCIÓN
+PAQUETE
+NOTA FISCAL
+COMPUTARI-
+ZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+Archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+El paquete de notas fiscales enviado
+solo debe ser del tipo de emisión “fuera
+de línea”.
+El ambiente que debe enviarse es
+“producción”.
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+del paquete de notas fiscales.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las notas fiscales se
+empaquetarán en formato .TAR.
+El paquete de notas fiscales debe ser
+comprimido en formato GZIP.
+El paquete debe ser incluida en el XML
+de solicitud en formato base64.
+Una vez enviado el paquete se debe
+recibir el código de recepción.
+El código de recepción debe ser
+guardado en el sistema de facturación
+para realizar la verificación posterior
+del validación de las notas fiscales.
+Las notas fiscales del paquete serán
+válidas solamente cuando se haya
+confirmado su procesamiento en el SIN
+a través del método de validación.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE
+NOTA
+COMPUTARI-
+ZADA
+(Continuación)
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=Código del producto no coincide con la actividad
+económica
+53=Código actividad económica inválido
+54=Monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+VALIDACIÓN
+PAQUETE
+NOTA FISCAL
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoSector
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+NumeroFactura (numérico)
+CUF (alfanumérico)
+ListaErrores (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= Archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+85=Tipo Documento Sector Inválido
+El paquete de notas fiscales a ser
+validado debe ser del tipo de emisión
+“fuera de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las notas fiscales.
+La validación de las notas fiscales es de
+forma individual.
+Las notas fiscales deben ser sin
+derecho a crédito fiscal.
+En caso de error en la validación de la
+nota fiscal corresponde el reenvío de
+la misma.
+En caso de error en la emisión de la
+nota fiscal corresponde una anulación,
+para lo que se tiene un método
+habilitado.
+La estructura de este servicio es válida para los siguientes tipos de documento por sector: comercial de exportación, comercial de exportación en
+libre consignación, tasa cero, exportación de servicio turístico y hospedaje, zona franca, artistas nacionales, comercialización de alimentos - seguridad
+alimentaria y abastecimiento, venta de moneda extranjera.
+RECEPCIÓN
+PAQUETE
+NOTAS
+CRÉDITO/
+DÉBITO COMPU
+-TARIZADA
+codigoSistema codigoSistema
+(numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+El paquete de notas de débito y crédito
+enviado solo debe ser del tipo de
+emisión “fuera de línea”
+
+-- 10 of 16 --
+
+www.impuestos.gob.bo
+LÍNEA GRATUITA DE CONSULTAS TRIBUTARIAS 800 10 34 44
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN ELECTRÓNICA11
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE
+NOTAS
+CRÉDITO/
+DÉBITO
+COMPUTARI-
+ZADA
+(Continuación)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+14=numero Documento Duplicado
+20=CUF Inválido
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+del paquete de notas de débito y
+crédito.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las notas de débito y
+crédito se empaquetarán en formato
+.TAR.
+El paquete de notas de débito y crédito
+debe ser comprimido en formato GZIP
+El paquete debe ser incluida en el XML
+de solicitud en formato base64
+Una vez enviado el paquete se debe
+recibir el código de recepción
+El código de recepción debe ser
+guardado en el sistema para realizar la
+verificación posterior del procesamiento
+de las notas de débito y crédito.
+Las notas de débito y crédito del
+paquete serán válidas solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación.
+VALIDACIÓN
+PAQUETE
+NOTAS
+CRÉDITO/
+DÉBITO
+COMPUTARI-
+ZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+NumeroFactura (numérico)
+CUF (alfanumérico)
+ListaErrores (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida, 8= Sucursal no válida
+9= NIT no válido
+10 = Archivo no válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+20 = CUF inválido
+El paquete de notas de débito/crédito
+a ser validado debe ser del tipo de
+emisión “fuera de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: Código
+de Sistema, CUIS y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las notas de débito/crédito.
+La validación de las notas de débito/
+crédito es de forma individual.
+En caso de error en la validación de la
+notas de débito/crédito corresponde el
+reenvío de la misma.
+RECEPCIÓN
+PAQUETE
+BOLETA
+CONTINGENCIA
+COMPUTARI-
+ZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no válido
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+10= archivo no válido
+Validaciones Previas al Envío
+11= Firma Incorrecta
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido en este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+El paquete de boletas de contingencia
+enviado solo debe ser del tipo de
+emisión “fuera de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema:
+Código de Sistema, CUIS y CUFD
+deben ser válidos y asociados al NIT
+del emisor del paquete de boletas de
+contingencia.
+El paquete debe estar construido
+en el XML definido en el presente
+documento.
+Los XMLs de las boletas de
+contingencia se empaquetarán en
+formato .TAR.
+El paquete de boletas de contingencia
+debe ser comprimido en formato GZIP
+El paquete debe ser incluida en el XML
+de solicitud en formato base64
+Una vez enviado el paquete se debe
+recibir el código de recepción
+El código de recepción debe ser
+guardado en el sistema para
+realizar la verificación posterior del
+procesamiento de las boletas de
+contingencia.
+Las boletas de contingencia del
+paquete serán válidas solamente
+cuando se haya confirmado su
+procesamiento en el SIN a través del
+método de validación.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE
+BOLETA
+CONTINGENCIA
+COMPUTARI-
+ZADA
+(Continuación)
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+VALIDACIÓN
+PAQUETE
+FACTURA
+CONTINGENCIA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+numeroFactura (numérico)
+cuf (alfanumérico)
+listaErrores (arreglo)
+2= Código de Sistema no válido
+3= Código de inicio no válido
+4= Código diario no válido
+6= Código Emisión no válido
+7= Modalidad no válida
+8= Sucursal no válida
+9= NIT no válido
+13= Código de Recepción No Válido
+11= Firma Incorrecta
+13= Código de Recepción No Válido
+14=numero Documento Duplicado
+16=Nombre cajero con caracteres inválidos
+17=Fecha emisión mayor a definido en normativa
+18=Fecha emisión menor a definido en normativa
+19=Código documento identidad Inválido
+20=CUF Inválido
+21=Numero documento (NIT inválido)
+22=El Periodo facturado es requerido para este tipo
+de factura
+24=El tipo de cambio es requerido en este tipo de
+factura
+25=Incoterm es requerido en este tipo de factura
+26=Puerto destino es requerido en este tipo de factura
+27=Código Moneda es requerido en este tipo de
+factura
+28=Tipo de Moneda inválido
+29=Precio valor bruto es requerido en este tipo de
+factura
+30=Gastos transporte frontera es requerido en este
+tipo de factura
+31=Gastos seguro frontera es requerido en este tipo
+de factura
+32=Total FOB frontera es requerido en este tipo de
+factura
+33=Monto transporte internacional es requerido en
+este tipo de factura
+34=Monto seguro internacional es requerido en este
+tipo de factura
+35=Otros montos es requerido en este tipo de factura
+36=Total moneda es requerido en este tipo de factura
+37=Total puerto es requerido e+n este tipo de factura
+38=Operador turismo receptivo es requerido en este
+tipo de factura
+39=Remitente es requerido en este tipo de factura
+40=Consignatario es requerido en este tipo de factura
+41=Placa es requerido en este tipo de factura
+42=Código país es requerido en este tipo de factura
+43=Código de País Inválido
+44=Monto Ley 317 es requerido en este tipo de factura
+45=Monto total sujeto IVA es requerido en este tipo
+de factura
+46=Monto total sujeto IPJ es requerido en este tipo
+de factura
+47=Monto total IJ es requerido en este tipo de factura
+48=Monto diferencia tipo de cambio es requerido en
+este tipo de factura
+49=Monto ICE es requerido en este tipo de factura
+50=Monto IEHD es requerido en este tipo de factura
+51=Código producto inválido
+52=producto id no coincide con la actividad
+53=Código actividad Inválida
+54=monto total no coincide con la sumatoria de los
+subtotales y descuentos
+55=Calculo del subtotal errado
+56=Monto Ley 317 es incorrecto
+57=Monto total sujeto IVA es incorrecto
+58=Monto total sujeto IPJ es incorrecto
+59=Monto total IJ es incorrecto
+60=Monto ICE es incorrecto
+61=Monto IEHD es incorrecto
+El paquete de las facturas de
+contingencia a ser validado debe ser
+del tipo de emisión “fuera de línea”
+El ambiente que debe enviarse es
+“producción”
+Los identificadores del sistema: código
+de sistema, cuis y CUFD deben ser
+válidos y asociados al NIT del emisor
+de las boletas de contingencia.
+La validación de las boletas de
+contingencia es de forma individual.
+En caso de error en la validación de las
+boletas de contingencia corresponde el
+reenvío de la misma.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+SERVICIO DE
+SINCRONIZACIÓN
+DE PRODUCTOS Y
+SERVICIOS
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaProductos (arreglo)
+codigoProductoServicio (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de Productos y
+Servicios se la realiza por sistema y sucursal
+habilitada en el padrón de contribuyentes o
+punto de venta registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+TIPOS DE MODALIDAD
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoModalidad (arreglo)
+codigoModalidad (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de Tipo de
+Modalidad de Facturación se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+TIPOS DE EMISION
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoModalidad (arreglo)
+codigoEmisión (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de Tipos
+de Emisión de Documentos Fiscales
+Electrónicos se la realiza por sistema
+y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+SERVICIO DE
+SINCRONIZACIÓN DE
+TIPOS DE AMBIENTE
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoAmbiente (arreglo)
+codigoAmbiente (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de tipos de
+Ambiente que se usan en la facturación, se
+la realiza por sistema y sucursal habilitada
+en el padrón de contribuyentes o punto de
+venta registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+TIPOS DE DOCUMENTOS
+FISCALES
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoDocumentoFiscal (arreglo)
+codigoDocumentoFiscal (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de
+Documentos Fiscales Electrónicos que
+se usan para la facturación, se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+TIPOS DE DOCUMENTO
+IDENTIDAD
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoDocumentoIdentidad (arreglo)
+codigoDocumentoIdentidad (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización del catálogo
+de tipos de Documentos de Identidad, se
+la realiza por sistema y sucursal habilitada
+en el padrón de contribuyentes o punto de
+venta registrado en facturación.
+SERVICIOS WEB DE SINCRONIZACIÓN
+
+-- 11 of 16 --
+
+www.impuestos.gob
+www.impuestos.gob.bo 	La Paz 21 de noviembre del 2018
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN VIRTUAL
+12
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+SERVICIO DE
+SINCRONIZACIÓN
+DE TIPO IMPRESIÓN
+IMPRENTA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoTipoImpresionImprenta(arreglo)
+codigoTipoImpresionImprenta
+(numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización del catálogo
+de tipos de Impresión Imprenta, se la
+realiza por sistema y sucursal habilitada
+en el padrón de contribuyentes o punto de
+venta registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+TIPOS DE EVENTOS
+SIGNIFICATIVOS
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoEventoSignificativo (arreglo)
+codigoEventoSignificativo (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización del catálogo
+de Eventos Significativos usados para su
+registro y entrada en contingencia, se la
+realiza por sistema y sucursal habilitada
+en el padrón de contribuyentes o punto de
+venta registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+PAISES
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaPaises (arreglo)
+codigoPais (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de catálogo de
+países, se la realiza por sistema y sucursal
+habilitada en el padrón de contribuyentes o
+punto de venta registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+DEPARTAMENTOS
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaDepartamento (arreglo)
+codigoDepartamento (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización del catálogo
+de Departamentos, se la realiza por sistema
+y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+MONEDAS
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaMoneda (arreglo)
+codigoMoneda (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de catálogo
+de Monedas, se la realiza por sistema
+y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+SERVICIO DE
+SINCRONIZACIÓN
+DE MOTIVOS DE
+ANULACION
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+ListaMotivoAnulacion(arreglo)
+codigoMotivoAnulacion (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de catálogo
+de Motivos de Anulación, se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+TIPO COMPONENTE
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+ListaTipoComponente(arreglo)
+codigoTipoComponente (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización del catálogo
+de tipos de Componente, se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+SERVICIO DE
+SINCRONIZACIÓN DE
+HUELLAS DE SISTEMA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+listaHuellas (arreglo)
+componente (alfanumérico)
+huellaMd5 (alfanumérico)
+huellaCrc (alfanumérico)
+huellaSha2 (alfanumérico)
+respuesta (booleano)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de Huellas
+de sistema para verificación, se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+COMUNICACION
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+Texto (alfanumérico)
+respuesta (booleano)
+mensajeRespuesta(alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de
+Comunicación de sistema para verificación
+de la comunicación, se la realiza por sistema
+y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+LEYENDAS
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaLeyenda(arreglo)
+codigoLeyenda (numérico)
+descripción (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de catálogo
+de Mensajes de la Leyenda de Defensa
+al Consumidor, se la realiza por sistema
+y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+SERVICIO DE
+SINCRONIZACIÓN
+DE MENSAJES DE
+SERVICIOS
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+ListaMensajeServicio (arreglo)
+codigoMensajeServicio (numérico)
+descripción (alfanumérico)
+listaM-ensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de catálogo de
+Mensajes de los Servicios Web, se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN DE
+FECHA Y HORA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+fecha (Date)
+hora (Time)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de fecha
+y hora del SIN, para sincronizar con el
+servidor del contribuyente, se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+SERVICIO DE
+SINCRONIZACIÓN TIPO
+DOCUMENTO SECTOR
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+respuesta (booleano)
+listaTipoDocumentoSector (arreglo)
+codigoTipoDocumentoSector (numérico)
+descripcion (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de sincronización de catálogo de
+Tipos de Documento por Sector, se la realiza
+por sistema y sucursal habilitada en el
+padrón de contribuyentes o punto de venta
+registrado en facturación.
+SERVICIO DE SOLICITUD
+DE NUEVO VALOR
+PARAMÉTRICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+CUIS (alfanumérico)
+CUFD (alfanumérico)
+sucursal (numérico)
+nit (numérico)
+Descripción (Alfanumerico
+respuesta (booleano)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de registro de nuevo valor
+paramétrico, se la realiza por sistema
+y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+SERVICIO WEB DE OPERACIONES
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+SOLICITUD DE CUFD 	usuario (Alfanumérico)
+password (Alfanumérico)
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+sucursal (numérico)
+respuesta (booleano)
+cufd (alfanumérico)
+fechaVigencia (timestamp)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de CUFD se la realiza se la realiza
+por sistema y sucursal habilitada en el padrón
+de contribuyentes o punto de venta registrado
+en facturación.
+SOLICITUD DE CUIS 	usuario (Alfanumérico)
+password (Alfanumérico)
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+sucursal (numérico)
+codigoPos (numérico)
+respuesta (booleano)
+cuis (alfanumérico)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+La solicitud de CUIS se la realiza se la realiza
+por sistema y sucursal habilitada en el padrón
+de contribuyentes o punto de venta registrado
+en facturación.
+SOLICITUD DE CUAPE 	usuario (Alfanumérico)
+password (Alfanumérico)
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+sucursal (numérico)
+tipoPrevalorada
+respuesta (booleano)
+cuape (alfanumérico)
+fechaVigencia (timestamp)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+86 = Tipo Prevalorada No Valido
+La solicitud de CUAPE se la realiza se la realiza
+por sistema y sucursal habilitada en el padrón
+de contribuyentes o punto de venta registrado
+en facturación.
+SERVICIO WEB EVENTOS SIGNIFICATIVOS
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+INICIO EVENTOS
+SIGNIFICATIVOS
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+sucursal (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+codigoEvento (numérico)
+descricpion (Alfanumérico)
+fechaEvento DateTime
+respuesta (booleano)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+El registro de inicio de evento significativo se
+la realiza se la realiza por sistema y sucursal
+habilitada en el padrón de contribuyentes o
+punto de venta registrado en facturación.
+FIN EVENTOS
+SIGNIFICATIVOS
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+sucursal (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+codigoEvento (numérico)
+descricpion (Alfanumérico)
+fechaEvento DateTime
+respuesta (booleano)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+El registro de fin de evento significativo se
+la realiza se la realiza por sistema y sucursal
+habilitada en el padrón de contribuyentes o
+punto de venta registrado en facturación.
+CONSULTA DE EVENTOS
+SIGNIFICATIVOS
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+nit (numérico)
+sucursal (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+fechaEvento DateTime
+respuesta (booleano)
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+8= Sucursal no valida
+9= NIT no valido
+La consulta de registro de evento significativo
+se la realiza por sistema y sucursal habilitada
+en el padrón de contribuyentes o punto de
+venta registrado en facturación.
+SERVICIOS WEB MODALIDAD FACTURACIÓN MANUAL
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN FACTURA
+COMPRA MANUAL
+PAQUETE
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (DateTime)
+archivo (Alfanumérico)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido,
+2= Código de Sistema no valido,
+3= Código de inicio no valido,
+4= Código diario no valido,
+5= Documento Fiscal Invalido,
+6= Código Emisión no valido,
+7= Modalidad no valida,
+8= Sucursal no valida,
+9= NIT no valido,
+10= archivo no valido
+El registro de recepción de factura compra
+manual por paquete se la realiza por sistema
+y sucursal habilitada
+en el padrón de contribuyentes o punto de
+venta registrado en facturación.
+RECEPCIÓN FACTURA
+COMPRA MANUAL codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+tipoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (DateTime)
+archivo (Alfanumérico)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido,
+2= Código de Sistema no valido,
+3= Código de inicio no valido,
+4= Código diario no valido,
+5= Documento Fiscal Invalido,
+6= Código Emisión no valido,
+7= Modalidad no valida,
+8= Sucursal no valida,
+9= NIT no valido,
+10= archivo no valido
+El registro de recepción de factura compra
+manual
+se la realiza por sistema y sucursal habilitada
+en el padrón
+de contribuyentes o punto de venta
+registrado en facturación.
+CORRECCIÓN FACTURAS
+COMPRA MANUAL codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (DateTime)
+archivo (Alfanumérico)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido,
+2= Código de Sistema no valido,
+3= Código de inicio no valido,
+4= Código diario no valido,
+5= Documento Fiscal Invalido,
+6= Código Emisión no valido,
+7= Modalidad no valida,
+8= Sucursal no valida,
+9= NIT no valido,
+10= archivo no valido
+El registro de corrección de factura compra
+manual se la realiza por sistema y sucursal
+habilitada en el padrón de contribuyentes
+o punto de venta registrado en facturación.
+RECEPCIÓN FACTURA
+DE CONTINGENCIA POR
+PAQUETE
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (DateTime)
+archivo (Alfanumérico)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido,
+2= Código de Sistema no valido,
+3= Código de inicio no valido,
+4= Código diario no valido,
+5= Documento Fiscal Invalido,
+6= Código Emisión no valido,
+7= Modalidad no valida,
+8= Sucursal no valida,
+9= NIT no valido,
+10= archivo no valido
+El registro de recepción de factura de
+contingencia por paquete se la realiza por
+sistema y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+SERVICIOS WEB MODALIDAD FACTURACIÓN MANUAL
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+CORRECCIÓN FACTURA
+DE CONTINGENCIA POR
+PAQUETE
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuis (Alfanumérico)
+cufd (Alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (DateTime)
+archivo (Alfanumérico)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido,
+2= Código de Sistema no valido,
+3= Código de inicio no valido,
+4= Código diario no valido,
+5= Documento Fiscal Invalido,
+6= Código Emisión no valido,
+7= Modalidad no valida,
+8= Sucursal no valida,
+9= NIT no valido,
+10= Archivo no valido
+El registro de la corrección de factura de
+contingencia
+por paquete se la realiza por sistema y
+sucursal habilitada
+en el padrón de contribuyentes o punto
+de venta
+registrado en facturación.
+VALIDACIÓN DE
+RECEPCIÓN FACTURA
+COMPRA MANUAL
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+sucursal (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+8= Sucursal no valida
+9= NIT no valido
+13= Código de Recepción No Valido
+La validación de la recepción de la factura
+de compra manual se la realiza por sistema
+y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+VALIDACIÓN DE
+RECEPCIÓN PAQUETE
+FACTURA COMPRA
+MANUAL
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+nitEmisor (numérico)
+cuis (alfanumérico)
+cufd (alfanumérico)
+sucursal (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+8= Sucursal no valida
+9= NIT no valido
+13= Código de Recepción No Valido
+La validación de la recepción de paquete de
+la factura de compra manual se la realiza por
+sistema y sucursal habilitada en el padrón de
+contribuyentes o punto de venta registrado
+en facturación.
+
+-- 12 of 16 --
+
+www.impuestos.gob.bo
+LÍNEA GRATUITA DE CONSULTAS TRIBUTARIAS 800 10 34 44
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN ELECTRÓNICA13
+SERVICIOS WEB MODALIDAD PREVALORADA ELECTRÓNICA
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE FACTURA
+PREVALORADA
+ELECTRÓNICA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+Archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+10= Archivo no valido
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor del paquete.
+El paquete debe estar construido en el XML
+definido en el presente documento.
+Los XMLs de las notas fiscales se
+empaquetarán en formato .TAR.
+El paquete de notas fiscales debe ser
+comprimido en formato GZIP.
+El paquete debe ser incluida en el XML de
+solicitud en formato base64.
+Una vez enviado el paquete se debe recibir el
+código de recepción.
+El código de recepción debe ser guardado
+en el sistema de facturación para realizar la
+verificación posterior de validación.
+RECEPCIÓN FACTURA
+PREVALORADA
+ELECTRÓNICA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+Archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+10= Archivo no valido
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor del paquete.
+El paquete debe estar construido en el XML
+definido en el presente documento.
+Una vez enviado el documento se debe recibir
+el código de recepción
+El código de recepción debe ser guardado
+en el sistema de facturación para realizar la
+verificación posterior de validación.
+VALIDACIÓN
+PAQUETE DE FACTURA
+PREVALORADA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+numeroFactura (numérico)
+cuf (alfanumérico)
+listaErrores (arreglo)
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+13= Código de Recepción No Valido
+El paquete de facturas a ser validado debe ser
+del tipo de emisión “fuera de línea”
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor de las facturas.
+La validación de las facturas es de forma
+individual.
+El código de recepción debe existir en la base
+de datos del SIN y ser válido.
+VALIDACIÓN
+FACTURA
+PREVALORADA
+ELECTRÓNICA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+numeroFactura (numérico)
+cuf (alfanumérico)
+listaErrores (arreglo)
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+13= Código de Recepción No Valido
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor de las facturas.
+La validación de las facturas es de forma
+individual.
+El código de recepción debe existir en la base
+de datos del SIN y ser válido.
+SERVICIOS WEB MODALIDAD PREVALORADA COMPUTARIZADA
+MÉTODO 	ENTRADA 	SALIDA 	CONSIDERACIONES
+RECEPCIÓN
+PAQUETE FACTURA
+PREVALORADA
+COMPUTARIZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+Archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+10= Archivo no valido
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor del paquete.
+El paquete debe estar construido en el XML
+definido en el presente documento.
+Los XMLs de las notas fiscales se
+empaquetarán en formato .TAR.
+El paquete de notas fiscales debe ser
+comprimido en formato GZIP
+El paquete debe ser incluida en el XML de
+solicitud en formato base64
+Una vez enviado el paquete se debe recibir el
+código de recepción
+El código de recepción debe ser guardado
+en el sistema de facturación para realizar la
+verificación posterior de validación.
+RECEPCIÓN FACTURA
+PREVALORADA
+COMPUTARIZADA
+codigoSistema (numérico)
+codigoAmbiente (numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+nit (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+sucursal (numérico)
+fechaEnvio (timestamp)
+Archivo (base64)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+901 = recibido
+902 = rechazado
+listaMensajes (arreglo)
+1= Ambiente no valido
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+10= Archivo no valido
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor del paquete.
+El paquete debe estar construido en el XML
+definido en el presente documento.
+Una vez enviado el documento se debe recibir
+el código de recepción
+El código de recepción debe ser guardado
+en el sistema de facturación para realizar la
+verificación posterior de validación.
+VALIDACIÓN
+PAQUETE DE FACTURA
+PREVALORADA
+COMPUTARIZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+numeroFactura (numérico)
+cuf (alfanumérico)
+listaErrores (arreglo)
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+13= Código de Recepción No Valido
+El paquete de facturas a ser validado debe ser
+del tipo de emisión “fuera de línea”
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor de las facturas.
+La validación de las facturas es de forma
+individual.
+El código de recepción debe existir en la base
+de datos del SIN y ser válido.
+VALIDACIÓN
+FACTURA
+PREVALORADA
+COMPUTARIZADA
+codigoAmbiente (numérico)
+codigoSistema (numérico)
+cuape (alfanumérico)
+cufd (alfanumérico)
+codigoDocumentoFiscal
+(numérico)
+codigoEmision (numérico)
+codigoModalidad (numérico)
+sucursal (numérico)
+nitEmisor (numérico)
+codigoRecepcion (numérico)
+respuesta (booleano)
+codigoRecepcion (numérico)
+estado (numérico)
+903= Procesada
+904= Observada
+listaMensajes (arreglo)
+numeroFactura (numérico)
+cuf (alfanumérico)
+listaErrores (arreglo)
+2= Código de Sistema no valido
+3= Código de inicio no valido
+4= Código diario no valido
+6= Código Emisión no valido
+7= Modalidad no valida
+8= Sucursal no valida
+9= NIT no valido
+13= Código de Recepción No Valido
+El ambiente que debe enviarse es “producción”
+Los identificadores del sistema: Código de
+Sistema, CUAPE y CUFD deben ser válidos y
+asociados al NIT del emisor de las facturas.
+La validación de las facturas es de forma
+individual.
+El código de recepción debe existir en la base
+de datos del SIN y ser válido.
+VALIDACIONES APLICABLES SOBRE LOS DATOS
+Antes de proceder a enviar la factura se debe realizar las siguientes validaciones
+mínimas:
+1. El monto de la factura sea mayor a Cero.
+2. La suma de subtotales menos los descuentos, bonificaciones, tasas u
+otros en caso de existir sea igual al monto total.
+3. Se llenen los campos marcados como mandatorios.
+4. Dependiendo del tipo de documento por sector llenar los campos corres-
+pondientes
+5. Validar XML contra el XSD.
+6. Otros que se vean convenientes para mejorar la calidad de datos para el
+Documento Fiscal que será enviado a la Administración Tributaria.
+CERTIFICACIÓN DE SISTEMAS DE FACTURACIÓN
+Cuando el contribuyente realiza la solicitud de Certificación de Sistema de Fac-
+turación, el sistema le entregará las rutas de acceso al ambiente de pruebas y
+adicionalmente se entregará el Plan de Pruebas que deberá satisfacer el Sistema
+de Facturación.
+El listado completo del Plan de Pruebas será puesto a disposición en la Página Web
+de la Administración Tributaria.
+Asimismo, para la certificación se recomienda lo siguiente:
+1. Independencia del Sistema de Facturación: Los sistemas de facturación
+de ser posible deben ser independientes de los sistemas de negocio del
+Sujeto Pasivo o Tercero Responsable. De esta manera los cambios ge-
+nerados en los sistemas de negocio no repercutirán en los componentes
+certificados.
+2. Independencia y Parametrización de los Archivos de Configuración: Esto
+en el entendido que no deberán llegar rutas, ips, usuarios o contraseñas
+a la Administración Tributaria.
+3. Recertificación del Sistema de Facturación: Cuando se realice cualquier
+modificación al Sistema de Facturación certificado que afecte al o los ar-
+chivos que contengan los componentes mínimos, se debe solicitar una
+nueva certificación.
+4. Huellas electrónicas de verificación: Concluido el proceso de certificación,
+la Administración Tributaria registrará las huellas digitales de todos los
+componentes que hacen al Sistema de Facturación, para ello se utilizarán
+los algoritmos MD5, CRC32 y SHA256.
+Los algoritmos o librerías que se utilizarán serán publicados en la Página
+Web de la Administración Tributaria.
+PLAN DE PRUEBAS
+Nº 	DESCRIPCIÓN 	SI 	NO
+SISTEMA DE FACTURACIÓN
+1 	Tiene Asignación del Código de Cliente
+2 	Tiene Sincronización de Código de productos y
+servicios
+3 	Tiene Sincronización de países
+4 	Tiene Sincronización de Códigos de eventos
+significativos
+5 	Tiene Sincronización de Códigos de errores de
+servicios
+6 	Tiene Componente de Sincronización de Fecha y
+Hora
+7 	Tiene Componente de Registro de Huellas
+8 	Tiene Componente Validador de Comunicaciones
+9 	Tiene Componente de Registro de Eventos
+Significativos
+10 	Tiene Componente Validador de salud del sistema
+11 	Tiene Componente de Registro de códigos especiales
+12 	Tiene Componente de Sincronización de catálogos
+13 	Tiene Sincronización de tipos de documento
+14 	Tiene Sincronización de tipo de moneda
+15 	Tiene Reporte de Eventos Significativos de un
+periodo
+16 	Tiene Reporte de Estado de salud del Sistema de
+Facturación
+29 	Tiene Componente de obtención de CUFD (Código
+Único de Facturación Diaria)
+30 	Tiene Componente de generación de CUF (Código
+Único de Factura)
+31 	Tiene Formato correcto de la Representación Gráfica
+para la factura estándar
+… 	…
+… 	…
+… 	…
+REPORTES MÍNIMOS A SER CERTIFICADOS
+CONTROL Y VERIFICACIÓN
+Eventos significativos de un periodo
+REPORTE DE REGISTRO DE EVENTOS SIGNIFICATIVOS
+DESDE: 	HASTA:
+SUCURSAL/PTO.
+VENTA CÓDIGO
+EVENTO FECHA
+INICIO 	FECHA FIN DESCRIPCION
+EVENTO
+Estado de salud del Sistema de Facturación
+REPORTE ESTADO DE SALUD DEL SISTEMA
+DESDE: 	HASTA:
+PUNTO DE EMISIÓN 	CÓDIGO EVENTO 	DESCRIPCIÓN EVENTO 	FECHA
+Certificación del Sistema de Facturación
+REPORTE DE CERTIFICACIÓN DE SISTEMA
+CÓDIGO SISTEMA:
+NOMBRE SISTEMA:
+FECHA CERTIFICACIÓNRUTA REGISTRADA NOMBRE ARCHIVO HUELLAS ASOCIADAS
+Documentos fiscales electrónicos emitidos
+REPORTE DOCUMENTOS FISCALES EMITIDOS
+DESDE: 	HASTA:
+FECHA
+EMISIÓN DOCUMENTO
+FISCAL
+NIT
+EMI-
+SOR NOMBRE/RA-
+ZON SOCIAL NRO DOCUMENTO
+COMPRADOR MON-
+TO ESTA-
+DO
+Documentos fiscales electrónicos anulados
+REPORTE DE DOCUMENTOS FISCALES ANULADAS
+DESDE: 	HASTA:
+FECHA
+EMISIÓN DOCUMENTO
+FISCAL
+NIT
+EMI-
+SOR NOMBRE/RA-
+ZON SOCIAL NRO DOCUMENTO
+COMPRADOR MON-
+TO ESTA-
+DO
+Estado de envío de Documentos Fiscales
+REPORTE DE ESTADO DE ENVIO DE DOCUMENTOS FISCALES
+DESDE: 	HASTA:
+FECHA
+EMISIÓN
+DOCUMENTO
+FISCAL
+MODO DE
+ENVIO
+NRO DOCUMENTO
+FISCAL 	MONTO ESTADO
+EJECUTIVOS O GERENCIALES
+Resumen de ventas en el periodo
+RESUMEN DE VENTAS DEL PERIODO
+MES: 	GESTION:
+MES 	GESTION CANTIDAD DE FACTURAS 	MONTO TOTAL
+Resumen de compras en el periodo
+RESUMEN DE COMPRAS DEL PERIODO
+MES: 	GESTION:
+MES 	GESTION 	CANTIDAD DE FACTURAS 	MONTO TOTAL
+Ranking de los veinte productos más vendidos en un rango de fechas
+RANKING DE PRODUCTOS
+DES-
+DE: 	HASTA:
+N° CÓDIGO PRO-
+DUCTO NOMBRE PRO-
+DUCTO CANTIDAD
+VENDIDA MONTO TOTAL
+VENDIDO
+Ranking de clientes más frecuentes o con más compras en un rango de fechas
+RESUMEN DE CLIENTES
+MES: 	GESTIÓN:
+Nro. 	NIT/CI 	Nombre o Razon Social Nro. Compras 	Monto Total
+
+-- 13 of 16 --
+
+www.impuestos.gob
+www.impuestos.gob.bo 	La Paz 21 de noviembre del 2018
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN VIRTUAL
+14
+Tipo	
+Grupo	
+Número de	
+autorizacion
+Numero de Factura	
+Codigo de Control
+CI/NIT/Cliente
+Nombre Cliente	
+Fecha factura	
+Importe Total	
+Importe ICE/IEH	
+TASAS
+Importe Externo	
+Ventas gravadas tasa	
+cero
+Descuentos	
+Bonificaciones	
+Placa	
+Pais de Origen de la	
+Placa	
+Tipo de envase	
+Tipo de Producto	
+Autorizacion de venta	
+tipo de cambio	
+tipo de moneda
+CDCF,CALQ,CFTI,CETC 	1 	28740141 	123 	FD-54-F5-4F 	5959291 	Prez 	3/25/2015 	100
+0 	0 	0 	5
+CVGD 	2 	25240541 	456 	AD-25-C5-44 	2338547 	ABC SRL 	3/26/2015 	100
+5 	2196zPL 	BOLIVIA 	0 	GE 	987654
+CCEX,CEXL 	3 	26440441 	789 	DD-11-45-21 	8787965 	Iglesias 	3/27/2018 	100
+0 	100 	0 	0 	6,95 USD
+CSCF,CTCI,CFTU 	4 	26640841 	101112 	O0-33F-3D 	63214587 	Color SA 	8/28/2015 	100
+0
+CVME 	5 	43140641 	2021 	BA-96K6-3F 	2336543016 	Vargas 	8/29/2015 	100 	6,95 USD
+N° 	Nombre del Campo 	Tipo de Dato 	Descripción 	Obligatoriedad 	Longitud Máxima
+1 	NIT emisor (Número de Identificación Tributaria) 	Numérico 	NIT del emisor. 	SI 	12
+2 	Número de Factura 	Numérico 	Número correlativo de Factura o Nota Fiscal. 	SI 	10
+3 	Número de Autorización 	Numérico 	Número otorgado por la Administración Tributaria para identificar la
+dosificación. 	SI 	15
+4 	Fecha de emisión 	Fecha 	Con formato: DD/MM/AAAA. 	SI 	10
+5 	Total 	Numérico 	Monto total consignado en la Factura o Nota Fiscal, (utilizando el punto “.”
+como separador de decimales para los centavos). 	SI 	11
+6 	Importe base para el Crédito Fiscal 	Numérico 	Monto válido para el cálculo del Crédito Fiscal, (utilizando el punto “.”
+como separador de decimales para los centavos). 	SI 	11
+7 	Código de Control 	Alfanumérico 	Código que identifica la transacción comercial realizada con la Factura o
+Nota Fiscal. 	SI 	17
+8 	NIT / CI / CEX Comprador (Número de Identificación
+Tributaria o Documento de Identidad) 	Alfanumérico 	NIT del comprador, en caso de no contar se consignará el número de
+Cédula de Identidad o Carnet de Extranjería o el carácter cero (0). 	SI 	12
+9 	Importe ICE/IEHD/TASAS 	Numérico
+Monto ICE/IEHD/TASAS, en el caso de no corresponder consignar el
+carácter cero (0). (Utilizando el punto “.” como separador de decimales
+para los centavos).
+CUANDO CORRESPONDA 	11
+10 	Importe por ventas no Gravadas o Gravadas a Tasa
+Cero 	Numérico 	Cuando corresponda, caso contrario se consignará el carácter cero (0).
+(Utilizando el punto “.” como separador de decimales para los centavos). 	CUANDO CORRESPONDA 	11
+11 	Importe no Sujeto a Crédito Fiscal 	Numérico 	Cuando corresponda, caso contrario se consignará el carácter cero (0).
+(Utilizando el punto “.” como separador de decimales para los centavos). 	CUANDO CORRESPONDA 	11
+12 	Descuentos, Bonificaciones y Rebajas Obtenidas 	Numérico 	Cuando corresponda, caso contrario se consignará el carácter cero (0).
+(Utilizando el punto “.” como separador de decimales para los centavos). 	CUANDO CORRESPONDA 	11
+TOTAL NÚMERO DE CARACTERES 	142
+ANEXO TÉCNICO II
+I. 	FINALIDAD
+El presente documento tiene la finalidad de proporcionar información técnica a
+todos aquellos contribuyentes que continúen utilizando las Modalidades de Fac-
+turación Computarizada, Electrónica Web y Electrónica por Ciclos del Sistema de
+Facturación Virtual “SFV”, brindando los formatos, modelos y directrices para el
+uso correcto de estas modalidades hasta la fecha de implementación de la nueva
+modalidad que corresponda a cada contribuyente.
+Los campos deben ser concatenados por pipes “|”.
+Los campos que no consignen un valor deben ir con “0” (cero).
+II. 	REGISTRO Y/O CONFIRMACIÓN DE VENTAS
+Y COMPRAS
+El Sujeto Pasivo o Tercero Responsable podrá realizar el Registro y/o Confirma-
+ción de Ventas y Compras a través de las opciones habilitadas en el Portal Web
+de la Administración Tributaria.
+Los tipos de registro de información de compras y ventas son:
+Individual: Registro de una Factura, Nota Fiscal o Documento Equivalente en la
+opción habilitada en el Portal Web de la Administración Tributaria.
+Masivo: Registro de varias Facturas, Notas Fiscales o Documentos Equivalentes
+en formato texto .CSV que podrá ser cargado a través de la opción habilitada en
+el Portal Web de la Administración Tributaria. Los archivos .CSV con los formatos
+establecidos para éste propósito, podrán ser descargados de la Página Web de la
+Administración Tributaria.
+En el caso de la Modalidad de Facturación por Ciclos, la Autorización de un ciclo
+será de quince (15) días y la estructura de hivo respeta lo establecido en la Reso-
+lución Normativa de Directorio del Sistema de Facturación Virtual “SFV”.
+III. CÓDIGO DE RESPUESTA RÁPIDA QR
+Los Documentos Fiscales emitidos en las Modalidades de Facturación Computarizada, Electrónica Web y Electrónica por Ciclos del Sistema de Facturación Virtual “SFV”, deberán contar con un Código de respuesta rápido (QR), la cadena de datos deberá estar
+separada en cada uno de los campos por el carácter separador vertical de listas “|” (pipeline), de acuerdo al siguiente formato:
+
+-- 14 of 16 --
+
+www.impuestos.gob.bo
+LÍNEA GRATUITA DE CONSULTAS TRIBUTARIAS 800 10 34 44
+RND Nº 101800000026
+SISTEMA DE FACTURACIÓN ELECTRÓNICA15
+Genéricas
+Ley N° 453: Si se te ha vulnerado algún derecho puedes exigir la reposición o restauración.
+Ley N° 453: El proveedor deberá dar cumplimiento a las condiciones ofertadas.
+Ley N° 453: Están prohibidas las prácticas comerciales abusivas, tienes derecho a denunciarlas.
+Ley N° 453: Tienes derecho a recibir información que te proteja de la publicidad engañosa.
+Ley N° 453: Puedes acceder a la reclamación cuando tus derechos han sido vulnerados.
+Ley N° 453: Los contratos de adhesión deben redactarse en términos claros, comprensibles, legibles y deben informar todas las facilidades y limitaciones.
+Ley N° 453: Se debe promover el consumo solidario, justo, en armonía con la Madre Tierra y precautelando el hábitat, en el marco del Vivir Bien.
+Ley N° 453: El proveedor de productos debe habilitar medios e instrumentos para efectuar consultas y reclamaciones.
+Ley N° 453: El proveedor debe brindar atención sin discriminación, con respeto, calidez y cordialidad a los usuarios y consumidores.
+Prestación de Servicios
+Ley N° 453: Los servicios deben suministrarse en condiciones de inocuidad, calidad y seguridad.
+Ley N° 453: Tienes derecho a un trato equitativo sin discriminación en la oferta de servicios.
+Ley N° 453: El proveedor deberá suministrar el servicio en las modalidades y términos ofertados o convenidos.
+Ley N° 453: En caso de incumplimiento a lo ofertado o convenido, el proveedor debe reparar o sustituir el servicio.
+Ley N° 453: Tienes derecho a recibir información sobre las características y contenidos de los servicios que utilices.
+Ley N° 453: La interrupción del servicio debe comunicarse con anterioridad a las Autoridades que correspondan y a los usuarios afectados.
+Ley N° 453: El proveedor de servicios debe habilitar medios e instrumentos para efectuar consultas y reclamaciones.
+Ley N° 453: El proveedor debe exhibir certificaciones de habilitación o documentos que acrediten las capacidades u ofertas de servicios especializados.
+Venta de Productos
+Ley N° 453: Los productos deben suministrarse en condiciones de inocuidad, calidad y seguridad.
+Ley N° 453: Está prohibido importar, distribuir o comercializar productos expirados o prontos a expirar.
+Ley N° 453: Está prohibido importar, distribuir o comercializar productos prohibidos o retirados en el país de origen por atentar a la integridad física y a la salud.
+Ley N° 453: Tienes derecho a recibir información sobre las características y contenidos de los productos que consumes.
+Ley N° 453: Tienes derecho a un trato equitativo sin discriminación en la oferta de productos.
+Ley N° 453: El proveedor deberá entregar el producto en las modalidades y términos ofertados o convenidos.
+Ley N° 453: En caso de incumplimiento a lo ofertado o convenido, el proveedor debe reparar o sustituir el producto.
+Ley N° 453: Los alimentos declarados de primera necesidad deben ser suministrados de manera adecuada, oportuna, continua y a precio justo.
+Salud
+Ley N° 453: El prestador de servicio médico debe brindar atención de calidad al paciente.
+Ley N° 453: Cuando lo solicite el paciente, se debe informar los resultados de exámenes, diagnósticos y estudios de laboratorio
+Ley N° 453: El prestador de servicio médico debe prescribir medicamentos debidamente autorizados por el Ministerio de Salud.
+Ley N° 453: Se debe otorgar el auxilio y atención necesarios en casos de urgencia o emergencia hospitalaria, sin aducir excusa alguna
+Ley N° 453: Se debe brindar alternativas de pago por servicios utilizados en emergencia médica u hospitalaria, no pudiendo retenerse al usuario por deuda.
+Ley N° 453: Tienes derecho a denunciar la existencia de productos y servicios que pongan en riesgo tu salud o integridad física.
+Servicios Bancarios y
+Financieros
+Ley N° 453: La entidad financiera tiene la obligación de promover la educación financiera.
+Ley N° 453: La entidad financiera debe facilitar en cualquier momento y gratuitamente, toda información de los movimientos bancarios, financieros o de crédito.
+Ley N° 453: La entidad financiera debe informar por escrito los motivos por los cuales se denegó un crédito.
+Medios de Comunicación
+Ley N° 453: Los medios de comunicación deben difundir mensajes o programas de educación de consumo responsable y sustentable.
+Ley N° 453: Los medios de comunicación deben promover el respeto de los derechos de los usuarios y consumidores.
+Ley N° 453: Las publicaciones, mensajes e imágenes no deben promover la sumisión o explotación de las mujeres.
+Ley N° 453: Las publicaciones, mensajes e imágenes no deben deshonrar y atentar contra la dignidad e imagen de la mujer.
+Ley N° 453: Los medios de comunicación deben evitar contenidos inapropiados que vulneren la protección de niñas, niños y adolescentes.
+IV. LEYENDAS LEY Nº 453
+Los Documentos Fiscales emitidos en las Modalidades de Facturación Computarizada, Electrónica Web y Electrónica por Ciclos del Sistema de Facturación Virtual “SFV”, deberán tener impresa alguna de las leyendas conforme la Ley N° 453, Ley General de los
+Derechos de las Usuarias y los Usuarios y de las Consumidoras y los Consumidores, la cual será proporcionada al momento de solicitud de autorización de Documentos Fiscales, de acuerdo al siguiente listado:
+
+-- 15 of 16 --
+
+PERDONAZO
+TRIBUTARIO
+30 de noviembre de 2018
+28 de febrero de 2019
+
+-- 16 of 16 --
+

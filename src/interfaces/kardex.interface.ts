@@ -10,4 +10,6 @@ export interface IKardexEntry {
   balance: number;
   created_by: string;
   entity_name: string;
+  currency?: string | null;
+  exchange_rate?: number | null;
 }

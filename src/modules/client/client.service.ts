@@ -19,7 +19,7 @@ import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
-import { round2 } from "../../utils/money";
+import { round2, toBaseCurrency } from "../../utils/money";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -63,12 +63,24 @@ export const findAllSaleOrderByClient = async (
     .populate("company")
     .lean<ISaleOrder[]>();
 
+  // Cada nota puede estar en la moneda base de la empresa o en su moneda
+  // alterna (Bs) — sumar `total` crudo mezclaría ambas en un solo número sin
+  // sentido, así que cada monto se convierte primero a la moneda base.
   const total: number = round2(
     allSalesOrderByClient
       .filter(
         (saleOrder: ISaleOrder) => saleOrder.status === saleOrderStatus.APROBADO
       )
-      .reduce((sum, saleOrder) => sum + Number(saleOrder.total || 0), 0)
+      .reduce(
+        (sum, saleOrder) =>
+          sum +
+          toBaseCurrency(
+            Number(saleOrder.total || 0),
+            saleOrder.currency,
+            saleOrder.exchange_rate
+          ),
+        0
+      )
   );
 
   const response: ISaleOrderByClient = {

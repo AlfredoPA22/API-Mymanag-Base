@@ -12,6 +12,7 @@ import {
   IProductSerial,
   ProductSerialInput,
 } from "../../interfaces/productSerial.interface";
+import { ISaleOrder } from "../../interfaces/saleOrder.interface";
 import { IUser } from "../../interfaces/user.interface";
 import { codeType } from "../../utils/enums/orderType.enum";
 import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum";
@@ -39,7 +40,7 @@ import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan, PLAN_LABELS } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
-import { round2 } from "../../utils/money";
+import { round2, toBaseCurrencyExpr, toOrderCurrency } from "../../utils/money";
 import * as XLSX from "xlsx";
 import { stockType } from "../../utils/enums/stockType.enum";
 import { Brand } from "../brand/brand.model";
@@ -342,6 +343,9 @@ export const generalData = async (
     throw new Error("Usuario no encontrado");
   }
 
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
   const currentYear = new Date().getFullYear();
   const dateFrom = startDate
     ? new Date(startDate)
@@ -458,7 +462,7 @@ export const generalData = async (
     {
       $group: {
         _id: null,
-        total: { $sum: "$total" },
+        total: { $sum: toBaseCurrencyExpr("$total", "$currency", "$exchange_rate") },
       },
     },
   ]);
@@ -468,40 +472,67 @@ export const generalData = async (
       ? round2(total_sales_value_aggregate[0].total)
       : 0;
 
+  // "Por cobrar" es el saldo pendiente ACTUAL, no algo limitado al período
+  // seleccionado en el dashboard — una venta a crédito de hace dos meses que
+  // sigue sin pagarse debe seguir contando como pendiente hoy. Por eso este
+  // match NO filtra por `date`, a diferencia del resto de las métricas del
+  // header (que sí son "de este período"). Así coincide con Pagos, que
+  // tampoco filtra por fecha por defecto.
   const creditPendingMatch: any = {
     company: new MongooseTypes.ObjectId(`${companyId}`),
     status: saleOrderStatus.APROBADO,
     payment_method: paymentMethod.CREDITO,
     is_paid: false,
-    date: { $gte: dateFrom, $lte: dateTo },
     ...(foundUser.is_global ? {} : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
   };
 
-  const creditPendingAgg = await SaleOrder.aggregate([
-    { $match: creditPendingMatch },
-    {
-      $lookup: {
-        from: "sale_payments",
-        localField: "_id",
-        foreignField: "sale_order",
-        as: "payments",
-      },
-    },
-    {
-      $addFields: {
-        pending: {
-          $max: [{ $subtract: ["$total", { $sum: "$payments.amount" }] }, 0],
-        },
-      },
-    },
-    { $group: { _id: null, total: { $sum: "$pending" }, count: { $sum: 1 } } },
-  ]);
+  // Las notas a crédito y sus pagos pueden estar cada uno en una moneda
+  // distinta (nota en $ pagada parcialmente en Bs, etc.) — el pendiente de
+  // cada nota se calcula en JS con toOrderCurrency(), el mismo patrón que
+  // usa salePayment.service.ts para el saldo de una nota. En vez de
+  // convertir todo a una sola moneda (lo que confunde: "¿es lo mismo pero
+  // en otra moneda?"), se separa el pendiente en dos totales — uno por cada
+  // moneda en la que realmente están las notas — igual que en PaymentList.
+  const creditPendingOrders = await SaleOrder.find(creditPendingMatch).lean<ISaleOrder[]>();
+  const creditPendingPayments = await SalePayment.find({
+    sale_order: { $in: creditPendingOrders.map((o) => o._id) },
+  }).lean();
 
-  const total_credit_pending: number =
-    creditPendingAgg.length > 0 ? round2(creditPendingAgg[0].total) : 0;
-  const total_credit_pending_count: number =
-    creditPendingAgg.length > 0 ? creditPendingAgg[0].count : 0;
+  const paymentsByOrder = new Map<string, typeof creditPendingPayments>();
+  for (const payment of creditPendingPayments) {
+    const key = (payment as any).sale_order.toString();
+    if (!paymentsByOrder.has(key)) paymentsByOrder.set(key, []);
+    paymentsByOrder.get(key)!.push(payment);
+  }
 
+  let total_credit_pending = 0;
+  let total_credit_pending_bs = 0;
+  for (const order of creditPendingOrders) {
+    const orderCurrency = order.currency ?? company.currency;
+    const payments = paymentsByOrder.get((order as any)._id.toString()) ?? [];
+    const totalPaidInOrderCurrency = payments.reduce(
+      (sum, p: any) =>
+        sum + toOrderCurrency(p.amount, p.currency, p.exchange_rate, company.currency, orderCurrency),
+      0
+    );
+    const pendingInOrderCurrency = Math.max(order.total - totalPaidInOrderCurrency, 0);
+    // OJO: se compara `order.currency` (el campo crudo) y no `orderCurrency`
+    // (que ya cae a company.currency cuando es null). Una empresa que opera
+    // en Bs tiene `order.currency` null en TODAS sus notas — usar la versión
+    // resuelta mandaría todo su pendiente al bucket "_bs" por error.
+    if (order.currency === "Bs") {
+      total_credit_pending_bs += pendingInOrderCurrency;
+    } else {
+      total_credit_pending += pendingInOrderCurrency;
+    }
+  }
+  total_credit_pending = round2(total_credit_pending);
+  total_credit_pending_bs = round2(total_credit_pending_bs);
+  const total_credit_pending_count: number = creditPendingOrders.length;
+
+  // Igual que el pendiente: cada pago queda en su propia moneda, así que se
+  // agrupan por moneda en vez de convertirse a una sola — para que "Cobrado"
+  // muestre la misma info que "Por cobrar" en cada tarjeta.
   const creditCollectedAgg = await SalePayment.aggregate([
     {
       $match: {
@@ -510,11 +541,20 @@ export const generalData = async (
         ...(foundUser.is_global ? {} : { created_by: new MongooseTypes.ObjectId(`${userId}`) }),
       },
     },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
+    {
+      $group: {
+        _id: { $cond: [{ $eq: ["$currency", "Bs"] }, "Bs", "base"] },
+        total: { $sum: "$amount" },
+      },
+    },
   ]);
 
-  const total_credit_collected: number =
-    creditCollectedAgg.length > 0 ? round2(creditCollectedAgg[0].total) : 0;
+  let total_credit_collected = 0;
+  let total_credit_collected_bs = 0;
+  for (const row of creditCollectedAgg) {
+    if (row._id === "Bs") total_credit_collected_bs = round2(row.total);
+    else total_credit_collected = round2(row.total);
+  }
 
   const response: IGeneralData = {
     best_product,
@@ -525,8 +565,10 @@ export const generalData = async (
     total_sales_value,
     best_product_sales_number,
     total_credit_pending,
+    total_credit_pending_bs,
     total_credit_pending_count,
     total_credit_collected,
+    total_credit_collected_bs,
   };
 
   return response;

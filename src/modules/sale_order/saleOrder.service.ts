@@ -17,6 +17,7 @@ import {
 } from "../../interfaces/saleOrder.interface";
 import {
   AddSerialToSaleOrderDetailInput,
+  CreateCustomSaleOrderDetailInput,
   ISaleOrderDetail,
   ISaleOrderDetailToPDF,
   SaleOrderDetailInput,
@@ -46,7 +47,7 @@ import dayjs from "dayjs";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
-import { round2 } from "../../utils/money";
+import { round2, toBaseCurrencyExpr } from "../../utils/money";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -316,6 +317,29 @@ export const create = async (
     { perMonth: true }
   );
 
+  // Moneda por nota: `currency` solo se guarda cuando la nota se crea en la
+  // moneda ALTERNA a la de la empresa (Bs para una empresa en $). El
+  // `exchange_rate`, en cambio, se congela en TODA venta de una empresa en
+  // dólares (sin importar en qué moneda se vendió), para que después se
+  // pueda ver cualquier venta en Bs usando el tipo de cambio que había en
+  // ese momento — la nota siempre se muestra por defecto en la moneda en la
+  // que realmente se vendió. Por eso, si la empresa opera en dólares, no se
+  // puede registrar NINGUNA venta sin tipo de cambio configurado.
+  let orderCurrency: string | null = null;
+  let orderExchangeRate: number | null = null;
+  if (company.currency === "$") {
+    if (!company.exchange_rate || company.exchange_rate <= 0) {
+      throw new Error("Configura el tipo de cambio de la empresa en Ajustes antes de registrar una venta.");
+    }
+    orderExchangeRate = company.exchange_rate;
+  }
+  if (createSaleOrderInput.currency && createSaleOrderInput.currency !== company.currency) {
+    if (company.currency !== "$" || createSaleOrderInput.currency !== "Bs") {
+      throw new Error("Esta empresa no permite crear ventas en esa moneda.");
+    }
+    orderCurrency = "Bs";
+  }
+
   // is_paid ya no se asume al crear la venta para ningún método — para
   // Efectivo/Transferencia se confirma recién al aprobar la venta
   // (ver approve()); para QR se confirma vía el webhook de Mesa de Pagos.
@@ -330,6 +354,8 @@ export const create = async (
       is_paid: false,
       source: createSaleOrderInput.source ?? "manual",
       created_by: userId,
+      currency: orderCurrency,
+      exchange_rate: orderExchangeRate,
     })
   ).populate("client");
 
@@ -541,6 +567,72 @@ export const createDetail = async (
   return foundSaleOrderDetail;
 };
 
+// Agrega un ítem "sin inventario" a la venta — algo que el vendedor
+// consiguió de un tercero para esta venta puntual, sin manejarlo como
+// producto propio. A diferencia de createDetail(), no toca stock, seriales
+// ni almacenes: es solo nombre + precio (+ costo opcional).
+export const createCustomDetail = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  input: CreateCustomSaleOrderDetailInput
+): Promise<ISaleOrderDetail> => {
+  const foundOrder = await SaleOrder.findOne({
+    _id: input.sale_order,
+    company: companyId,
+  });
+
+  if (!foundOrder) {
+    throw new Error("Orden no encontrada");
+  }
+
+  if (!input.name?.trim()) {
+    throw new Error("Ingrese un nombre para el ítem");
+  }
+
+  if (input.sale_price <= 0) {
+    throw new Error("Ingrese un precio mayor a 0");
+  }
+
+  if (input.quantity <= 0) {
+    throw new Error("Ingrese una cantidad mayor a 0");
+  }
+
+  const gross = round2(input.quantity * input.sale_price);
+  const { discountAmount, subtotal } = calcDetailDiscount(
+    gross,
+    input.discount_type,
+    input.discount_value
+  );
+
+  const newSaleOrderDetail = await SaleOrderDetail.create({
+    company: companyId,
+    sale_order: input.sale_order,
+    product: null,
+    custom_name: input.name.trim(),
+    custom_cost: input.cost != null && input.cost >= 0 ? input.cost : null,
+    sale_price: input.sale_price,
+    quantity: input.quantity,
+    discount_type: input.discount_type ?? null,
+    discount_value: input.discount_value ?? 0,
+    discount_amount: discountAmount,
+    subtotal,
+  });
+
+  await updateOrderTotal(companyId, input.sale_order);
+
+  const foundSaleOrderDetail = await SaleOrderDetail.findOne({
+    _id: newSaleOrderDetail._id,
+    company: companyId,
+  })
+    .populate("sale_order")
+    .lean<ISaleOrderDetail | null>();
+
+  if (!foundSaleOrderDetail) {
+    throw new Error("Detalle de venta no encontrado");
+  }
+
+  return foundSaleOrderDetail;
+};
+
 export const incrementSerials = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -610,7 +702,7 @@ export const addSerialToOrder = async (
 
   if (
     foundProductSerial.product.toString() !==
-    foundSaleOrderDetail.product.toString()
+    foundSaleOrderDetail.product!.toString()
   ) {
     throw new Error("El serial no pertenece a este producto");
   } else if (foundProductSerial.status === productSerialStatus.VENDIDO) {
@@ -713,7 +805,7 @@ export const deleteProductToOrder = async (
     throw new Error("No se puede borrar el detalle");
   }
 
-  if (foundSaleOrderDetail.product.stock_type === stockType.INDIVIDUAL) {
+  if (foundSaleOrderDetail.product?.stock_type === stockType.INDIVIDUAL) {
     for (const inventoryUsage of foundSaleOrderDetail.inventory_usage) {
       const productInventory = await ProductInventory.findOne({
         company: companyId,
@@ -783,6 +875,16 @@ export const deleteSaleOrder = async (
   if (foundSaleOrder.status === saleOrderStatus.APROBADO) {
     await Promise.all(
       foundSaleOrderDetails.map(async (detail) => {
+        // Los ítems sin inventario no tienen stock/seriales/almacén que
+        // revertir — solo se elimina el detalle.
+        if (!detail.product) {
+          await SaleOrderDetail.deleteOne({
+            _id: detail._id,
+            company: companyId,
+          });
+          return;
+        }
+
         // Actualizar el stock del producto
         const productUpdate = await Product.findOneAndUpdate(
           { _id: detail.product._id, company: companyId },
@@ -824,7 +926,7 @@ export const deleteSaleOrder = async (
             detail.inventory_usage.map(async (usage: any) => {
               const inventory = await ProductInventory.findOne({
                 company: companyId,
-                product: detail.product._id,
+                product: detail.product!._id,
                 warehouse: usage.warehouse,
                 purchase_order_detail: usage.purchase_order_detail,
               });
@@ -883,6 +985,16 @@ export const deleteSaleOrder = async (
     // En estado borrador solo eliminamos los detalles de la orden y la orden de venta
     await Promise.all(
       foundSaleOrderDetails.map(async (detail) => {
+        // Los ítems sin inventario no tienen stock/seriales/almacén que
+        // revertir — solo se elimina el detalle.
+        if (!detail.product) {
+          await SaleOrderDetail.deleteOne({
+            _id: detail._id,
+            company: companyId,
+          });
+          return;
+        }
+
         // Restaurar inventory_usage reservado para productos INDIVIDUAL
         if (detail.inventory_usage && Array.isArray(detail.inventory_usage) && detail.inventory_usage.length > 0) {
           for (const usage of detail.inventory_usage as any[]) {
@@ -983,7 +1095,7 @@ export const approve = async (
 
   const hasSerialsInZero = foundDetail.some(
     (detail: ISaleOrderDetail) =>
-      detail.product.stock_type === stockType.SERIALIZADO &&
+      detail.product?.stock_type === stockType.SERIALIZADO &&
       detail.serials !== detail.quantity
   );
 
@@ -992,7 +1104,7 @@ export const approve = async (
   }
 
   for (const detail of foundDetail) {
-    if (detail.product.stock_type === stockType.INDIVIDUAL) {
+    if (detail.product?.stock_type === stockType.INDIVIDUAL) {
       const product = await Product.findOne({
         _id: detail.product._id,
         company: companyId,
@@ -1005,7 +1117,11 @@ export const approve = async (
     }
   }
 
+  // Los ítems sin inventario (product null) no tocan stock/seriales — se
+  // aprueban junto con el resto de la venta sin pasar por este bloque.
   for (const detail of foundDetail) {
+    if (!detail.product) continue;
+
     const product = await Product.findOneAndUpdate(
       { _id: detail.product._id, company: companyId },
       { $inc: { stock: -detail.quantity } },
@@ -1317,7 +1433,7 @@ export const reportSaleOrderByClient = async (
     {
       $group: {
         _id: "$client",
-        total: { $sum: "$total" },
+        total: { $sum: toBaseCurrencyExpr("$total", "$currency", "$exchange_rate") },
       },
     },
     {
@@ -1397,7 +1513,7 @@ export const reportSaleOrderBySeller = async (
     {
       $group: {
         _id: "$created_by",
-        total: { $sum: "$total" },
+        total: { $sum: toBaseCurrencyExpr("$total", "$currency", "$exchange_rate") },
       },
     },
     {
@@ -1494,7 +1610,7 @@ export const reportSaleOrderByCategory = async (
       $group: {
         _id: "$categoryData._id",
         category: { $first: "$categoryData.name" },
-        total: { $sum: "$subtotal" },
+        total: { $sum: toBaseCurrencyExpr("$subtotal", "$orderData.currency", "$orderData.exchange_rate") },
       },
     },
     { $sort: { total: -1 } },
@@ -1551,7 +1667,7 @@ export const reportSaleOrderByProduct = async (
     {
       $group: {
         _id: "$product",
-        total: { $sum: "$subtotal" },
+        total: { $sum: toBaseCurrencyExpr("$subtotal", "$order.currency", "$order.exchange_rate") },
       },
     },
     {
@@ -1608,7 +1724,7 @@ export const reportMonthlySales = async (
     {
       $group: {
         _id: { $month: "$date" },
-        total: { $sum: "$total" },
+        total: { $sum: toBaseCurrencyExpr("$total", "$currency", "$exchange_rate") },
       },
     },
     { $sort: { _id: 1 } },
@@ -1770,7 +1886,7 @@ export const addManySerialsToOrder = async (
       missing.push(serial);
       continue;
     }
-    if (found.product.toString() !== foundSaleOrderDetail.product.toString()) {
+    if (found.product.toString() !== foundSaleOrderDetail.product!.toString()) {
       wrongProduct.push(serial);
       continue;
     }
@@ -1855,7 +1971,7 @@ export const getStoreOrderStats = async (
           $sum: {
             $cond: [
               { $eq: ["$status", saleOrderStatus.APROBADO] },
-              "$total",
+              toBaseCurrencyExpr("$total", "$currency", "$exchange_rate"),
               0,
             ],
           },
@@ -1891,7 +2007,7 @@ export const getStoreOrderStats = async (
       $group: {
         _id: "$product",
         quantity: { $sum: "$quantity" },
-        total: { $sum: "$subtotal" },
+        total: { $sum: toBaseCurrencyExpr("$subtotal", "$order.currency", "$order.exchange_rate") },
       },
     },
     {

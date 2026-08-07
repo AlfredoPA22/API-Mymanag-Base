@@ -16,8 +16,19 @@ import dayjs from "dayjs";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
-import { round2 } from "../../utils/money";
+import { round2, toOrderCurrency as toOrderCurrencyRaw } from "../../utils/money";
 import { createNotification } from "../notification/notification.service";
+
+// Igual que toOrderCurrency() de utils/money.ts, pero redondeando el
+// resultado a 2 decimales — este módulo usa el monto convertido directamente
+// en comparaciones/guardado, así que necesita el redondeo aplicado ya aquí.
+const toOrderCurrency = (
+  amount: number,
+  paymentCurrency: string | null | undefined,
+  paymentExchangeRate: number | null | undefined,
+  fallbackCurrency: string,
+  orderCurrency: string
+): number => round2(toOrderCurrencyRaw(amount, paymentCurrency, paymentExchangeRate, fallbackCurrency, orderCurrency));
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -84,6 +95,9 @@ export const detailSalePaymentBySaleOrder = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IDetailSalePaymentBySaleOrder> => {
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
+
   const payments = await SalePayment.find({
     company: companyId,
     sale_order: saleOrderId,
@@ -108,7 +122,15 @@ export const detailSalePaymentBySaleOrder = async (
     }
   }
 
-  const totalPaid = round2(payments.reduce((sum, payment) => sum + payment.amount, 0));
+  const orderCurrency = saleOrder.currency ?? company.currency;
+  const totalPaid = round2(
+    payments.reduce(
+      (sum, payment) =>
+        sum +
+        toOrderCurrency(payment.amount, payment.currency, payment.exchange_rate, company.currency, orderCurrency),
+      0
+    )
+  );
 
   return {
     sale_order: saleOrder,
@@ -162,37 +184,67 @@ export const createPayment = async (
     throw new Error("No se pueden agregar pagos a una venta devuelta");
   }
 
-  const payments = await SalePayment.aggregate([
-    {
-      $match: {
-        company: new MongooseTypes.ObjectId(companyId),
-        sale_order: new MongooseTypes.ObjectId(salePaymentInput.sale_order),
-      },
-    },
-    {
-      $group: {
-        _id: "$sale_order",
-        totalPaid: { $sum: "$amount" },
-      },
-    },
-  ]);
+  // Moneda de este pago en particular: por defecto la moneda de la empresa;
+  // solo se congela currency/exchange_rate cuando se paga explícitamente en
+  // la moneda alterna (Bs, con empresa en $) — un pago en $ no necesita
+  // tipo de cambio guardado en ningún lado.
+  const orderCurrency = foundSaleOrder.currency ?? company.currency;
+  let paymentCurrency: string | null = null;
+  let paymentExchangeRate: number | null = null;
+  if (salePaymentInput.currency && salePaymentInput.currency !== company.currency) {
+    if (company.currency !== "$" || salePaymentInput.currency !== "Bs") {
+      throw new Error("Esta empresa no permite registrar pagos en esa moneda.");
+    }
+    if (!company.exchange_rate || company.exchange_rate <= 0) {
+      throw new Error("Configura el tipo de cambio de la empresa en Ajustes antes de registrar un pago en Bs.");
+    }
+    paymentCurrency = "Bs";
+    paymentExchangeRate = company.exchange_rate;
+  }
 
-  const totalPaid = round2(payments[0]?.totalPaid || 0);
+  const existingPayments = await SalePayment.find({
+    company: companyId,
+    sale_order: salePaymentInput.sale_order,
+  }).lean<ISalePayment[]>();
+
+  const totalPaid = round2(
+    existingPayments.reduce(
+      (sum, payment) =>
+        sum +
+        toOrderCurrency(payment.amount, payment.currency, payment.exchange_rate, company.currency, orderCurrency),
+      0
+    )
+  );
   const saldoPendiente = round2(foundSaleOrder.total - totalPaid);
 
-  if (round2(salePaymentInput.amount) > saldoPendiente) {
+  const effectivePaymentCurrency = paymentCurrency ?? company.currency;
+  const newPaymentInOrderCurrency = toOrderCurrency(
+    salePaymentInput.amount,
+    effectivePaymentCurrency,
+    paymentExchangeRate ?? company.exchange_rate,
+    company.currency,
+    orderCurrency
+  );
+
+  if (round2(newPaymentInOrderCurrency) > saldoPendiente) {
     throw new Error(
-      `El monto excede el saldo pendiente. Saldo actual: ${saldoPendiente}`
+      `El monto excede el saldo pendiente. Saldo actual: ${saldoPendiente} ${orderCurrency}`
     );
   }
 
   const newPayment = await SalePayment.create({
-    ...salePaymentInput,
+    sale_order: salePaymentInput.sale_order,
+    date: salePaymentInput.date,
+    amount: salePaymentInput.amount,
+    payment_method: salePaymentInput.payment_method,
+    note: salePaymentInput.note,
+    currency: paymentCurrency,
+    exchange_rate: paymentExchangeRate,
     created_by: userId,
     company: companyId,
   });
 
-  const nuevoTotalPagado = round2(totalPaid + salePaymentInput.amount);
+  const nuevoTotalPagado = round2(totalPaid + newPaymentInOrderCurrency);
   foundSaleOrder.is_paid = nuevoTotalPagado >= foundSaleOrder.total;
 
   await foundSaleOrder.save();
@@ -240,12 +292,23 @@ export const deleteSalePayment = async (
     });
   }
 
-  const remainingPayments = await SalePayment.aggregate([
-    { $match: { sale_order: foundSaleOrder._id, company: companyId } },
-    { $group: { _id: null, totalPaid: { $sum: "$amount" } } },
-  ]);
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
 
-  const totalPaid = round2(remainingPayments[0]?.totalPaid || 0);
+  const orderCurrency = foundSaleOrder.currency ?? company.currency;
+  const remainingPayments = await SalePayment.find({
+    sale_order: foundSaleOrder._id,
+    company: companyId,
+  }).lean<ISalePayment[]>();
+
+  const totalPaid = round2(
+    remainingPayments.reduce(
+      (sum, payment) =>
+        sum +
+        toOrderCurrency(payment.amount, payment.currency, payment.exchange_rate, company.currency, orderCurrency),
+      0
+    )
+  );
   const isStillPaid = totalPaid >= foundSaleOrder.total;
 
   foundSaleOrder.is_paid = isStillPaid;

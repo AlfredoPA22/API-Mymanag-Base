@@ -7,11 +7,17 @@ const saleOrderDetailSchema = new mongoose.Schema(
       ref: "sale_order",
       required: true,
     },
+    // Sin producto (null) cuando es un ítem sin inventario — algo que el
+    // vendedor consiguió de un tercero para esta venta puntual y no maneja
+    // como stock propio. En ese caso `custom_name`/`custom_cost` lo describen.
     product: {
       type: MongooseSchema.Types.ObjectId,
       ref: "product",
-      required: true,
+      required: false,
+      default: null,
     },
+    custom_name: { type: String, required: false, default: null },
+    custom_cost: { type: Number, required: false, default: null },
     inventory_usage: [
       {
         warehouse: { type: MongooseSchema.Types.ObjectId, ref: "warehouse" },

@@ -9,7 +9,7 @@ import {
   IProfitabilityByProduct,
   IProfitabilityReport,
 } from "../../interfaces/profitability.interface";
-import { round2 } from "../../utils/money";
+import { round2, toBaseCurrency } from "../../utils/money";
 
 export const profitabilityReport = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -50,6 +50,12 @@ export const profitabilityReport = async (
 
   const saleOrderIds = saleOrders.map((o: any) => o._id);
 
+  // Cada nota puede estar en la moneda base de la empresa o en su moneda
+  // alterna (Bs); el `subtotal` de sus detalles queda en esa misma moneda.
+  // Se indexa por orden para poder convertir cada `subtotal` a la moneda
+  // base antes de sumarlo — sumarlo crudo mezclaría Bs y $ en un solo total.
+  const orderById = new Map(saleOrders.map((o: any) => [o._id.toString(), o]));
+
   // Detalles con producto populado (categoría y marca incluidas)
   const details = await SaleOrderDetail.find({
     company: companyId,
@@ -73,8 +79,13 @@ export const profitabilityReport = async (
     const product = (detail as any).product;
     if (!product) continue;
 
+    const order = orderById.get((detail as any).sale_order?.toString());
     const qty: number = (detail as any).quantity ?? 0;
-    const revenue: number = (detail as any).subtotal ?? 0;
+    const revenue: number = toBaseCurrency(
+      (detail as any).subtotal ?? 0,
+      order?.currency,
+      order?.exchange_rate
+    );
     const cost: number = qty * ((product as any).last_cost_price ?? 0);
     const profit = revenue - cost;
 

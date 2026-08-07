@@ -72,3 +72,18 @@ node scripts/migrate-split-permissions.js
 ```
 node scripts/migrate-contado-payment-method.js
 ```
+
+---
+
+## migrate-add-cash-register-permissions.js
+
+**Qué hace:** Agrega los permisos de Caja (`LIST_CASH_REGISTER`, `OPEN_CASH_REGISTER`, `CLOSE_CASH_REGISTER`) a los roles administradores **existentes** — la función de Caja es nueva, así que las empresas creadas antes no la tienen. Las empresas nuevas ya la reciben automáticamente vía `PERMISSIONS_MOCK`.
+
+Alcance: cualquier rol que ya tenga `USER_AND_ROLE` (se usa como marcador de "es rol de administrador", sin depender del nombre del rol).
+
+```
+node scripts/migrate-add-cash-register-permissions.js --dry-run   # solo muestra qué haría
+node scripts/migrate-add-cash-register-permissions.js             # aplica los cambios
+```
+
+**Cuándo usarlo:** Una sola vez, al desplegar la función de Caja a producción. Después de correrlo, los administradores que ya tengan sesión iniciada no ven el cambio hasta cerrar sesión y volver a entrar (los permisos van en el JWT, vigente 1 día).

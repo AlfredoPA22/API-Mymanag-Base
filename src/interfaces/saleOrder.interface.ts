@@ -26,6 +26,8 @@ export interface ISaleOrder {
   discount_amount?: number;
   source: string;
   payment_reminder_sent_at?: Date | null;
+  currency?: string | null;
+  exchange_rate?: number | null;
 }
 
 export interface ISaleOrderByClient {
@@ -44,6 +46,7 @@ export interface SaleOrderInput {
   payment_method: string;
   contado_payment_method?: string;
   source?: string;
+  currency?: string;
 }
 
 export interface IQrPaymentInfo {

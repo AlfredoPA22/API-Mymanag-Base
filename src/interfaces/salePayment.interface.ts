@@ -11,6 +11,8 @@ export interface ISalePayment {
   note: string;
   created_by: IUser;
   company: ICompany;
+  currency?: string | null;
+  exchange_rate?: number | null;
 }
 
 export interface IDetailSalePaymentBySaleOrder {
@@ -26,4 +28,5 @@ export interface SalePaymentInput {
   amount: number;
   payment_method: string;
   note?: string;
+  currency?: string;
 }

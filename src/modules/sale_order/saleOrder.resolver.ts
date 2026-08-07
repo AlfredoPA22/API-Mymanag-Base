@@ -16,6 +16,7 @@ import {
   addSerialToOrder,
   approve,
   create,
+  createCustomDetail,
   createDetail,
   deleteProductToOrder,
   deleteSaleOrder,
@@ -255,6 +256,20 @@ export const saleOrderResolver = {
       return await createDetail(
         context.user.companyId,
         args.saleOrderDetailInput
+      );
+    },
+    async createCustomSaleOrderDetail(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ) {
+      checkAnyAbility(context.ability, [
+        ["create", "Sale"],
+        ["update", "Sale"],
+      ]);
+      return await createCustomDetail(
+        context.user.companyId,
+        args.createCustomSaleOrderDetailInput
       );
     },
     async updateSaleOrderDetail(

@@ -527,6 +527,8 @@ type SaleOrder {
   discount_value: Float
   discount_amount: Float
   source: String
+  currency: String
+  exchange_rate: Float
 }
 
 input SaleOrderInput {
@@ -534,6 +536,7 @@ input SaleOrderInput {
   client: String!
   payment_method: String!
   contado_payment_method: String
+  currency: String
 }
 
 input FilterSaleOrderInput {
@@ -547,6 +550,8 @@ type SaleOrderDetail {
   _id: ID!
   sale_order: SaleOrder
   product: Product
+  custom_name: String
+  custom_cost: Float
   sale_price: Float
   quantity: Int
   serials: Int
@@ -569,6 +574,8 @@ type SalePayment {
   payment_method: String
   note: String
   created_by: User
+  currency: String
+  exchange_rate: Float
 }
 
 input SalePaymentInput {
@@ -577,6 +584,7 @@ input SalePaymentInput {
   amount: Float!
   payment_method: String!
   note: String
+  currency: String
 }
 
 type IDetailSalePayment {
@@ -620,6 +628,16 @@ input SaleOrderDetailInput {
   product: String!
   quantity: Int!
   warehouse: String
+  discount_type: String
+  discount_value: Float
+}
+
+input CreateCustomSaleOrderDetailInput {
+  sale_order: String!
+  name: String!
+  sale_price: Float!
+  quantity: Int!
+  cost: Float
   discount_type: String
   discount_value: Float
 }
@@ -721,8 +739,10 @@ type GeneralData {
   total_sales_number: Int!
   total_sales_value: Float!
   total_credit_pending: Float!
+  total_credit_pending_bs: Float!
   total_credit_pending_count: Int!
   total_credit_collected: Float!
+  total_credit_collected_bs: Float!
 }
 
 type BillingInfo {
@@ -887,6 +907,8 @@ type KardexEntry {
   balance: Int
   created_by: String
   entity_name: String
+  currency: String
+  exchange_rate: Float
 }
 
 type Query {
@@ -1060,6 +1082,9 @@ type Mutation {
   createSaleOrder(saleOrderInput: SaleOrderInput!): SaleOrder
   createSaleOrderDetail(
     saleOrderDetailInput: SaleOrderDetailInput!
+  ): SaleOrderDetail
+  createCustomSaleOrderDetail(
+    createCustomSaleOrderDetailInput: CreateCustomSaleOrderDetailInput!
   ): SaleOrderDetail
   addSerialToSaleOrderDetail(
     addSerialToSaleOrderDetailInput: addSerialToSaleOrderDetailInput!
@@ -1330,4 +1355,70 @@ type Query {
 
 type Mutation {
   deleteCompanyPermanently(companyId: ID!, confirmationText: String!): DeleteCompanyResult!
+}
+
+type CashMovement {
+  type: String!
+  amount: Float!
+  currency: String
+  description: String!
+  date: String
+  created_by: User
+}
+
+type CashRegister {
+  _id: ID!
+  status: String
+  opening_amount: Float
+  opening_amount_bs: Float
+  opening_date: String
+  opened_by: User
+  closing_amount: Float
+  closing_amount_bs: Float
+  closing_date: String
+  closed_by: User
+  notes: String
+  movements: [CashMovement!]
+  cash_sales: Float
+  cash_sales_bs: Float
+  cash_payments: Float
+  cash_payments_bs: Float
+  expected_amount: Float
+  expected_amount_bs: Float
+}
+
+input OpenCashRegisterInput {
+  opening_amount: Float!
+  opening_amount_bs: Float
+  notes: String
+}
+
+input CloseCashRegisterInput {
+  closing_amount: Float!
+  closing_amount_bs: Float
+  notes: String
+}
+
+input AddCashMovementInput {
+  type: String!
+  amount: Float!
+  currency: String
+  description: String!
+}
+
+type Query {
+  findCurrentCashRegister: CashRegister
+  listCashRegister: [CashRegister!]!
+}
+
+type Mutation {
+  openCashRegister(openCashRegisterInput: OpenCashRegisterInput!): CashRegister
+  closeCashRegister(
+    cashRegisterId: String!
+    closeCashRegisterInput: CloseCashRegisterInput!
+  ): CashRegister
+  addCashMovement(
+    cashRegisterId: String!
+    addCashMovementInput: AddCashMovementInput!
+  ): CashRegister
 }

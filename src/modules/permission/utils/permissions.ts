@@ -157,4 +157,14 @@ export const PERMISSIONS_TREE: IPermission[] = [
       { label: "Eliminar transferencia", name: "Eliminar transferencia", value: "DELETE_TRANSFER" },
     ],
   },
+  {
+    label: "Caja",
+    name: "Caja",
+    value: "ALL_CASH_REGISTER",
+    children: [
+      { label: "Ver caja", name: "Ver caja", value: "LIST_CASH_REGISTER" },
+      { label: "Abrir caja", name: "Abrir caja", value: "OPEN_CASH_REGISTER" },
+      { label: "Cerrar caja", name: "Cerrar caja", value: "CLOSE_CASH_REGISTER" },
+    ],
+  },
 ];
