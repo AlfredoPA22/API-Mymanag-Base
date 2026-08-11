@@ -35,7 +35,8 @@ const allowedOrigins = [
   "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:5176",
-  "https://extends-cartoons-eau-charge.trycloudflare.com"
+  "https://extends-cartoons-eau-charge.trycloudflare.com",
+  "https://front-restaurant-sand.vercel.app"
 ];
 
 const corsOptions = {
