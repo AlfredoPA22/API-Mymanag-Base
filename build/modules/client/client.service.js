@@ -40,9 +40,13 @@ const findAllSaleOrderByClient = async (companyId, userId, clientId) => {
         .populate("client")
         .populate("company")
         .lean();
+    // Cada nota puede estar en la moneda base de la empresa o en su moneda
+    // alterna (Bs) — sumar `total` crudo mezclaría ambas en un solo número sin
+    // sentido, así que cada monto se convierte primero a la moneda base.
     const total = (0, money_1.round2)(allSalesOrderByClient
         .filter((saleOrder) => saleOrder.status === saleOrderStatus_enum_1.saleOrderStatus.APROBADO)
-        .reduce((sum, saleOrder) => sum + Number(saleOrder.total || 0), 0));
+        .reduce((sum, saleOrder) => sum +
+        (0, money_1.toBaseCurrency)(Number(saleOrder.total || 0), saleOrder.currency, saleOrder.exchange_rate), 0));
     const response = {
         saleOrder: allSalesOrderByClient,
         total: total.toString(),

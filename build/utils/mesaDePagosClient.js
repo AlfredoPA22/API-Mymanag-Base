@@ -1,14 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateDepositQr = void 0;
+exports.generateDepositQr = exports.isMesaDePagosConfigured = void 0;
 let cachedToken = null;
+const isMesaDePagosConfigured = () => !!(process.env.MESADEPAGOS_API_URL &&
+    process.env.MESADEPAGOS_API_KEY &&
+    process.env.MESADEPAGOS_EMAIL &&
+    process.env.MESADEPAGOS_PASSWORD);
+exports.isMesaDePagosConfigured = isMesaDePagosConfigured;
 const getConfig = () => {
     const baseUrl = process.env.MESADEPAGOS_API_URL;
     const apiKey = process.env.MESADEPAGOS_API_KEY;
     const email = process.env.MESADEPAGOS_EMAIL;
     const password = process.env.MESADEPAGOS_PASSWORD;
     if (!baseUrl || !apiKey || !email || !password) {
-        throw new Error("Faltan variables de entorno para el cobro por QR (MESADEPAGOS_API_URL / MESADEPAGOS_API_KEY / MESADEPAGOS_EMAIL / MESADEPAGOS_PASSWORD).");
+        // No se listan los nombres de las variables en el mensaje: este error
+        // puede llegar hasta el cliente (GraphQL error) y no queremos exponer
+        // detalles de la configuración interna del servidor.
+        throw new Error("El cobro por QR no está disponible en este momento.");
     }
     return { baseUrl, apiKey, email, password };
 };

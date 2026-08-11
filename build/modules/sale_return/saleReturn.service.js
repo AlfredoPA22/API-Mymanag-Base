@@ -43,6 +43,9 @@ const createSaleReturn = async (companyId, userId, saleOrderId, reason, items) =
         const detail = detailMap.get(item.saleOrderDetailId);
         if (!detail)
             throw new Error(`Detalle ${item.saleOrderDetailId} no pertenece a esta orden`);
+        if (!detail.product) {
+            throw new Error(`"${detail.custom_name ?? "Este ítem"}" no tiene inventario y no se puede devolver — anula la venta si necesitas revertirlo.`);
+        }
         if (item.quantity > detail.quantity) {
             throw new Error(`La cantidad a devolver (${item.quantity}) supera la vendida (${detail.quantity}) para ${detail.product.name}`);
         }

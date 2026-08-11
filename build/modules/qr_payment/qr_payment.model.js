@@ -44,7 +44,10 @@ const qrPaymentSchema = new mongoose_1.default.Schema({
     sale_order: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: "sale_order",
-        required: true,
+    },
+    payment_landing: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "payment_landing",
     },
     created_by: {
         type: mongoose_1.Schema.Types.ObjectId,
@@ -56,7 +59,7 @@ const qrPaymentSchema = new mongoose_1.default.Schema({
     },
     type: {
         type: String,
-        enum: ["venta_contado", "abono_credito"],
+        enum: ["venta_contado", "abono_credito", "landing_subscription"],
         required: true,
     },
     transactionId: { type: String, required: true, unique: true },

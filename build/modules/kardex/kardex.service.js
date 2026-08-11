@@ -74,6 +74,8 @@ const listKardexByProduct = async (companyId, productId) => {
             balance: 0,
             created_by: so.created_by?.user_name ?? "—",
             entity_name: so.client?.fullName ?? "—",
+            currency: so.currency ?? null,
+            exchange_rate: so.exchange_rate ?? null,
         });
     }
     // ── Devoluciones ────────────────────────────────────────────
@@ -83,7 +85,10 @@ const listKardexByProduct = async (companyId, productId) => {
     })
         .populate({
         path: "sale_return",
-        populate: { path: "created_by", select: "user_name" },
+        populate: [
+            { path: "created_by", select: "user_name" },
+            { path: "sale_order", select: "currency exchange_rate" },
+        ],
     })
         .lean();
     for (const detail of returns) {
@@ -102,6 +107,8 @@ const listKardexByProduct = async (companyId, productId) => {
             balance: 0,
             created_by: sr.created_by?.user_name ?? "—",
             entity_name: sr.reason ?? "—",
+            currency: sr.sale_order?.currency ?? null,
+            exchange_rate: sr.sale_order?.exchange_rate ?? null,
         });
     }
     // ── Transferencias aprobadas ────────────────────────────────

@@ -31,6 +31,7 @@ const store_resolver_1 = require("../modules/store/store.resolver");
 const storeAuth_resolver_1 = require("../modules/store_auth/storeAuth.resolver");
 const notification_resolver_1 = require("../modules/notification/notification.resolver");
 const qr_payment_resolver_1 = require("../modules/qr_payment/qr_payment.resolver");
+const cashRegister_resolver_1 = require("../modules/cash_register/cashRegister.resolver");
 const schemaPath = path_1.default.join(__dirname, "./schema.graphql");
 if (!(0, fs_1.existsSync)(schemaPath)) {
     throw new Error(`Schema GraphQL no encontrado en ${schemaPath}`);
@@ -67,6 +68,8 @@ exports.resolvers = {
         ...storeAuth_resolver_1.storeAuthResolver.Query,
         ...notification_resolver_1.notificationResolver.Query,
         ...user_landing_resolver_1.userLandingResolver.Query,
+        ...qr_payment_resolver_1.qrPaymentResolver.Query,
+        ...cashRegister_resolver_1.cashRegisterResolver.Query,
     },
     Mutation: {
         ...brand_resolver_1.brandResolver.Mutation,
@@ -91,5 +94,6 @@ exports.resolvers = {
         ...storeAuth_resolver_1.storeAuthResolver.Mutation,
         ...notification_resolver_1.notificationResolver.Mutation,
         ...qr_payment_resolver_1.qrPaymentResolver.Mutation,
+        ...cashRegister_resolver_1.cashRegisterResolver.Mutation,
     },
 };

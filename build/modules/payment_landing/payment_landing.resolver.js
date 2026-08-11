@@ -21,5 +21,14 @@ exports.paymentLandingResolver = {
         async updatePaymentLanding(_, args, context) {
             return await (0, payment_landing_service_1.updatePaymentLanding)(context.user.id, args.paymentId, args.proof_url);
         },
+        async generateDepositQrForLanding(_, args, context) {
+            if (!context.user)
+                throw new Error("No autorizado");
+            return await (0, payment_landing_service_1.generateDepositQrForLanding)(context.user.id, args.companyId, args.plan, args.system, {
+                name: args.billing_name,
+                nit: args.billing_nit,
+                email: args.billing_email,
+            });
+        },
     },
 };

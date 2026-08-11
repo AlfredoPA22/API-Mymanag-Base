@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAdminNewPaymentEmail = exports.sendAdminNewCompanyEmail = void 0;
+exports.sendAdminDoublePaymentAlertEmail = exports.sendAdminAutoActivatedEmail = exports.sendAdminNewPaymentEmail = exports.sendAdminNewCompanyEmail = void 0;
 const emailTransporter_1 = require("./emailTransporter");
 const ADMIN_EMAIL = "inventasysbolivia@gmail.com";
 const SYSTEM_LABELS = {
@@ -124,3 +124,92 @@ const sendAdminNewPaymentEmail = async (params) => {
     }
 };
 exports.sendAdminNewPaymentEmail = sendAdminNewPaymentEmail;
+const sendAdminAutoActivatedEmail = async (params) => {
+    const { company_name, plan, system, amount, currency, transactionId } = params;
+    const systemLabel = SYSTEM_LABELS[system] ?? system;
+    const planLabel = PLAN_LABELS[plan] ?? plan;
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background: #f9fafb;">
+      <div style="max-width: 560px; margin: 0 auto; background: white; border-radius: 8px; padding: 24px; border: 1px solid #e5e7eb;">
+        <h2 style="color: #16a34a; margin-top: 0;">⚡ Suscripción activada automáticamente</h2>
+        <p>Un pago por QR se confirmó y la suscripción se activó sola, sin necesidad de aprobación manual. Este correo es solo informativo.</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px; width: 140px;">Empresa</td>
+            <td style="padding: 8px 0; font-weight: 600;">${company_name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Sistema</td>
+            <td style="padding: 8px 0;">${systemLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Plan</td>
+            <td style="padding: 8px 0;">${planLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Monto</td>
+            <td style="padding: 8px 0; font-weight: 600; color: #059669;">${amount} ${currency}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Transacción</td>
+            <td style="padding: 8px 0; font-family: monospace; font-size: 12px;">${transactionId}</td>
+          </tr>
+        </table>
+        <p style="font-size: 11px; color: #9ca3af; margin-top: 24px;">Notificación automática de Inventasys</p>
+      </div>
+    </div>
+  `;
+    try {
+        await (0, emailTransporter_1.sendEmailWithRetry)({
+            to: ADMIN_EMAIL,
+            subject: `⚡ Suscripción auto-activada: ${company_name} - ${amount} ${currency}`,
+            html: htmlContent,
+        });
+        console.log("✅ Notificación al admin enviada: activación automática", { company_name, amount });
+    }
+    catch (error) {
+        console.error("⚠️ No se pudo notificar al admin sobre activación automática:", error);
+    }
+};
+exports.sendAdminAutoActivatedEmail = sendAdminAutoActivatedEmail;
+const sendAdminDoublePaymentAlertEmail = async (params) => {
+    const { paymentId, transactionId, amount } = params;
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background: #f9fafb;">
+      <div style="max-width: 560px; margin: 0 auto; background: white; border-radius: 8px; padding: 24px; border: 1px solid #fca5a5;">
+        <h2 style="color: #dc2626; margin-top: 0;">⚠️ Posible doble pago QR — revisar</h2>
+        <p>Se confirmó un pago por QR para una suscripción que ya estaba aprobada. La activación NO se volvió a aplicar (para no extender la suscripción dos veces), pero el dinero sí se recibió y requiere reconciliación manual.</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px; width: 140px;">ID de pago</td>
+            <td style="padding: 8px 0; font-family: monospace; font-size: 12px;">${paymentId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Transacción</td>
+            <td style="padding: 8px 0; font-family: monospace; font-size: 12px;">${transactionId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Monto</td>
+            <td style="padding: 8px 0; font-weight: 600;">${amount} Bs</td>
+          </tr>
+        </table>
+        <p style="margin-top: 20px; font-size: 13px; color: #dc2626; font-weight: 500;">
+          Revisa manualmente si corresponde un reembolso o un ajuste.
+        </p>
+        <p style="font-size: 11px; color: #9ca3af; margin-top: 24px;">Notificación automática de Inventasys</p>
+      </div>
+    </div>
+  `;
+    try {
+        await (0, emailTransporter_1.sendEmailWithRetry)({
+            to: ADMIN_EMAIL,
+            subject: `⚠️ Posible doble pago QR — ${amount} Bs`,
+            html: htmlContent,
+        });
+        console.log("✅ Notificación al admin enviada: posible doble pago", { paymentId, transactionId });
+    }
+    catch (error) {
+        console.error("⚠️ No se pudo notificar al admin sobre posible doble pago:", error);
+    }
+};
+exports.sendAdminDoublePaymentAlertEmail = sendAdminDoublePaymentAlertEmail;

@@ -67,6 +67,8 @@ const saleOrderSchema = new mongoose_1.default.Schema({
     // existentes ni ningún cálculo actual.
     payment_reminder_sent_at: { type: Date, default: null },
     source: { type: String, default: "manual" },
+    currency: { type: String, enum: ["Bs", "$", null], default: null },
+    exchange_rate: { type: Number, default: null },
     created_by: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: "user",

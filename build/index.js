@@ -14,6 +14,7 @@ const mongoose_1 = require("mongoose");
 const multer_1 = __importDefault(require("multer"));
 const http_1 = __importDefault(require("http"));
 const socket_1 = require("./socket");
+const restaurant_1 = require("./restaurant");
 const checkCompanyExpirations_1 = require("./cron/checkCompanyExpirations");
 const checkLowStock_1 = require("./cron/checkLowStock");
 const checkAccountsReceivable_1 = require("./cron/checkAccountsReceivable");
@@ -36,6 +37,7 @@ const allowedOrigins = [
     "http://localhost:5174",
     "http://localhost:5175",
     "http://localhost:5176",
+    "https://extends-cartoons-eau-charge.trycloudflare.com"
 ];
 const corsOptions = {
     origin: (origin, callback) => {
@@ -47,7 +49,9 @@ const corsOptions = {
         }
     },
     credentials: true,
-    methods: ["GET", "POST", "OPTIONS"],
+    // PUT/PATCH/DELETE agregados para el sistema de fichas del restaurant
+    // (editar plato, cambiar estado de ficha, borrar categoría/plato).
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
         "Content-Type",
         "Authorization",
@@ -305,6 +309,7 @@ const bootstrapServer = async () => {
     });
     const httpServer = http_1.default.createServer(app);
     (0, socket_1.initSocket)(httpServer, allowedOrigins);
+    (0, restaurant_1.mountRestaurantApi)(app, httpServer, allowedOrigins);
     httpServer.listen(port, () => {
         console.log(`server ready on port ${port}`);
     });

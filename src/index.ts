@@ -9,6 +9,7 @@ import { Types as MongooseTypes } from "mongoose";
 import multer from "multer";
 import http from "http";
 import { initSocket } from "./socket";
+import { mountRestaurantApi } from "./restaurant";
 import { initCompanyExpirationCron } from "./cron/checkCompanyExpirations";
 import { initLowStockCron } from "./cron/checkLowStock";
 import { initAccountsReceivableCron } from "./cron/checkAccountsReceivable";
@@ -49,7 +50,9 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "OPTIONS"],
+  // PUT/PATCH/DELETE agregados para el sistema de fichas del restaurant
+  // (editar plato, cambiar estado de ficha, borrar categoría/plato).
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
     "Authorization",
@@ -345,6 +348,7 @@ const bootstrapServer = async () => {
 
   const httpServer = http.createServer(app);
   initSocket(httpServer, allowedOrigins);
+  mountRestaurantApi(app, httpServer, allowedOrigins);
 
   httpServer.listen(port, () => {
     console.log(`server ready on port ${port}`);

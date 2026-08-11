@@ -1,0 +1,1424 @@
+scalar Date
+scalar Upload
+
+input LoginLandingInput {
+  clientId: String!
+  credential: String!
+}
+
+type AdminCredentials {
+  user_name: String!
+  password: String!
+}
+
+type UserLandingWithCompanies {
+  _id: ID!
+  email: String
+  fullName: String
+  picture: String
+  user_type: String
+  createdAt: String
+  companies: [Company]
+}
+
+type Query {
+  listUserLandingAdmin: [UserLandingWithCompanies!]!
+}
+
+enum QrPaymentType {
+  venta_contado
+  abono_credito
+  landing_subscription
+}
+
+input GenerateDepositQrInput {
+  amount: Float!
+  referenceId: String!
+  description: String
+  saleOrderId: ID!
+  type: QrPaymentType!
+}
+
+type DepositQrResult {
+  transactionId: String!
+  transactionStatus: String!
+  calculatedFiatAmount: String!
+  qrCodeBase64: String!
+  referenceId: String!
+  fiatCurrency: String!
+}
+
+type Query {
+  """
+  true si las credenciales de Mesa de Pagos están configuradas en el
+  servidor — los frontends la usan para deshabilitar/ocultar la opción de
+  QR en vez de dejar que el usuario intente pagar y se encuentre con un
+  error recién al momento de generar el QR.
+  """
+  qrPaymentAvailable: Boolean!
+}
+
+type Mutation {
+  generateDepositQr(input: GenerateDepositQrInput!): DepositQrResult!
+  storeGenerateDepositQr(input: GenerateDepositQrInput!): DepositQrResult!
+}
+
+type CompanySubscription {
+  system: String
+  plan: String
+  status: String
+  trial_expires_at: String
+  subscription_expires_at: String
+  notified_before_expiration: Boolean
+  latest_payment: PaymentLanding
+}
+
+type StoreTheme {
+  primary: String
+  primaryDark: String
+  primaryForeground: String
+  dark: String
+  darkLight: String
+  light: String
+}
+
+input StoreThemeInput {
+  primary: String
+  primaryDark: String
+  primaryForeground: String
+  dark: String
+  darkLight: String
+  light: String
+}
+
+type Company {
+  _id: ID!
+  name: String
+  slug: String
+  tagline: String
+  description: String
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  image: String
+  currency: String
+  exchange_rate: Float
+  store_enabled: Boolean
+  store_banner_image: String
+  store_theme: StoreTheme
+  plan: String
+  status: String
+  trial_expires_at: String
+  subscription_expires_at: String
+  subscriptions: [CompanySubscription]
+}
+
+type CompanyOutput {
+  company: Company!
+  adminCredentials: AdminCredentials!
+}
+
+input CompanyInput {
+  name: String!
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  plan: String!
+  currency: String!
+  exchange_rate: Float
+  system: String
+}
+
+input UpdateCompanyInput {
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  image: String
+  currency: String
+  exchange_rate: Float
+  store_enabled: Boolean
+  store_banner_image: String
+  store_theme: StoreThemeInput
+}
+
+input AdjustSubscriptionInput {
+  companyId: String!
+  system: String!
+  plan: String!
+  status: String!
+  subscription_expires_at: String
+  trial_expires_at: String
+}
+
+type Warehouse {
+  _id: ID!
+  name: String
+  description: String
+  is_active: Boolean
+}
+
+type Warehouse {
+  _id: ID!
+  name: String
+  description: String
+  is_active: Boolean
+}
+
+input WarehouseInput {
+  name: String!
+  description: String
+}
+
+input UpdateWarehouseInput {
+  name: String!
+  description: String!
+}
+
+type Permission {
+  label: String
+  name: String
+  value: String
+  children: [Permission]
+}
+
+input PermissionInput {
+  name: String!
+  description: String
+}
+
+type Role {
+  _id: ID!
+  name: String
+  description: String
+  permission: [String]
+}
+
+input RoleInput {
+  name: String!
+  description: String
+  permission: [String!]!
+}
+
+type User {
+  _id: ID!
+  user_name: String
+  password: String
+  role: Role
+  is_active: Boolean
+  is_global: Boolean
+}
+
+input UserInput {
+  user_name: String!
+  password: String!
+  role: String!
+  is_global: Boolean!
+}
+
+input UpdateUserInput {
+  user_name: String!
+  role: String!
+  is_global: Boolean!
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
+}
+
+input LoginInput {
+  user_name: String!
+  password: String!
+}
+
+type Brand {
+  _id: ID!
+  name: String
+  description: String
+  count_product: Int
+  is_active: Boolean
+}
+
+input BrandInput {
+  name: String!
+  description: String
+}
+
+input UpdateBrandInput {
+  name: String!
+  description: String!
+}
+
+type Category {
+  _id: ID!
+  name: String
+  description: String
+  count_product: Int
+  is_active: Boolean
+}
+
+input CategoryInput {
+  name: String!
+  description: String
+}
+
+input UpdateCategoryInput {
+  name: String!
+  description: String!
+}
+
+type Provider {
+  _id: ID!
+  code: String
+  name: String
+  address: String
+  phoneNumber: String
+}
+
+input ProviderInput {
+  name: String!
+  address: String!
+  phoneNumber: String
+}
+
+input UpdateProviderInput {
+  name: String!
+  address: String!
+  phoneNumber: String!
+}
+
+enum StockType {
+  serializado
+  individual
+}
+
+type Product {
+  _id: ID!
+  code: String
+  name: String
+  description: String
+  image: String
+  images: [String!]
+  show_in_store: Boolean
+  sale_price: Float
+  store_price: Float
+  store_discount_price: Float
+  stock: Int
+  last_cost_price: Float
+  brand: Brand
+  category: Category
+  status: String
+  stock_type: StockType
+  min_stock: Int
+  max_stock: Int
+}
+
+input ProductInput {
+  code: String
+  name: String!
+  description: String
+  image: String
+  images: [String!]
+  show_in_store: Boolean
+  sale_price: Float
+  store_price: Float
+  store_discount_price: Float
+  category: String!
+  brand: String!
+  stock_type: StockType!
+  min_stock: Int!
+  max_stock: Int!
+}
+
+input UpdateProductInput {
+  code: String!
+  name: String!
+  image: String!
+  images: [String!]
+  show_in_store: Boolean
+  description: String!
+  sale_price: Float!
+  store_price: Float
+  store_discount_price: Float
+  category: String!
+  brand: String!
+  stock_type: StockType!
+  min_stock: Int!
+  max_stock: Int!
+}
+
+input FilterProductInput {
+  category: String
+  brand: String
+  status: String
+}
+
+type PurchaseOrder {
+  _id: ID!
+  code: String
+  date: String
+  provider: Provider
+  total: Float
+  status: String
+  created_by: User
+}
+
+input PurchaseOrderInput {
+  date: String!
+  provider: String!
+}
+
+input FilterPurchaseOrderInput {
+  startDate: Date
+  endDate: Date
+  provider: String
+  status: String
+}
+
+type PurchaseOrderDetail {
+  _id: ID!
+  purchase_order: PurchaseOrder
+  product: Product
+  purchase_price: Float
+  quantity: Int
+  serials: Int
+  subtotal: Float
+}
+
+input PurchaseOrderDetailInput {
+  purchase_order: String!
+  purchase_price: Float!
+  product: String!
+  quantity: Int!
+  warehouse: String
+}
+
+input UpdatePurchaseOrderDetailInput {
+  purchase_price: Float!
+  quantity: Int!
+}
+
+type ProductTransfer {
+  _id: ID!
+  code: String
+  date: String
+  origin_warehouse: Warehouse
+  destination_warehouse: Warehouse
+  status: String
+  created_by: User
+}
+
+input ProductTransferInput {
+  date: String!
+  origin_warehouse: String!
+  destination_warehouse: String!
+}
+
+type ProductTransferDetail {
+  _id: ID!
+  product_transfer: ProductTransfer
+  product: Product
+  quantity: Int
+  serials: [String]
+}
+
+input ProductTransferDetailInput {
+  product_transfer: String!
+  product: String!
+  quantity: Int!
+}
+
+input AddSerialToTransferDetailInput {
+  product_transfer_detail: String!
+  serial: String!
+}
+
+type ProductSerial {
+  _id: ID!
+  serial: String
+  product: Product
+  warehouse: Warehouse
+  purchase_order_detail: PurchaseOrderDetail
+  sale_order_detail: SaleOrderDetail
+  status: String
+}
+
+type ProductInventory {
+  _id: ID!
+  product: Product
+  warehouse: Warehouse
+  purchase_order_detail: PurchaseOrderDetail
+  product_transfer_detail: ProductTransferDetail
+  quantity: Int
+  available: Int
+  reserved: Int
+  sold: Int
+  transferred: Int
+  status: String
+}
+
+input addSerialToPurchaseOrderDetailInput {
+  purchase_order_detail: String!
+  serial: String!
+  warehouse: String!
+}
+
+input AddManySerialsToPurchaseOrderDetailInput {
+  purchase_order_detail: ID!
+  warehouse: ID!
+  serials: [String!]!
+}
+
+type Mutation {
+  addManySerialsToPurchaseOrderDetail(
+    addManySerialsToPurchaseOrderDetailInput: AddManySerialsToPurchaseOrderDetailInput!
+  ): [ProductSerial!]!
+}
+
+type DeleteResponse {
+  success: Boolean!
+}
+
+type Client {
+  _id: ID!
+  code: String
+  fullName: String
+  email: String
+  address: String
+  phoneNumber: String
+}
+
+input ClientInput {
+  fullName: String!
+  email: String
+  address: String
+  phoneNumber: String
+}
+
+input UpdateClientInput {
+  fullName: String!
+  email: String!
+  address: String!
+  phoneNumber: String!
+}
+
+type SaleOrder {
+  _id: ID!
+  code: String
+  client: Client
+  date: String
+  total: Float
+  status: String
+  created_by: User
+  payment_method: String
+  contado_payment_method: String
+  is_paid: Boolean
+  has_return: Boolean
+  discount_type: String
+  discount_value: Float
+  discount_amount: Float
+  source: String
+  currency: String
+  exchange_rate: Float
+}
+
+input SaleOrderInput {
+  date: String!
+  client: String!
+  payment_method: String!
+  contado_payment_method: String
+  currency: String
+}
+
+input FilterSaleOrderInput {
+  startDate: Date
+  endDate: Date
+  client: String
+  status: String
+}
+
+type SaleOrderDetail {
+  _id: ID!
+  sale_order: SaleOrder
+  product: Product
+  custom_name: String
+  custom_cost: Float
+  sale_price: Float
+  quantity: Int
+  serials: Int
+  discount_type: String
+  discount_value: Float
+  discount_amount: Float
+  subtotal: Float
+}
+
+type SaleOrderByClient {
+  saleOrder: [SaleOrder]
+  total: String!
+}
+
+type SalePayment {
+  _id: ID!
+  sale_order: SaleOrder
+  date: String
+  amount: Float
+  payment_method: String
+  note: String
+  created_by: User
+  currency: String
+  exchange_rate: Float
+}
+
+input SalePaymentInput {
+  sale_order: String!
+  date: String!
+  amount: Float!
+  payment_method: String!
+  note: String
+  currency: String
+}
+
+type IDetailSalePayment {
+  sale_order: SaleOrder
+  total_amount: Float
+  total_paid: Float
+  total_pending: Float
+}
+
+type PurchaseOrderDetailToPDF {
+  purchaseOrderDetail: PurchaseOrderDetail
+  productSerial: [ProductSerial]
+}
+
+type PurchaseOrderToPDF {
+  purchaseOrder: PurchaseOrder
+  purchaseOrderDetail: [PurchaseOrderDetailToPDF]
+}
+
+type SaleOrderDetailToPDF {
+  saleOrderDetail: SaleOrderDetail
+  productSerial: [ProductSerial]
+}
+
+type QrPaymentInfo {
+  amount: Float
+  currency: String
+  amount_bob: Float
+  exchange_rate: Float
+}
+
+type SaleOrderToPDF {
+  saleOrder: SaleOrder
+  saleOrderDetail: [SaleOrderDetailToPDF]
+  qr_payment_info: QrPaymentInfo
+}
+
+input SaleOrderDetailInput {
+  sale_order: String!
+  sale_price: Float!
+  product: String!
+  quantity: Int!
+  warehouse: String
+  discount_type: String
+  discount_value: Float
+}
+
+input CreateCustomSaleOrderDetailInput {
+  sale_order: String!
+  name: String!
+  sale_price: Float!
+  quantity: Int!
+  cost: Float
+  discount_type: String
+  discount_value: Float
+}
+
+input UpdateSaleOrderDetailInput {
+  sale_price: Float!
+  quantity: Int!
+  discount_type: String
+  discount_value: Float
+}
+
+input UpdateSaleOrderPaymentMethodInput {
+  payment_method: String!
+  contado_payment_method: String
+}
+
+input UpdateSaleOrderDiscountInput {
+  discount_type: String
+  discount_value: Float
+}
+
+input addSerialToSaleOrderDetailInput {
+  sale_order_detail: String!
+  serial: String!
+}
+
+input AddManySerialsToSaleOrderDetailInput {
+  sale_order_detail: ID!
+  serials: [String!]!
+}
+
+type Mutation {
+  addManySerialsToSaleOrderDetail(
+    addManySerialsToSaleOrderDetailInput: AddManySerialsToSaleOrderDetailInput!
+  ): [ProductSerial!]!
+}
+
+type ReportSaleOrderByClient {
+  client: String!
+  total: Float!
+}
+
+type ReportSaleOrderBySeller {
+  seller: String!
+  total: Float!
+}
+
+type ReportSaleOrderByCategory {
+  category: String!
+  total: Float!
+}
+
+type ReportSaleOrderByProduct {
+  product: String!
+  total: Float!
+}
+
+type ReportMonthlySales {
+  month: String!
+  total: Float!
+}
+
+type SaleOrderByProduct {
+  saleOrder: SaleOrder
+  saleOrderDetail: SaleOrderDetail
+}
+
+type SaleReturn {
+  _id: ID!
+  code: String
+  sale_order: SaleOrder
+  date: String
+  reason: String
+  total: Float
+  created_by: User
+}
+
+type SaleReturnDetail {
+  _id: ID!
+  sale_return: SaleReturn
+  sale_order_detail: SaleOrderDetail
+  product: Product
+  quantity: Int
+  sale_price: Float
+  subtotal: Float
+}
+
+type PurchaseOrderByProduct {
+  purchaseOrder: PurchaseOrder
+  purchaseOrderDetail: PurchaseOrderDetail
+}
+
+type GeneralData {
+  total_products_number: Int!
+  total_products_low: Int!
+  stock: Int!
+  best_product: Product
+  best_product_sales_number: Int!
+  total_sales_number: Int!
+  total_sales_value: Float!
+  total_credit_pending: Float!
+  total_credit_pending_bs: Float!
+  total_credit_pending_count: Int!
+  total_credit_collected: Float!
+  total_credit_collected_bs: Float!
+}
+
+type BillingInfo {
+  name: String
+  nit: String
+  email: String
+}
+
+type PaymentLanding {
+  _id: ID!
+  company: Company
+  system: String
+  plan: String
+  amount: Float
+  currency: String
+  method: String
+  status: String
+  paid_at: String
+  proof_url: String
+  billing_info: BillingInfo
+}
+
+input PaymentLandingInput {
+  company: String!
+  system: String
+  plan: String!
+  amount: Float!
+  currency: String!
+  method: String!
+  proof_url: String
+  billing_name: String
+  billing_nit: String
+  billing_email: String
+}
+
+type CompanyWithPayment {
+  _id: ID!
+  name: String
+  slug: String
+  legal_name: String
+  nit: String
+  email: String
+  phone: String
+  address: String
+  country: String
+  image: String
+  currency: String
+  exchange_rate: Float
+  store_enabled: Boolean
+  store_banner_image: String
+  store_theme: StoreTheme
+  plan: String
+  status: String
+  trial_expires_at: String
+  subscription_expires_at: String
+  subscriptions: [CompanySubscription]
+  latest_payment: PaymentLanding
+}
+
+input PreviewProductImport {
+  row: Int!
+  code: String!
+  name: String!
+  description: String!
+  sale_price: Float!
+  brand: String!
+  category: String!
+  stock_type: String!
+  min_stock: Float!
+  max_stock: Float!
+  isValid: Boolean!
+  errors: [String!]!
+}
+
+type StockDiscrepancy {
+  productId: String!
+  code: String!
+  name: String!
+  stock_type: String!
+  companyId: String!
+  companyName: String!
+  stockActual: Int!
+  stockCorrecto: Int!
+  statusActual: String!
+  statusCorrecto: String!
+  diff: Int!
+}
+
+type StockAuditResult {
+  totalProducts: Int!
+  ok: Int!
+  discrepancies: [StockDiscrepancy!]!
+  errors: Int!
+}
+
+type StockChange {
+  productId: String!
+  name: String!
+  companyId: String!
+  companyName: String!
+  stock_type: String!
+  stockBefore: Int!
+  stockAfter: Int!
+  statusBefore: String!
+  statusAfter: String!
+}
+
+type StockReconcileResult {
+  totalProducts: Int!
+  updated: Int!
+  unchanged: Int!
+  errors: Int!
+  changes: [StockChange!]!
+}
+
+input FilterProfitabilityInput {
+  startDate: Date
+  endDate: Date
+}
+
+type ProfitabilityByProduct {
+  product_id: String
+  product_code: String
+  product_name: String
+  category_name: String
+  brand_name: String
+  units_sold: Int
+  revenue: Float
+  cost: Float
+  gross_profit: Float
+  margin_percent: Float
+}
+
+type ProfitabilityByCategory {
+  category_id: String
+  category_name: String
+  units_sold: Int
+  revenue: Float
+  cost: Float
+  gross_profit: Float
+  margin_percent: Float
+}
+
+type ProfitabilityReport {
+  by_product: [ProfitabilityByProduct]
+  by_category: [ProfitabilityByCategory]
+  total_revenue: Float
+  total_cost: Float
+  total_gross_profit: Float
+  total_margin_percent: Float
+}
+
+type KardexEntry {
+  _id: ID!
+  date: Float
+  type: String
+  reference_code: String
+  reference_id: String
+  quantity: Int
+  unit_price: Float
+  subtotal: Float
+  balance: Int
+  created_by: String
+  entity_name: String
+  currency: String
+  exchange_rate: Float
+}
+
+type Query {
+  listCompany: [CompanyWithPayment]
+  listCompanyAdmin: [CompanyWithPayment]
+  detailCompany: CompanyWithPayment
+
+  listUser: [User]
+
+  listRole: [Role]
+  listPermissionsByRole(roleId: String!): [String]
+
+  listPermission: [Permission]
+
+  listBrand: [Brand]
+
+  listCategory: [Category]
+
+  listWarehouse: [Warehouse]
+
+  listProduct: [Product]
+  listLowStockProduct: [Product]
+  listProductWithParams(
+    categoryId: String
+    brandId: String
+    warehouseId: String
+  ): [Product]
+  findProduct(productId: String!): Product
+  productReport(filterProductInput: FilterProductInput!): [Product]
+  listProductSerialByProduct(productId: String!): [ProductSerial]
+  listProductInventoryByProduct(productId: String!): [ProductInventory]
+  searchProduct(serial: String!): Product
+
+  listClient: [Client]
+
+  listProvider: [Provider]
+
+  listSaleOrder: [SaleOrder]
+  listStoreOrders: [SaleOrder]
+  storeOrderStats: StoreOrderStats
+  listSaleOrderDetail(saleOrderId: String!): [SaleOrderDetail]
+  listProductSerialBySaleOrder(saleOrderDetailId: String!): [ProductSerial]
+  listSaleOrderByClient(clientId: String!): SaleOrderByClient
+  saleOrderReport(filterSaleOrderInput: FilterSaleOrderInput!): [SaleOrder]
+  findSaleOrder(saleOrderId: String!): SaleOrder
+  findSaleOrderToPDF(saleOrderId: String!): SaleOrderToPDF
+  findQrPaymentInfoBySaleOrder(saleOrderId: String!): QrPaymentInfo
+  reportSaleOrderByClient(startDate: Date, endDate: Date): [ReportSaleOrderByClient]
+  reportSaleOrderBySeller(startDate: Date, endDate: Date): [ReportSaleOrderBySeller]
+  reportSaleOrderByCategory(startDate: Date, endDate: Date): [ReportSaleOrderByCategory]
+  reportSaleOrderByProduct(startDate: Date, endDate: Date): [ReportSaleOrderByProduct]
+  reportMonthlySales(startDate: Date, endDate: Date): [ReportMonthlySales]
+  reportSaleOrderByMonth(startDate: Date, endDate: Date): [SaleOrder]
+  reportCuentasCobrar(startDate: Date, endDate: Date): [SaleOrder]
+  generalData(startDate: Date, endDate: Date): GeneralData
+  listSaleOrderByProduct(productId: ID!): [SaleOrderByProduct]
+
+  listSalePayment: [SalePayment]
+  listSalePaymentBySaleOrder(saleOrderId: String!): [SalePayment]
+  detailSalePaymentBySaleOrder(saleOrderId: String!): IDetailSalePayment
+
+  listPurchaseOrder: [PurchaseOrder]
+  listPurchaseOrderDetail(purchaseOrderId: String!): [PurchaseOrderDetail]
+  listProductSerialByPurchaseOrder(
+    purchaseOrderDetailId: String!
+  ): [ProductSerial]
+  purchaseOrderReport(
+    filterPurchaseOrderInput: FilterPurchaseOrderInput!
+  ): [PurchaseOrder]
+  findPurchaseOrder(purchaseOrderId: String!): PurchaseOrder
+  findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
+  listPurchaseOrderByProduct(productId: ID!): [PurchaseOrderByProduct]
+
+  listProductTransfer: [ProductTransfer]
+  findProductTransfer(transferId: String!): ProductTransfer
+  listProductTransferDetail(transferId: String!): [ProductTransferDetail]
+
+  generateCode(type: String!): String
+
+  listPaymentLandingByCompany(companyId: String!): [PaymentLanding]
+
+  auditStock: StockAuditResult
+
+  listSaleReturn: [SaleReturn]
+  findSaleReturn(saleReturnId: String!): SaleReturn
+  listSaleReturnDetail(saleReturnId: String!): [SaleReturnDetail]
+  findSaleReturnBySaleOrder(saleOrderId: String!): SaleReturn
+
+  listKardexByProduct(productId: String!): [KardexEntry]
+
+  profitabilityReport(filterInput: FilterProfitabilityInput): ProfitabilityReport
+}
+
+type Mutation {
+  createCompany(companyInput: CompanyInput!): CompanyOutput
+  updateCompany(updateCompanyInput: UpdateCompanyInput!): Company
+  adjustSubscription(input: AdjustSubscriptionInput!): Company
+
+  createPermission(permissionInput: PermissionInput!): Permission
+
+  createRole(roleInput: RoleInput!): Role
+  updateRolePermissions(roleId: String!, permissions: [String!]!): Role
+  deleteRole(roleId: String!): DeleteResponse
+
+  createUser(userInput: UserInput!): User
+  updateUser(userId: String!, updateUserInput: UpdateUserInput!): User
+  deleteUser(userId: String!): DeleteResponse
+  login(loginInput: LoginInput!): String
+  switchUserState(userId: String!): User
+  changePassword(
+    userId: String!
+    changePasswordInput: ChangePasswordInput!
+  ): User
+
+  loginLanding(loginLandingInput: LoginLandingInput!): String
+
+  createBrand(brandInput: BrandInput!): Brand
+  updateBrand(brandId: String!, updateBrandInput: UpdateBrandInput!): Brand
+  deleteBrand(brandId: String!): DeleteResponse
+
+  createCategory(categoryInput: CategoryInput!): Category
+  updateCategory(
+    categoryId: String!
+    updateCategoryInput: UpdateCategoryInput!
+  ): Category
+  deleteCategory(categoryId: String!): DeleteResponse
+
+  createWarehouse(warehouseInput: WarehouseInput!): Warehouse
+  updateWarehouse(
+    warehouseId: String!
+    updateWarehouseInput: UpdateWarehouseInput!
+  ): Warehouse
+  deleteWarehouse(warehouseId: String!): DeleteResponse
+
+  createProduct(productInput: ProductInput!): Product
+  updateProduct(
+    productId: String!
+    updateProductInput: UpdateProductInput!
+  ): Product
+  deleteProduct(productId: String!): DeleteResponse
+
+  createClient(clientInput: ClientInput!): Client
+  updateClient(clientId: String!, updateClientInput: UpdateClientInput!): Client
+  deleteClient(clientId: String!): DeleteResponse
+
+  createProvider(providerInput: ProviderInput!): Provider
+  updateProvider(
+    providerId: String!
+    updateProviderInput: UpdateProviderInput!
+  ): Provider
+  deleteProvider(providerId: String!): DeleteResponse
+
+  createPurchaseOrder(purchaseOrderInput: PurchaseOrderInput!): PurchaseOrder
+  createPurchaseOrderDetail(
+    purchaseOrderDetailInput: PurchaseOrderDetailInput!
+  ): PurchaseOrderDetail
+  addSerialToPurchaseOrderDetail(
+    addSerialToPurchaseOrderDetailInput: addSerialToPurchaseOrderDetailInput!
+  ): ProductSerial
+  deleteSerialToPurchaseOrderDetail(productSerialId: String!): DeleteResponse
+  deleteProductToPurchaseOrderDetail(
+    purchaseOrderDetailId: String!
+  ): DeleteResponse
+  deletePurchaseOrder(purchaseOrderId: String!): DeleteResponse
+  approvePurchaseOrder(purchaseOrderId: String!): PurchaseOrder
+  updatePurchaseOrderDetail(
+    purchaseOrderDetailId: String!
+    updatePurchaseOrderDetailInput: UpdatePurchaseOrderDetailInput!
+  ): PurchaseOrderDetail
+
+  createSaleOrder(saleOrderInput: SaleOrderInput!): SaleOrder
+  createSaleOrderDetail(
+    saleOrderDetailInput: SaleOrderDetailInput!
+  ): SaleOrderDetail
+  createCustomSaleOrderDetail(
+    createCustomSaleOrderDetailInput: CreateCustomSaleOrderDetailInput!
+  ): SaleOrderDetail
+  addSerialToSaleOrderDetail(
+    addSerialToSaleOrderDetailInput: addSerialToSaleOrderDetailInput!
+  ): ProductSerial
+  deleteSerialToSaleOrderDetail(productSerialId: String!): DeleteResponse
+  deleteProductToSaleOrderDetail(saleOrderDetailId: String!): DeleteResponse
+  deleteSaleOrder(saleOrderId: String!): DeleteResponse
+  approveSaleOrder(saleOrderId: String!): SaleOrder
+  updateSaleOrderDetail(
+    saleOrderDetailId: String!
+    updateSaleOrderDetailInput: UpdateSaleOrderDetailInput!
+  ): SaleOrderDetail
+  updateSaleOrderPaymentMethod(
+    saleOrderId: String!
+    updateSaleOrderPaymentMethodInput: UpdateSaleOrderPaymentMethodInput!
+  ): SaleOrder
+  updateSaleOrderDiscount(
+    saleOrderId: String!
+    updateSaleOrderDiscountInput: UpdateSaleOrderDiscountInput!
+  ): SaleOrder
+
+  createSalePayment(salePaymentInput: SalePaymentInput!): SalePayment
+  deleteSalePayment(salePaymentId: String!): DeleteResponse
+
+  createProductTransfer(
+    productTransferInput: ProductTransferInput!
+  ): ProductTransfer
+  createProductTransferDetail(
+    productTransferDetailInput: ProductTransferDetailInput!
+  ): ProductTransferDetail
+  addSerialToTransferDetail(
+    addSerialToTransferDetailInput: AddSerialToTransferDetailInput!
+  ): ProductSerial
+  removeSerialFromTransferDetail(
+    transferDetailId: String!
+    serial: String!
+  ): DeleteResponse
+  deleteProductFromTransfer(transferDetailId: String!): DeleteResponse
+  deleteProductTransfer(transferId: String!): DeleteResponse
+  approveProductTransfer(transferId: String!): ProductTransfer
+
+  createPaymentLanding(
+    paymentLandingInput: PaymentLandingInput!
+  ): PaymentLanding
+  approvePaymentLanding(paymentId: String!): PaymentLanding
+  rejectPaymentLanding(paymentId: String!): PaymentLanding
+  updatePaymentLanding(paymentId: String!, proof_url: String!): PaymentLanding
+  generateDepositQrForLanding(
+    companyId: ID!
+    plan: String!
+    system: String
+    billing_name: String
+    billing_nit: String
+    billing_email: String
+  ): DepositQrResult!
+
+  saveImportProducts(importProducts: [PreviewProductImport!]!): [Product]
+
+  reconcileStock: StockReconcileResult
+
+  createSaleReturn(saleOrderId: String!, reason: String!, items: [SaleReturnItemInput!]!): SaleReturn
+}
+
+input SaleReturnItemInput {
+  saleOrderDetailId: String!
+  quantity: Int!
+}
+
+type StoreOrderStatsProduct {
+  product: String
+  quantity: Float
+  total: Float
+}
+
+type StoreOrderStats {
+  totalOrders: Int
+  pendingOrders: Int
+  approvedOrders: Int
+  totalRevenue: Float
+  averageTicket: Float
+  topProducts: [StoreOrderStatsProduct!]
+}
+
+# ── Tienda pública (storefront) ──────────────────────────────
+# Solo expone campos seguros de Product: nunca last_cost_price, min_stock ni max_stock.
+type StoreProduct {
+  _id: ID!
+  code: String
+  name: String
+  description: String
+  image: String
+  images: [String!]
+  sale_price: Float
+  regular_price: Float
+  stock: Int
+  brand: Brand
+  category: Category
+  status: String
+  stock_type: StockType
+}
+
+input StoreCartItemInput {
+  productId: String!
+  quantity: Int!
+}
+
+input StoreOrderInput {
+  fullName: String!
+  phoneNumber: String!
+  email: String
+  address: String
+  items: [StoreCartItemInput!]!
+}
+
+type StoreOrderResult {
+  _id: ID!
+  code: String!
+  total: Float!
+  clientFullName: String!
+}
+
+type Query {
+  storeListProducts(companyId: ID!): [StoreProduct!]!
+}
+
+type Mutation {
+  storeCreateOrder(companyId: ID!, storeOrderInput: StoreOrderInput!): StoreOrderResult!
+}
+
+# ── Cuentas de cliente para la tienda ────────────────────────
+type StoreClient {
+  _id: ID!
+  fullName: String!
+  phoneNumber: String!
+  phoneCountry: String
+  email: String
+  address: String
+}
+
+type StoreCartItem {
+  productId: ID!
+  name: String!
+  image: String
+  sale_price: Float!
+  stock: Int!
+  quantity: Int!
+}
+
+type StoreAuthResult {
+  token: String!
+  client: StoreClient!
+  cart: [StoreCartItem!]!
+}
+
+type StoreMeResult {
+  client: StoreClient!
+  cart: [StoreCartItem!]!
+}
+
+input StoreRegisterInput {
+  fullName: String!
+  phoneNumber: String!
+  phoneCountry: String
+  email: String
+  address: String
+  password: String!
+}
+
+input StoreUpdateProfileInput {
+  fullName: String
+  email: String
+  address: String
+}
+
+type StoreOrderDetailItem {
+  productId: ID!
+  productName: String!
+  productImage: String
+  quantity: Int!
+  sale_price: Float!
+  subtotal: Float!
+}
+
+type StoreOrderDetailResult {
+  _id: ID!
+  code: String!
+  date: String!
+  status: String!
+  total: Float!
+  is_paid: Boolean!
+  address: String
+  payment_method: String
+  contado_payment_method: String
+  items: [StoreOrderDetailItem!]!
+  qr_payment_info: QrPaymentInfo
+}
+
+type Query {
+  storeMe: StoreMeResult
+  storeMyOrders: [SaleOrder!]!
+  storeOrderDetail(orderId: ID!): StoreOrderDetailResult!
+}
+
+type Mutation {
+  storeRegister(companyId: ID!, input: StoreRegisterInput!): StoreAuthResult!
+  storeLogin(companyId: ID!, phoneNumber: String!, password: String!): StoreAuthResult!
+  storeUpdateCart(items: [StoreCartItemInput!]!): [StoreCartItem!]!
+  storeCreateOrderForClient(items: [StoreCartItemInput!]!, address: String, contado_payment_method: String): StoreOrderResult!
+  storeUpdateProfile(input: StoreUpdateProfileInput!): StoreClient!
+}
+
+# ── Notificaciones internas ──────────────────────────────────
+type Notification {
+  _id: ID!
+  type: String!
+  title: String!
+  message: String!
+  link: String
+  read: Boolean!
+  createdAt: Date
+}
+
+type Query {
+  listNotifications: [Notification!]!
+  countUnreadNotifications: Int!
+}
+
+type Mutation {
+  markNotificationRead(notificationId: ID!): Notification!
+  markAllNotificationsRead: DeleteResponse!
+}
+
+type CompanyDeletionReport {
+  companyName: String!
+  products: Int!
+  brands: Int!
+  categories: Int!
+  providers: Int!
+  clients: Int!
+  warehouses: Int!
+  roles: Int!
+  users: Int!
+  saleOrders: Int!
+  saleOrderDetails: Int!
+  purchaseOrders: Int!
+  purchaseOrderDetails: Int!
+  salePayments: Int!
+  saleReturns: Int!
+  saleReturnDetails: Int!
+  productTransfers: Int!
+  productTransferDetails: Int!
+  productInventory: Int!
+  productSerials: Int!
+  notifications: Int!
+  payments: Int!
+  codeGenerators: Int!
+}
+
+type DeleteCompanyResult {
+  success: Boolean!
+  deletedCounts: CompanyDeletionReport
+}
+
+type Query {
+  companyDeletionReport(companyId: ID!): CompanyDeletionReport!
+  companyBackup(companyId: ID!): String!
+}
+
+type Mutation {
+  deleteCompanyPermanently(companyId: ID!, confirmationText: String!): DeleteCompanyResult!
+}
+
+type CashMovement {
+  type: String!
+  amount: Float!
+  currency: String
+  description: String!
+  date: String
+  created_by: User
+}
+
+type CashRegister {
+  _id: ID!
+  status: String
+  opening_amount: Float
+  opening_amount_bs: Float
+  opening_date: String
+  opened_by: User
+  closing_amount: Float
+  closing_amount_bs: Float
+  closing_date: String
+  closed_by: User
+  notes: String
+  movements: [CashMovement!]
+  cash_sales: Float
+  cash_sales_bs: Float
+  cash_payments: Float
+  cash_payments_bs: Float
+  expected_amount: Float
+  expected_amount_bs: Float
+}
+
+input OpenCashRegisterInput {
+  opening_amount: Float!
+  opening_amount_bs: Float
+  notes: String
+}
+
+input CloseCashRegisterInput {
+  closing_amount: Float!
+  closing_amount_bs: Float
+  notes: String
+}
+
+input AddCashMovementInput {
+  type: String!
+  amount: Float!
+  currency: String
+  description: String!
+}
+
+type Query {
+  findCurrentCashRegister: CashRegister
+  listCashRegister: [CashRegister!]!
+}
+
+type Mutation {
+  openCashRegister(openCashRegisterInput: OpenCashRegisterInput!): CashRegister
+  closeCashRegister(
+    cashRegisterId: String!
+    closeCashRegisterInput: CloseCashRegisterInput!
+  ): CashRegister
+  addCashMovement(
+    cashRegisterId: String!
+    addCashMovementInput: AddCashMovementInput!
+  ): CashRegister
+}

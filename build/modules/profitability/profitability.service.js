@@ -36,6 +36,11 @@ const profitabilityReport = async (companyId, userId, filterInput) => {
         return { by_product: [], by_category: [], total_revenue: 0, total_cost: 0, total_gross_profit: 0, total_margin_percent: 0 };
     }
     const saleOrderIds = saleOrders.map((o) => o._id);
+    // Cada nota puede estar en la moneda base de la empresa o en su moneda
+    // alterna (Bs); el `subtotal` de sus detalles queda en esa misma moneda.
+    // Se indexa por orden para poder convertir cada `subtotal` a la moneda
+    // base antes de sumarlo — sumarlo crudo mezclaría Bs y $ en un solo total.
+    const orderById = new Map(saleOrders.map((o) => [o._id.toString(), o]));
     // Detalles con producto populado (categoría y marca incluidas)
     const details = await sale_order_detail_model_1.SaleOrderDetail.find({
         company: companyId,
@@ -57,8 +62,9 @@ const profitabilityReport = async (companyId, userId, filterInput) => {
         const product = detail.product;
         if (!product)
             continue;
+        const order = orderById.get(detail.sale_order?.toString());
         const qty = detail.quantity ?? 0;
-        const revenue = detail.subtotal ?? 0;
+        const revenue = (0, money_1.toBaseCurrency)(detail.subtotal ?? 0, order?.currency, order?.exchange_rate);
         const cost = qty * (product.last_cost_price ?? 0);
         const profit = revenue - cost;
         totalRevenue += revenue;

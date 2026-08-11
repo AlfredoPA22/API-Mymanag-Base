@@ -2,7 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.qrPaymentResolver = void 0;
 const qr_payment_service_1 = require("./qr_payment.service");
+const mesaDePagosClient_1 = require("../../utils/mesaDePagosClient");
 exports.qrPaymentResolver = {
+    Query: {
+        qrPaymentAvailable() {
+            return (0, mesaDePagosClient_1.isMesaDePagosConfigured)();
+        },
+    },
     Mutation: {
         async generateDepositQr(_, args, context) {
             if (!context.user) {

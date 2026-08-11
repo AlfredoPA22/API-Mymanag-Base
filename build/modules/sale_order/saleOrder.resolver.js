@@ -101,6 +101,13 @@ exports.saleOrderResolver = {
             ]);
             return await (0, saleOrder_service_1.createDetail)(context.user.companyId, args.saleOrderDetailInput);
         },
+        async createCustomSaleOrderDetail(_, args, context) {
+            (0, ability_1.checkAnyAbility)(context.ability, [
+                ["create", "Sale"],
+                ["update", "Sale"],
+            ]);
+            return await (0, saleOrder_service_1.createCustomDetail)(context.user.companyId, args.createCustomSaleOrderDetailInput);
+        },
         async updateSaleOrderDetail(_, args, context) {
             (0, ability_1.checkAnyAbility)(context.ability, [
                 ["create", "Sale"],

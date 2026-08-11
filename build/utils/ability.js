@@ -249,6 +249,20 @@ function buildAbility(permissions) {
             case "DELETE_TRANSFER":
                 can("delete", "Transfer");
                 break;
+            // ── Caja ────────────────────────────────────────────────────────────────
+            case "ALL_CASH_REGISTER":
+                can("manage", "CashRegister");
+                break;
+            case "LIST_CASH_REGISTER":
+                can("list", "CashRegister");
+                can("read", "CashRegister");
+                break;
+            case "OPEN_CASH_REGISTER":
+                can("create", "CashRegister");
+                break;
+            case "CLOSE_CASH_REGISTER":
+                can("update", "CashRegister");
+                break;
         }
     }
     return build();

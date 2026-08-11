@@ -288,6 +288,10 @@ const createOrderForClient = async (companyId, clientId, items, address, contado
                 }
                 warehouseId = inventories[0].warehouse;
             }
+            // Para productos serializados no se asigna ningún serial aquí — el
+            // cliente de la tienda no puede elegirlo. La venta queda en Borrador
+            // (con is_paid=true en cuanto se confirme el QR) hasta que un admin
+            // asigne los seriales manualmente y apruebe la venta.
             await (0, saleOrder_service_1.createDetail)(companyId, {
                 sale_order: newOrder._id,
                 product: product._id,
