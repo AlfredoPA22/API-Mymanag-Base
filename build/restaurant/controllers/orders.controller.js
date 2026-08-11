@@ -68,7 +68,9 @@ async function createOrder(req, res) {
         metodoPago,
         total,
     });
-    (0, socket_1.getRestaurantIO)().emit("order:new", order);
+    const io = (0, socket_1.getRestaurantIO)();
+    console.log(`[restaurant] emit order:new — clientes conectados en esta instancia: ${io.engine.clientsCount}`);
+    io.emit("order:new", order);
     res.status(201).json(order);
 }
 async function updateOrderEstado(req, res) {
@@ -79,6 +81,8 @@ async function updateOrderEstado(req, res) {
     const order = await Order_1.default.findByIdAndUpdate(req.params.id, { estado }, { new: true });
     if (!order)
         return res.status(404).json({ message: "Ficha no encontrada" });
-    (0, socket_1.getRestaurantIO)().emit("order:updated", order);
+    const io = (0, socket_1.getRestaurantIO)();
+    console.log(`[restaurant] emit order:updated — clientes conectados en esta instancia: ${io.engine.clientsCount}`);
+    io.emit("order:updated", order);
     res.json(order);
 }
