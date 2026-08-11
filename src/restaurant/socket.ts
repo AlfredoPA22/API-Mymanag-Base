@@ -18,6 +18,18 @@ export function initRestaurantSocket(httpServer: HttpServer, corsOrigins: string
     socket.on("disconnect", () => console.log("[restaurant] Cliente desconectado:", socket.id));
   });
 
+  // Diagnóstico: engine.io emite esto con el motivo real cuando una conexión
+  // falla ANTES de llegar a "connection" (sesión desconocida, transporte no
+  // soportado, etc.) — es lo que necesitamos ver para entender el 400 en prod.
+  io.engine.on("connection_error", (err) => {
+    console.log("[restaurant] connection_error:", {
+      code: err.code,
+      message: err.message,
+      context: err.context,
+      url: err.req?.url,
+    });
+  });
+
   return io;
 }
 
