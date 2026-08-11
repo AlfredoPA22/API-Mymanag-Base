@@ -4,9 +4,11 @@ exports.RESTAURANT_SOCKET_PATH = void 0;
 exports.initRestaurantSocket = initRestaurantSocket;
 exports.getRestaurantIO = getRestaurantIO;
 const socket_io_1 = require("socket.io");
-// Path propio y distinto al de Inventasys (que usa el default "/socket.io/")
-// para que ambos Socket.IO puedan convivir en el mismo httpServer sin pisarse.
-exports.RESTAURANT_SOCKET_PATH = "/restaurant-api/socket.io";
+// Path propio y distinto al de Inventasys (que usa el default "/socket.io/").
+// A propósito NO contiene "/socket.io" como substring: dos servidores de
+// Engine.IO en un mismo httpServer donde un path es substring del otro pueden
+// interceptarse pedidos entre sí ("Session ID unknown" intermitente).
+exports.RESTAURANT_SOCKET_PATH = "/restaurant-ws";
 let io = null;
 function initRestaurantSocket(httpServer, corsOrigins) {
     io = new socket_io_1.Server(httpServer, {

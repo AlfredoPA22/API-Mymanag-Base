@@ -1,9 +1,11 @@
 import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 
-// Path propio y distinto al de Inventasys (que usa el default "/socket.io/")
-// para que ambos Socket.IO puedan convivir en el mismo httpServer sin pisarse.
-export const RESTAURANT_SOCKET_PATH = "/restaurant-api/socket.io";
+// Path propio y distinto al de Inventasys (que usa el default "/socket.io/").
+// A propósito NO contiene "/socket.io" como substring: dos servidores de
+// Engine.IO en un mismo httpServer donde un path es substring del otro pueden
+// interceptarse pedidos entre sí ("Session ID unknown" intermitente).
+export const RESTAURANT_SOCKET_PATH = "/restaurant-ws";
 
 let io: Server | null = null;
 
