@@ -102,3 +102,16 @@ node scripts/migrate-add-view-product-cost-permission.js             # aplica lo
 ```
 
 **Cuándo usarlo:** Una sola vez, al desplegar la pestaña "Fuera de inventario". Después de correrlo, los administradores que ya tengan sesión iniciada no ven el cambio hasta cerrar sesión y volver a entrar (los permisos van en el JWT, vigente 1 día).
+
+---
+
+## migrate-enable-pos-sale-mode.js
+
+**Qué hace:** Activa `pos_sale_mode_enabled` (Modo de venta rápida / POS en "Nueva venta") en **todas** las empresas existentes — el campo es nuevo con default `false`, así que sin esto ninguna empresa creada antes de esta funcionalidad lo ve. A diferencia de las migraciones de permisos, esto actualiza directo la colección `companies`, no `roles`.
+
+```
+node scripts/migrate-enable-pos-sale-mode.js --dry-run   # solo muestra qué haría
+node scripts/migrate-enable-pos-sale-mode.js             # aplica los cambios
+```
+
+**Cuándo usarlo:** Una sola vez, para que el modo POS quede disponible de entrada en todas las empresas ya existentes (las nuevas nacen con el campo en `false`, así que no las toca el default — si también se quiere eso por default habría que cambiar el schema, no este script).
