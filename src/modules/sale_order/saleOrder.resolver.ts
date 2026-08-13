@@ -27,6 +27,7 @@ import {
   findSaleOrder,
   findSaleOrderToPDF,
   getStoreOrderStats,
+  listCustomSaleOrderDetail,
   listSaleOrderByProduct,
   reportSaleOrderByCategory,
   reportSaleOrderByClient,
@@ -86,6 +87,17 @@ export const saleOrderResolver = {
         context.user.companyId,
         context.user.id,
         args.productId
+      );
+    },
+    async listCustomSaleOrderDetail(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<ISaleOrderByProduct[]> {
+      checkAbility(context.ability, "list", "Product");
+      return await listCustomSaleOrderDetail(
+        context.user.companyId,
+        context.user.id
       );
     },
     async findSaleOrder(

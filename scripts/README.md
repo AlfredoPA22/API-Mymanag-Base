@@ -87,3 +87,18 @@ node scripts/migrate-add-cash-register-permissions.js             # aplica los c
 ```
 
 **Cuándo usarlo:** Una sola vez, al desplegar la función de Caja a producción. Después de correrlo, los administradores que ya tengan sesión iniciada no ven el cambio hasta cerrar sesión y volver a entrar (los permisos van en el JWT, vigente 1 día).
+
+---
+
+## migrate-add-view-product-cost-permission.js
+
+**Qué hace:** Agrega el permiso `VIEW_PRODUCT_COST` a los roles administradores **existentes** — gatea la columna de costo en la ficha de producto y en la pestaña "Fuera de inventario" (Productos), pero los roles creados antes de que ese permiso existiera no lo tienen. Las empresas nuevas ya lo reciben automáticamente vía `PERMISSIONS_MOCK`.
+
+Alcance: cualquier rol que ya tenga `USER_AND_ROLE` (se usa como marcador de "es rol de administrador", sin depender del nombre del rol).
+
+```
+node scripts/migrate-add-view-product-cost-permission.js --dry-run   # solo muestra qué haría
+node scripts/migrate-add-view-product-cost-permission.js             # aplica los cambios
+```
+
+**Cuándo usarlo:** Una sola vez, al desplegar la pestaña "Fuera de inventario". Después de correrlo, los administradores que ya tengan sesión iniciada no ven el cambio hasta cerrar sesión y volver a entrar (los permisos van en el JWT, vigente 1 día).

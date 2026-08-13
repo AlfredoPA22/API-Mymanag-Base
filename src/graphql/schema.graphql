@@ -965,6 +965,7 @@ type Query {
   reportCuentasCobrar(startDate: Date, endDate: Date): [SaleOrder]
   generalData(startDate: Date, endDate: Date): GeneralData
   listSaleOrderByProduct(productId: ID!): [SaleOrderByProduct]
+  listCustomSaleOrderDetail: [SaleOrderByProduct]
 
   listSalePayment: [SalePayment]
   listSalePaymentBySaleOrder(saleOrderId: String!): [SalePayment]
