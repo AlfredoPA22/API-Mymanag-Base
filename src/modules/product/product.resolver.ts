@@ -130,7 +130,7 @@ export const productResolver = {
       context: any
     ): Promise<IProduct> {
       checkAbility(context.ability, "search", "Product");
-      return await searchProduct(context.user.companyId, args.serial);
+      return await searchProduct(context.user.companyId, args.serial, args.exact);
     },
     async generalData(
       _: any,

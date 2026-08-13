@@ -282,7 +282,11 @@ export const listProductInventoryByProduct = async (
 
 export const searchProduct = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
-  argument: string
+  argument: string,
+  // Al leer un serial (lector físico + Enter, o cámara) el dato tiene que
+  // matchear un serial exacto — nada de caer al fallback difuso de
+  // nombre/código de acá abajo, que agarraría cualquier texto parecido.
+  exact?: boolean
 ): Promise<IProduct> => {
   const foundProductSerial: IProductSerial | null = await ProductSerial.findOne(
     {
@@ -306,6 +310,10 @@ export const searchProduct = async (
     }
 
     return product;
+  }
+
+  if (exact) {
+    throw new Error("No se encontró ningún producto con ese serial");
   }
 
   const product: IProduct | null = await Product.findOne({
