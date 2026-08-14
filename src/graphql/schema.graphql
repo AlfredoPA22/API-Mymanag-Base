@@ -532,6 +532,7 @@ type SaleOrder {
   source: String
   currency: String
   exchange_rate: Float
+  warehouse: Warehouse
 }
 
 input SaleOrderInput {
@@ -540,6 +541,7 @@ input SaleOrderInput {
   payment_method: String!
   contado_payment_method: String
   currency: String
+  warehouse: String
 }
 
 input FilterSaleOrderInput {
@@ -944,7 +946,8 @@ type Query {
   productReport(filterProductInput: FilterProductInput!): [Product]
   listProductSerialByProduct(productId: String!): [ProductSerial]
   listProductInventoryByProduct(productId: String!): [ProductInventory]
-  searchProduct(serial: String!, exact: Boolean): Product
+  searchProduct(serial: String!, exact: Boolean, warehouseId: String): Product
+  findProductSerialBySerial(serial: String!): ProductSerial
 
   listClient: [Client]
 

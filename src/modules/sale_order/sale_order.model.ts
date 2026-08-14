@@ -35,6 +35,16 @@ const saleOrderSchema = new mongoose.Schema(
     source: { type: String, default: "manual" },
     currency: { type: String, enum: ["Bs", "$", null], default: null },
     exchange_rate: { type: Number, default: null },
+    // Almacén desde el que se despacha toda la venta, elegido una sola vez al
+    // crear la nota. Opcional/null a propósito: las notas ya en Borrador antes
+    // de este campo lo mantienen así y siguen con el flujo viejo (almacén por
+    // línea) hasta que se aprueben o cancelen.
+    warehouse: {
+      type: MongooseSchema.Types.ObjectId,
+      ref: "warehouse",
+      required: false,
+      default: null,
+    },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",

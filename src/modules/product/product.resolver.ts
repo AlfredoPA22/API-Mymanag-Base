@@ -7,6 +7,7 @@ import {
   listProductSerialByProduct,
   update,
   searchProduct,
+  findProductSerialBySerial,
   generalData,
   findProduct,
   findAllWithParams,
@@ -130,7 +131,20 @@ export const productResolver = {
       context: any
     ): Promise<IProduct> {
       checkAbility(context.ability, "search", "Product");
-      return await searchProduct(context.user.companyId, args.serial, args.exact);
+      return await searchProduct(
+        context.user.companyId,
+        args.serial,
+        args.exact,
+        args.warehouseId
+      );
+    },
+    async findProductSerialBySerial(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IProductSerial | null> {
+      checkAbility(context.ability, "search", "Product");
+      return await findProductSerialBySerial(context.user.companyId, args.serial);
     },
     async generalData(
       _: any,

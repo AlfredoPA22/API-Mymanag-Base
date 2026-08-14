@@ -344,7 +344,10 @@ export const searchProduct = async (
   // Al leer un serial (lector físico + Enter, o cámara) el dato tiene que
   // matchear un serial exacto — nada de caer al fallback difuso de
   // nombre/código de acá abajo, que agarraría cualquier texto parecido.
-  exact?: boolean
+  exact?: boolean,
+  // Almacén de cabecera de la nota (si tiene) — si el serial escaneado
+  // pertenece a otro almacén, se corta acá antes de crear ningún detalle.
+  warehouseId?: string
 ): Promise<IProduct> => {
   const foundProductSerial: IProductSerial | null = await ProductSerial.findOne(
     {
@@ -366,6 +369,13 @@ export const searchProduct = async (
     }
     if (exact && foundProductSerial.status === productSerialStatus.BORRADOR) {
       throw new Error("Este serial no está disponible");
+    }
+    if (
+      exact &&
+      warehouseId &&
+      foundProductSerial.warehouse.toString() !== warehouseId
+    ) {
+      throw new Error("Este serial pertenece a otro almacén");
     }
 
     const product = await Product.findOne({
@@ -407,6 +417,24 @@ export const searchProduct = async (
   }
 
   return product;
+};
+
+// Dado solo el string de un serial, devuelve el ProductSerial con su
+// almacén — usado por el frontend cuando searchProduct/addSerialToOrder
+// rechazan un serial por estar en otro almacén, para saber cuál es ese
+// almacén y ofrecer transferirlo (no hay otra forma de saberlo, ya que un
+// error de GraphQL solo trae un mensaje de texto).
+export const findProductSerialBySerial = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  serial: string
+): Promise<IProductSerial | null> => {
+  return await ProductSerial.findOne({
+    company: companyId,
+    serial,
+  })
+    .populate("warehouse")
+    .populate("product")
+    .lean<IProductSerial | null>();
 };
 
 export const generalData = async (

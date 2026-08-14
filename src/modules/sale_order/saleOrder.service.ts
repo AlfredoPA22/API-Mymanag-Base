@@ -413,8 +413,9 @@ export const create = async (
       created_by: userId,
       currency: orderCurrency,
       exchange_rate: orderExchangeRate,
+      warehouse: createSaleOrderInput.warehouse ?? null,
     })
-  ).populate("client");
+  ).populate(["client", "warehouse"]);
 
   await increment(companyId, codeType.SALE_ORDER);
 
@@ -505,6 +506,14 @@ export const createDetail = async (
   }
 
   if (foundProduct.stock_type === stockType.INDIVIDUAL) {
+    // Si la nota ya tiene un almacén de cabecera (elegido al crearla), es la
+    // autoridad real — se ignora lo que mande el request para que no se
+    // pueda desalinear. Las notas viejas (sin almacén de cabecera) siguen
+    // exigiendo elegirlo por línea, como siempre.
+    if (foundOrder.warehouse) {
+      createSaleOrderDetailInput.warehouse = foundOrder.warehouse;
+    }
+
     if (!createSaleOrderDetailInput.warehouse) {
       throw new Error("Seleccione un almacén");
     }
@@ -770,6 +779,22 @@ export const addSerialToOrder = async (
     );
   } else if (foundProductSerial.status === productSerialStatus.BORRADOR) {
     throw new Error("El serial no esta disponible");
+  }
+
+  // Si la nota tiene almacén de cabecera, el serial elegido tiene que ser de
+  // ese mismo almacén — si no, el vendedor estaría despachando físicamente
+  // desde un lugar distinto al que dice la nota. Notas viejas (sin almacén
+  // de cabecera) no tienen esta restricción.
+  const foundSaleOrder = await SaleOrder.findOne({
+    _id: foundSaleOrderDetail.sale_order,
+    company: companyId,
+  });
+
+  if (
+    foundSaleOrder?.warehouse &&
+    foundProductSerial.warehouse.toString() !== foundSaleOrder.warehouse.toString()
+  ) {
+    throw new Error("Este serial pertenece a otro almacén");
   }
 
   await ProductSerial.updateOne(
