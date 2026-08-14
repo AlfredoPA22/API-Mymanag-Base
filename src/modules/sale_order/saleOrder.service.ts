@@ -74,6 +74,7 @@ export const findAll = async (
   return await SaleOrder.find(filter)
     .sort({ date: -1 })
     .populate("client")
+    .populate("warehouse")
     .populate("created_by")
     .lean<ISaleOrder[]>();
 };
@@ -107,6 +108,7 @@ export const listSaleOrderByProduct = async (
     ...(foundUser.is_global ? {} : { created_by: userId }),
   })
     .populate("client")
+    .populate("warehouse")
     .populate("created_by")
     .lean<ISaleOrder[]>();
 
@@ -164,6 +166,7 @@ export const listCustomSaleOrderDetail = async (
     ...(foundUser.is_global ? {} : { created_by: userId }),
   })
     .populate("client")
+    .populate("warehouse")
     .populate("created_by")
     .lean<ISaleOrder[]>();
 
@@ -235,6 +238,7 @@ export const saleOrderReport = async (
 
   const saleOrders = await SaleOrder.find(query)
     .populate("client")
+    .populate("warehouse")
     .populate("company")
     .lean<ISaleOrder[]>();
 
@@ -271,6 +275,7 @@ export const findSaleOrder = async (
     company: companyId,
   })
     .populate("client")
+    .populate("warehouse")
     .populate("company")
     .lean<ISaleOrder | null>();
 
@@ -622,7 +627,7 @@ export const createDetail = async (
     _id: newSaleOrderDetail._id,
     company: companyId,
   })
-    .populate("sale_order")
+    .populate({ path: "sale_order", populate: ["client", "warehouse"] })
     .populate("product")
     .lean<ISaleOrderDetail | null>();
 
@@ -689,7 +694,7 @@ export const createCustomDetail = async (
     _id: newSaleOrderDetail._id,
     company: companyId,
   })
-    .populate("sale_order")
+    .populate({ path: "sale_order", populate: ["client", "warehouse"] })
     .lean<ISaleOrderDetail | null>();
 
   if (!foundSaleOrderDetail) {
@@ -1433,6 +1438,7 @@ export const updateSaleOrderDiscount = async (
 
   return await SaleOrder.findOne({ _id: saleOrderId, company: companyId })
     .populate("client")
+    .populate("warehouse")
     .lean();
 };
 
@@ -1474,6 +1480,7 @@ export const updateSaleOrderPaymentMethod = async (
 
   return await SaleOrder.findOne({ _id: saleOrderId, company: companyId })
     .populate("client")
+    .populate("warehouse")
     .lean();
 };
 
@@ -1849,6 +1856,7 @@ export const reportCuentasCobrar = async (
 
   return await SaleOrder.find(matchStage)
     .populate("client")
+    .populate("warehouse")
     .populate("created_by")
     .sort({ date: -1 })
     .lean<ISaleOrder[]>();
@@ -1889,6 +1897,7 @@ export const reportSaleOrderByMonth = async (
 
   return await SaleOrder.find(filter)
     .populate("client")
+    .populate("warehouse")
     .populate("created_by")
     .sort({ date: -1 })
     .limit(10)

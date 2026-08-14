@@ -589,6 +589,13 @@ export const approveProductTransfer = async (
             inv.reserved -= usage.quantity;
             if (inv.reserved < 0) inv.reserved = 0;
             inv.transferred += usage.quantity;
+            // Mismo criterio que al aprobar una venta (saleOrder.service.ts):
+            // si ya no queda nada libre ni reservado en este lote/almacén, se
+            // marca Sin stock — si no, el lote queda mostrando "Disponible"
+            // aunque ya se transfirió todo afuera.
+            if (inv.reserved === 0 && inv.available === 0) {
+              inv.status = productInventoryStatus.SIN_STOCK;
+            }
             await inv.save();
           }
         }
@@ -607,6 +614,9 @@ export const approveProductTransfer = async (
           const moveQty = Math.min(inv.reserved, remaining);
           inv.reserved -= moveQty;
           inv.transferred += moveQty;
+          if (inv.reserved === 0 && inv.available === 0) {
+            inv.status = productInventoryStatus.SIN_STOCK;
+          }
           await inv.save();
           remaining -= moveQty;
         }

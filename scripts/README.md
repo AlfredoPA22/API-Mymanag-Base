@@ -115,3 +115,16 @@ node scripts/migrate-enable-pos-sale-mode.js             # aplica los cambios
 ```
 
 **Cuándo usarlo:** Una sola vez, para que el modo POS quede disponible de entrada en todas las empresas ya existentes (las nuevas nacen con el campo en `false`, así que no las toca el default — si también se quiere eso por default habría que cambiar el schema, no este script).
+
+---
+
+## migrate-fix-inventory-sin-stock-status.js
+
+**Qué hace:** Corrige lotes de `product_inventory` que quedaron marcados `"Disponible"` con `available: 0` y `reserved: 0` — pasa a `"Sin stock"`. Repara el bug de `approveProductTransfer`, que nunca actualizaba el estado del lote de origen al transferir todo su stock afuera (a diferencia de aprobar una venta, que sí lo hacía). El código ya está corregido para transferencias nuevas; esto solo repara los lotes que quedaron mal antes del fix.
+
+```
+node scripts/migrate-fix-inventory-sin-stock-status.js --dry-run   # solo muestra qué haría
+node scripts/migrate-fix-inventory-sin-stock-status.js             # aplica los cambios
+```
+
+**Cuándo usarlo:** Una sola vez, para limpiar el estado mostrado en el detalle de inventario de cada producto (columna "Estado"). No afecta cálculos de stock (esos ya suman `available`/`reserved` correctamente sin importar el `status`), solo el badge que se ve en pantalla.
