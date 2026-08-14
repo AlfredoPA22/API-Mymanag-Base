@@ -19,6 +19,10 @@ export interface IProduct {
   store_price?: number | null;
   store_discount_price?: number | null;
   stock: number;
+  // Solo para stock_type INDIVIDUAL: cuánto de `stock` está realmente libre
+  // para vender ahora mismo (stock ya cuenta lo reservado por otras ventas
+  // en Borrador). Se calcula al listar, no se guarda — ver findAll().
+  available_stock?: number;
   last_cost_price: number;
   category: ICategory;
   brand: IBrand;

@@ -49,13 +49,71 @@ import { Category } from "../category/category.model";
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ): Promise<IProduct[]> => {
-  return await Product.find({
+  const products = await Product.find({
     company: companyId,
   })
     .populate("category")
     .populate("brand")
     .populate("company")
     .lean<IProduct[]>();
+
+  return await attachAvailableStock(companyId, products);
+};
+
+// `stock` (el contador agregado en Product) no baja apenas algo queda
+// reservado por otra venta en Borrador — para Individual porque
+// ProductInventory.reserved/available cambian pero Product.stock no se toca
+// hasta aprobar; para Serializado porque un serial pasa a status Reservado
+// (ver addSerialToOrder) sin que Product.stock se decremente hasta aprobar.
+// En ambos casos, "stock" puede seguir mostrando como libre algo que en
+// realidad ya está comprometido en otra nota. Se calcula el disponible real
+// en una sola agregación por tipo (no una query por producto) y se adjunta
+// como available_stock, sin tocar `stock`.
+const attachAvailableStock = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  products: IProduct[]
+): Promise<IProduct[]> => {
+  const companyObjectId = new MongooseTypes.ObjectId(companyId.toString());
+  const individualIds = products
+    .filter((p) => p.stock_type === stockType.INDIVIDUAL)
+    .map((p) => p._id);
+  const serializadoIds = products
+    .filter((p) => p.stock_type === stockType.SERIALIZADO)
+    .map((p) => p._id);
+
+  if (individualIds.length === 0 && serializadoIds.length === 0) return products;
+
+  const [availableByInventory, availableBySerial] = await Promise.all([
+    individualIds.length === 0
+      ? []
+      : ProductInventory.aggregate([
+          { $match: { company: companyObjectId, product: { $in: individualIds } } },
+          { $group: { _id: "$product", available: { $sum: "$available" } } },
+        ]),
+    serializadoIds.length === 0
+      ? []
+      : ProductSerial.aggregate([
+          {
+            $match: {
+              company: companyObjectId,
+              product: { $in: serializadoIds },
+              status: productSerialStatus.DISPONIBLE,
+            },
+          },
+          { $group: { _id: "$product", available: { $sum: 1 } } },
+        ]),
+  ]);
+
+  const availableMap = new Map<string, number>();
+  for (const row of [...availableByInventory, ...availableBySerial]) {
+    availableMap.set(row._id.toString(), row.available);
+  }
+
+  return products.map((p) =>
+    p.stock_type === stockType.INDIVIDUAL || p.stock_type === stockType.SERIALIZADO
+      ? { ...p, available_stock: availableMap.get(p._id.toString()) ?? 0 }
+      : p
+  );
 };
 
 export const listLowStockProduct = async (
@@ -296,6 +354,20 @@ export const searchProduct = async (
   );
 
   if (foundProductSerial) {
+    // Un serial exacto solo sirve para agregar/seleccionar si de verdad está
+    // libre — si ya está Vendido/Reservado/Borrador, no tiene sentido dejar
+    // pasar el producto (addSerialToOrder lo va a rechazar igual, pero para
+    // entonces el detalle ya se creó sin serial).
+    if (exact && foundProductSerial.status === productSerialStatus.VENDIDO) {
+      throw new Error("Este serial ya fue vendido");
+    }
+    if (exact && foundProductSerial.status === productSerialStatus.RESERVADO) {
+      throw new Error("Este serial está reservado en otra venta");
+    }
+    if (exact && foundProductSerial.status === productSerialStatus.BORRADOR) {
+      throw new Error("Este serial no está disponible");
+    }
+
     const product = await Product.findOne({
       _id: foundProductSerial.product,
       company: companyId,

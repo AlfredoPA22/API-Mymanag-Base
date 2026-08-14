@@ -315,6 +315,7 @@ type Product {
   store_price: Float
   store_discount_price: Float
   stock: Int
+  available_stock: Int
   last_cost_price: Float
   brand: Brand
   category: Category
