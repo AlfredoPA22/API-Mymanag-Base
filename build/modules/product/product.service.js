@@ -243,7 +243,11 @@ const listProductInventoryByProduct = async (companyId, productId) => {
     return listProduct;
 };
 exports.listProductInventoryByProduct = listProductInventoryByProduct;
-const searchProduct = async (companyId, argument) => {
+const searchProduct = async (companyId, argument, 
+// Al leer un serial (lector físico + Enter, o cámara) el dato tiene que
+// matchear un serial exacto — nada de caer al fallback difuso de
+// nombre/código de acá abajo, que agarraría cualquier texto parecido.
+exact) => {
     const foundProductSerial = await product_serial_model_1.ProductSerial.findOne({
         company: companyId,
         serial: argument,
@@ -261,6 +265,9 @@ const searchProduct = async (companyId, argument) => {
             throw new Error("Producto no encontrado");
         }
         return product;
+    }
+    if (exact) {
+        throw new Error("No se encontró ningún producto con ese serial");
     }
     const product = await product_model_1.Product.findOne({
         company: companyId,

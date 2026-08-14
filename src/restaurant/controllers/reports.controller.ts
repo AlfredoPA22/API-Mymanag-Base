@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import Order, { METODOS_PAGO } from "../models/Order";
-import { startOfDay, endOfDay, parseDateQuery } from "../utils/date";
+import { businessDayBounds, parseDateQuery } from "../utils/date";
 
 export async function dailyReport(req: Request, res: Response) {
   const { fecha } = req.query;
   const day = parseDateQuery(fecha);
-  const range = { $gte: startOfDay(day), $lte: endOfDay(day) };
+  const { start, end } = businessDayBounds(day, !fecha);
+  const range = { $gte: start, $lte: end };
 
   const todasLasFichas = await Order.find({ createdAt: range });
   const orders = todasLasFichas.filter((o) => o.estado !== "cancelado");
@@ -37,7 +38,7 @@ export async function dailyReport(req: Request, res: Response) {
   const platosVendidos = Array.from(platosMap.values()).sort((a, b) => b.cantidad - a.cantidad);
 
   res.json({
-    fecha: startOfDay(day),
+    fecha: start,
     totalVentas,
     cantidadFichas,
     porMetodoPago,

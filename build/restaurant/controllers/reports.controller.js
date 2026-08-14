@@ -39,7 +39,8 @@ const date_1 = require("../utils/date");
 async function dailyReport(req, res) {
     const { fecha } = req.query;
     const day = (0, date_1.parseDateQuery)(fecha);
-    const range = { $gte: (0, date_1.startOfDay)(day), $lte: (0, date_1.endOfDay)(day) };
+    const { start, end } = (0, date_1.businessDayBounds)(day, !fecha);
+    const range = { $gte: start, $lte: end };
     const todasLasFichas = await Order_1.default.find({ createdAt: range });
     const orders = todasLasFichas.filter((o) => o.estado !== "cancelado");
     const canceladas = todasLasFichas.filter((o) => o.estado === "cancelado");
@@ -63,7 +64,7 @@ async function dailyReport(req, res) {
     }
     const platosVendidos = Array.from(platosMap.values()).sort((a, b) => b.cantidad - a.cantidad);
     res.json({
-        fecha: (0, date_1.startOfDay)(day),
+        fecha: start,
         totalVentas,
         cantidadFichas,
         porMetodoPago,

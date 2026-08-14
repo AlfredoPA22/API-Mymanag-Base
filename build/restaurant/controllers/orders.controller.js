@@ -39,14 +39,18 @@ exports.updateOrderEstado = updateOrderEstado;
 const Order_1 = __importStar(require("../models/Order"));
 const socket_1 = require("../socket");
 const date_1 = require("../utils/date");
-const NUMERO_FICHA_INICIAL = 1000;
+// Numeración de fichas: se recicla del 1 al 50 dentro del mismo día de negocio
+// (que arranca a la 1am, ver businessDayBounds). Si en el día hay más de 50
+// fichas, la ficha 51 vuelve a llamarse "1".
+const MAX_TICKETS_POR_DIA = 50;
 async function listOrders(req, res) {
     const { estado, fecha } = req.query;
     const filter = {};
     if (estado)
         filter.estado = estado;
     const day = (0, date_1.parseDateQuery)(fecha);
-    filter.createdAt = { $gte: (0, date_1.startOfDay)(day), $lte: (0, date_1.endOfDay)(day) };
+    const { start, end } = (0, date_1.businessDayBounds)(day, !fecha);
+    filter.createdAt = { $gte: start, $lte: end };
     const orders = await Order_1.default.find(filter).sort({ numero: 1 });
     res.json(orders);
 }
@@ -56,21 +60,19 @@ async function createOrder(req, res) {
         return res.status(400).json({ message: "tipo, metodoPago e items son requeridos" });
     }
     const total = items.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
-    const today = new Date();
+    const { start, end } = (0, date_1.businessDayBounds)(new Date(), true);
     const count = await Order_1.default.countDocuments({
-        createdAt: { $gte: (0, date_1.startOfDay)(today), $lte: (0, date_1.endOfDay)(today) },
+        createdAt: { $gte: start, $lte: end },
     });
     const order = await Order_1.default.create({
-        numero: NUMERO_FICHA_INICIAL + count,
+        numero: (count % MAX_TICKETS_POR_DIA) + 1,
         tipo,
         mesa: tipo === "mesa" && mesa ? mesa : undefined,
         items,
         metodoPago,
         total,
     });
-    const io = (0, socket_1.getRestaurantIO)();
-    console.log(`[restaurant] emit order:new — clientes conectados en esta instancia: ${io.engine.clientsCount}`);
-    io.emit("order:new", order);
+    (0, socket_1.getRestaurantIO)().emit("order:new", order);
     res.status(201).json(order);
 }
 async function updateOrderEstado(req, res) {
@@ -81,8 +83,6 @@ async function updateOrderEstado(req, res) {
     const order = await Order_1.default.findByIdAndUpdate(req.params.id, { estado }, { new: true });
     if (!order)
         return res.status(404).json({ message: "Ficha no encontrada" });
-    const io = (0, socket_1.getRestaurantIO)();
-    console.log(`[restaurant] emit order:updated — clientes conectados en esta instancia: ${io.engine.clientsCount}`);
-    io.emit("order:updated", order);
+    (0, socket_1.getRestaurantIO)().emit("order:updated", order);
     res.json(order);
 }

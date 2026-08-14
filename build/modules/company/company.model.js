@@ -41,6 +41,9 @@ const companySchema = new mongoose_1.default.Schema({
     store_enabled: { type: Boolean, default: false },
     store_banner_image: { type: String, default: "" },
     store_theme: { type: storeThemeSchema, default: null },
+    // Segunda forma de armar una venta (grilla de productos tipo POS) —
+    // opt-in por empresa, el formulario clásico sigue siendo el default.
+    pos_sale_mode_enabled: { type: Boolean, default: false },
     // Legacy fields (kept for MyManag backward compatibility)
     plan: {
         type: String,

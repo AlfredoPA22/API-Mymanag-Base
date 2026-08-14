@@ -29,6 +29,10 @@ exports.saleOrderResolver = {
         async listSaleOrderByProduct(_, args, context) {
             return await (0, saleOrder_service_1.listSaleOrderByProduct)(context.user.companyId, context.user.id, args.productId);
         },
+        async listCustomSaleOrderDetail(_, args, context) {
+            (0, ability_1.checkAbility)(context.ability, "list", "Product");
+            return await (0, saleOrder_service_1.listCustomSaleOrderDetail)(context.user.companyId, context.user.id);
+        },
         async findSaleOrder(_, args, context) {
             (0, ability_1.checkAnyAbility)(context.ability, [
                 ["read", "Sale"],

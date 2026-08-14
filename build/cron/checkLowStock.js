@@ -59,9 +59,10 @@ const checkLowStock = async () => {
     }
 };
 exports.checkLowStock = checkLowStock;
-// Ejecutar todos los días a las 08:00 am
+// Lunes y jueves a las 08:00 am — antes era todos los días, mucho ruido de
+// correo para algo que no cambia tan seguido.
 const initLowStockCron = () => {
-    node_cron_1.default.schedule("0 8 * * *", async () => {
+    node_cron_1.default.schedule("0 8 * * 1,4", async () => {
         console.log("🕗 Ejecutando verificación de stock bajo...");
         await (0, exports.checkLowStock)();
     }, {

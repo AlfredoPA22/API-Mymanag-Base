@@ -9,6 +9,7 @@ const menuItems_routes_1 = __importDefault(require("./routes/menuItems.routes"))
 const orders_routes_1 = __importDefault(require("./routes/orders.routes"));
 const reports_routes_1 = __importDefault(require("./routes/reports.routes"));
 const socket_1 = require("./socket");
+const autoCloseOrders_1 = require("./cron/autoCloseOrders");
 require("./db"); // abre la conexión propia a Mongo al importarse
 // Monta el sistema de fichas del restaurant dentro de una app de Express ya
 // existente, bajo el prefijo /restaurant-api, reusando el mismo httpServer
@@ -20,5 +21,6 @@ function mountRestaurantApi(app, httpServer, corsOrigins) {
     app.use("/restaurant-api/orders", orders_routes_1.default);
     app.use("/restaurant-api/reports", reports_routes_1.default);
     (0, socket_1.initRestaurantSocket)(httpServer, corsOrigins);
+    (0, autoCloseOrders_1.initRestaurantAutoCloseCron)();
     console.log("[restaurant] API montada en /restaurant-api");
 }

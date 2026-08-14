@@ -109,6 +109,7 @@ type Company {
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreTheme
+  pos_sale_mode_enabled: Boolean
   plan: String
   status: String
   trial_expires_at: String
@@ -148,6 +149,7 @@ input UpdateCompanyInput {
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreThemeInput
+  pos_sale_mode_enabled: Boolean
 }
 
 input AdjustSubscriptionInput {
@@ -794,6 +796,7 @@ type CompanyWithPayment {
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreTheme
+  pos_sale_mode_enabled: Boolean
   plan: String
   status: String
   trial_expires_at: String
@@ -940,7 +943,7 @@ type Query {
   productReport(filterProductInput: FilterProductInput!): [Product]
   listProductSerialByProduct(productId: String!): [ProductSerial]
   listProductInventoryByProduct(productId: String!): [ProductInventory]
-  searchProduct(serial: String!): Product
+  searchProduct(serial: String!, exact: Boolean): Product
 
   listClient: [Client]
 
@@ -965,6 +968,7 @@ type Query {
   reportCuentasCobrar(startDate: Date, endDate: Date): [SaleOrder]
   generalData(startDate: Date, endDate: Date): GeneralData
   listSaleOrderByProduct(productId: ID!): [SaleOrderByProduct]
+  listCustomSaleOrderDetail: [SaleOrderByProduct]
 
   listSalePayment: [SalePayment]
   listSalePaymentBySaleOrder(saleOrderId: String!): [SalePayment]

@@ -58,7 +58,7 @@ exports.productResolver = {
         },
         async searchProduct(_, args, context) {
             (0, ability_1.checkAbility)(context.ability, "search", "Product");
-            return await (0, product_service_1.searchProduct)(context.user.companyId, args.serial);
+            return await (0, product_service_1.searchProduct)(context.user.companyId, args.serial, args.exact);
         },
         async generalData(_, args, context) {
             (0, ability_1.checkAbility)(context.ability, "read", "GeneralData");

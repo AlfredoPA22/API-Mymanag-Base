@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getStoreOrderStats = exports.addManySerialsToOrder = exports.reportSaleOrderByMonth = exports.reportCuentasCobrar = exports.reportMonthlySales = exports.reportSaleOrderByProduct = exports.reportSaleOrderByCategory = exports.reportSaleOrderBySeller = exports.reportSaleOrderByClient = exports.updateSaleOrderPaymentMethod = exports.updateSaleOrderDiscount = exports.updateSaleOrderDetail = exports.approve = exports.deleteSaleOrder = exports.deleteProductToOrder = exports.deleteSerialToOrder = exports.addSerialToOrder = exports.decrementSerials = exports.incrementSerials = exports.createCustomDetail = exports.createDetail = exports.create = exports.findQrPaymentInfoBySaleOrder = exports.findSaleOrderToPDF = exports.findSaleOrder = exports.findDetail = exports.saleOrderReport = exports.listSaleOrderByProduct = exports.findAll = void 0;
+exports.getStoreOrderStats = exports.addManySerialsToOrder = exports.reportSaleOrderByMonth = exports.reportCuentasCobrar = exports.reportMonthlySales = exports.reportSaleOrderByProduct = exports.reportSaleOrderByCategory = exports.reportSaleOrderBySeller = exports.reportSaleOrderByClient = exports.updateSaleOrderPaymentMethod = exports.updateSaleOrderDiscount = exports.updateSaleOrderDetail = exports.approve = exports.deleteSaleOrder = exports.deleteProductToOrder = exports.deleteSerialToOrder = exports.addSerialToOrder = exports.decrementSerials = exports.incrementSerials = exports.createCustomDetail = exports.createDetail = exports.create = exports.findQrPaymentInfoBySaleOrder = exports.findSaleOrderToPDF = exports.findSaleOrder = exports.findDetail = exports.saleOrderReport = exports.listCustomSaleOrderDetail = exports.listSaleOrderByProduct = exports.findAll = void 0;
 const mongoose_1 = require("mongoose");
 const orderType_enum_1 = require("../../utils/enums/orderType.enum");
 const productInventoryStatus_enum_1 = require("../../utils/enums/productInventoryStatus.enum");
@@ -87,6 +87,49 @@ const listSaleOrderByProduct = async (companyId, userId, productId) => {
     });
 };
 exports.listSaleOrderByProduct = listSaleOrderByProduct;
+// Ítems de venta que NO están respaldados por un Product (product: null) —
+// mercadería que la empresa vendió sin tenerla en su catálogo/inventario.
+// Mismo patrón que listSaleOrderByProduct pero filtrando por "sin producto"
+// en vez de por un productId puntual.
+const listCustomSaleOrderDetail = async (companyId, userId) => {
+    const foundUser = await user_model_1.User.findOne({
+        _id: userId,
+        company: companyId,
+    });
+    if (!foundUser) {
+        throw new Error("Usuario no encontrado");
+    }
+    const details = await sale_order_detail_model_1.SaleOrderDetail.find({
+        company: companyId,
+        product: null,
+    });
+    if (!details.length)
+        return [];
+    const saleOrderIds = details.map((d) => d.sale_order);
+    const saleOrders = await sale_order_model_1.SaleOrder.find({
+        _id: { $in: saleOrderIds },
+        company: companyId,
+        ...(foundUser.is_global ? {} : { created_by: userId }),
+    })
+        .populate("client")
+        .populate("created_by")
+        .lean();
+    const allowedOrderIds = new Set(saleOrders.map((so) => so._id.toString()));
+    const result = details
+        .filter((detail) => allowedOrderIds.has(detail.sale_order.toString()))
+        .map((detail) => {
+        const order = saleOrders.find((so) => so._id.toString() === detail.sale_order.toString());
+        return {
+            saleOrder: order,
+            saleOrderDetail: detail,
+        };
+    });
+    return result.sort((a, b) => {
+        return (new Date(b.saleOrder.date).getTime() -
+            new Date(a.saleOrder.date).getTime());
+    });
+};
+exports.listCustomSaleOrderDetail = listCustomSaleOrderDetail;
 const saleOrderReport = async (companyId, userId, filterSaleOrderInput) => {
     const foundUser = await user_model_1.User.findOne({
         _id: userId,
