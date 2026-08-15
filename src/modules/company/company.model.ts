@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { companyStatus } from "../../utils/enums/companyStatus.enum";
 import { systemType } from "../../utils/enums/systemType.enum";
+import { paymentExchangeRateSource } from "../../utils/enums/paymentExchangeRateSource.enum";
 
 const subscriptionSchema = new mongoose.Schema(
   {
@@ -43,6 +44,14 @@ const companySchema = new mongoose.Schema(
     image: { type: String, default: "" },
     currency: { type: String, default: "Bs" },
     exchange_rate: { type: Number },
+    // Con qué tipo de cambio se convierte un pago hecho en la moneda
+    // alterna: el vigente al momento del pago, o el que quedó congelado en
+    // la nota que se está pagando. Ver enum para más contexto.
+    payment_exchange_rate_source: {
+      type: String,
+      enum: Object.values(paymentExchangeRateSource),
+      default: paymentExchangeRateSource.ACTUAL,
+    },
     store_enabled: { type: Boolean, default: false },
     store_banner_image: { type: String, default: "" },
     store_theme: { type: storeThemeSchema, default: null },

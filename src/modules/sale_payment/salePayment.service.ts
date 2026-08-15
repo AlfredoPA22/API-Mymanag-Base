@@ -17,6 +17,7 @@ import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
 import { round2, toOrderCurrency as toOrderCurrencyRaw } from "../../utils/money";
+import { paymentExchangeRateSource } from "../../utils/enums/paymentExchangeRateSource.enum";
 import { createNotification } from "../notification/notification.service";
 
 // Igual que toOrderCurrency() de utils/money.ts, pero redondeando el
@@ -189,17 +190,27 @@ export const createPayment = async (
   // la moneda alterna (Bs, con empresa en $) — un pago en $ no necesita
   // tipo de cambio guardado en ningún lado.
   const orderCurrency = foundSaleOrder.currency ?? company.currency;
+
+  // Qué tipo de cambio usar para convertir este pago: el vigente ahora, o
+  // el que quedó congelado en la nota que se está pagando (configurable
+  // por empresa — ver enum). Si la nota no tiene uno propio (dato viejo,
+  // de antes de este campo), se cae al de la empresa.
+  const effectiveExchangeRate =
+    company.payment_exchange_rate_source === paymentExchangeRateSource.NOTA
+      ? foundSaleOrder.exchange_rate ?? company.exchange_rate
+      : company.exchange_rate;
+
   let paymentCurrency: string | null = null;
   let paymentExchangeRate: number | null = null;
   if (salePaymentInput.currency && salePaymentInput.currency !== company.currency) {
     if (company.currency !== "$" || salePaymentInput.currency !== "Bs") {
       throw new Error("Esta empresa no permite registrar pagos en esa moneda.");
     }
-    if (!company.exchange_rate || company.exchange_rate <= 0) {
+    if (!effectiveExchangeRate || effectiveExchangeRate <= 0) {
       throw new Error("Configura el tipo de cambio de la empresa en Ajustes antes de registrar un pago en Bs.");
     }
     paymentCurrency = "Bs";
-    paymentExchangeRate = company.exchange_rate;
+    paymentExchangeRate = effectiveExchangeRate;
   }
 
   const existingPayments = await SalePayment.find({
@@ -221,7 +232,7 @@ export const createPayment = async (
   const newPaymentInOrderCurrency = toOrderCurrency(
     salePaymentInput.amount,
     effectivePaymentCurrency,
-    paymentExchangeRate ?? company.exchange_rate,
+    paymentExchangeRate ?? effectiveExchangeRate,
     company.currency,
     orderCurrency
   );

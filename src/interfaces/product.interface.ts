@@ -84,6 +84,9 @@ export interface IPreviewProductImport {
   stock_type: string;
   min_stock: number;
   max_stock: number;
+  show_in_store: boolean;
+  store_price: number | null;
+  store_discount_price: number | null;
   isValid: boolean;
   errors: string[];
 }

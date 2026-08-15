@@ -28,6 +28,7 @@ import {
   subtractCount as subtractCountCategory,
 } from "../category/category.service";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
+import { CodeGenerator } from "../codeGenerator/codeGenerator.model";
 import { PurchaseOrderDetail } from "../purchase_order/purchase_order_detail.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
@@ -203,35 +204,42 @@ export const findAllWithParams = async (
 
   if (!warehouseId) return products;
 
-  // Mapear productos con stock específico en ese almacén
-  const updatedProducts = await Promise.all(
-    products.map(async (product) => {
-      // Stock de inventario (no serializados)
-      const inventory = await ProductInventory.findOne({
-        company: companyId,
-        product: product._id,
-        warehouse: warehouseId,
-      });
+  const productIds = products.map((p) => p._id);
 
-      // Stock de productos serializados (solo los DISPONIBLES)
-      const serialCount = await ProductSerial.countDocuments({
-        company: companyId,
-        product: product._id,
-        warehouse: warehouseId,
-        status: productSerialStatus.DISPONIBLE, // Solo contar seriales DISPONIBLES
-      });
+  // Disponible por producto en ese almacén: se suma porque puede haber
+  // varios ProductInventory por almacén/producto (uno por lote de compra
+  // o por transferencia aprobada) — un solo findOne agarraría el lote
+  // equivocado, igual que el bug ya corregido en la búsqueda de POS.
+  const [availableByInventory, availableBySerial] = await Promise.all([
+    ProductInventory.aggregate([
+      { $match: { company: companyId, product: { $in: productIds }, warehouse: warehouseId } },
+      { $group: { _id: "$product", available: { $sum: "$available" } } },
+    ]),
+    ProductSerial.aggregate([
+      {
+        $match: {
+          company: companyId,
+          product: { $in: productIds },
+          warehouse: warehouseId,
+          status: productSerialStatus.DISPONIBLE,
+        },
+      },
+      { $group: { _id: "$product", available: { $sum: 1 } } },
+    ]),
+  ]);
 
-      // Calcular el stock total sumando inventarios y seriales DISPONIBLES
-      const stockTotal = (inventory?.quantity || 0) + serialCount;
+  const stockMap = new Map<string, number>();
+  for (const row of availableByInventory) {
+    stockMap.set(row._id.toString(), (stockMap.get(row._id.toString()) ?? 0) + row.available);
+  }
+  for (const row of availableBySerial) {
+    stockMap.set(row._id.toString(), (stockMap.get(row._id.toString()) ?? 0) + row.available);
+  }
 
-      return {
-        ...product,
-        stock: stockTotal,
-      };
-    })
-  );
-
-  return updatedProducts;
+  return products.map((product) => ({
+    ...product,
+    stock: stockMap.get(product._id.toString()) ?? 0,
+  }));
 };
 
 export const findProduct = async (
@@ -251,7 +259,8 @@ export const findProduct = async (
     throw new Error("No existe el producto");
   }
 
-  return product;
+  const [withAvailableStock] = await attachAvailableStock(companyId, [product]);
+  return withAvailableStock;
 };
 
 export const listProductSerialByPurchaseOrder = async (
@@ -1050,6 +1059,52 @@ export const previewImportProducts = async (
         errors.push("El stock mínimo no puede ser mayor que el stock máximo");
       }
 
+      // "Mostrar en tienda" — vacío se toma como "sí" (mismo default que el
+      // schema de Product), igual que el resto de columnas opcionales.
+      const rawShowInStore = String(row.show_in_store ?? "").trim().toLowerCase();
+      const TRUE_VALUES = ["si", "sí", "true", "1", "x"];
+      const FALSE_VALUES = ["no", "false", "0"];
+      let show_in_store = true;
+      if (rawShowInStore) {
+        if (TRUE_VALUES.includes(rawShowInStore)) {
+          show_in_store = true;
+        } else if (FALSE_VALUES.includes(rawShowInStore)) {
+          show_in_store = false;
+        } else {
+          errors.push('"Mostrar en tienda" inválido (usa si/no)');
+        }
+      }
+
+      // Precio/descuento de tienda: opcionales — vacío queda en null, igual
+      // que en el formulario manual de producto.
+      let store_price: number | null = null;
+      if (String(row.store_price ?? "").trim() !== "") {
+        const parsed = Number(row.store_price);
+        if (isNaN(parsed) || parsed < 0) {
+          errors.push("Precio de tienda inválido");
+        } else {
+          store_price = parsed;
+        }
+      }
+
+      let store_discount_price: number | null = null;
+      if (String(row.store_discount_price ?? "").trim() !== "") {
+        const parsed = Number(row.store_discount_price);
+        if (isNaN(parsed) || parsed < 0) {
+          errors.push("Precio de descuento de tienda inválido");
+        } else {
+          store_discount_price = parsed;
+        }
+      }
+
+      if (
+        store_price !== null &&
+        store_discount_price !== null &&
+        store_discount_price > store_price
+      ) {
+        errors.push("El precio de descuento de tienda no puede ser mayor al precio de tienda");
+      }
+
       return {
         row: index + 1, // índice + encabezado
         code,
@@ -1061,6 +1116,9 @@ export const previewImportProducts = async (
         stock_type: row.stock_type || "",
         min_stock: min_stock || 0,
         max_stock: max_stock || 0,
+        show_in_store,
+        store_price,
+        store_discount_price,
         isValid: errors.length === 0,
         errors,
       };
@@ -1070,6 +1128,14 @@ export const previewImportProducts = async (
   return preview;
 };
 
+// Antes hacía todo esto por FILA, secuencial (await adentro de un for...of):
+// buscar/crear marca, buscar/crear categoría, contar productos de la empresa,
+// buscar nombre duplicado, generar+persistir código, crear el producto,
+// popular, incrementar contador de código, leer+escribir contador de marca y
+// de categoría — ~15 round-trips a Mongo por fila. Con un Excel de varios
+// cientos de filas eso es la causa directa de la lentitud reportada. Acá se
+// resuelve todo en memoria una sola vez y se escribe en lotes (insertMany /
+// bulkWrite), sin importar cuántas filas traiga el archivo.
 export const saveImportProducts = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   dataProducts: IPreviewProductImport[]
@@ -1083,57 +1149,276 @@ export const saveImportProducts = async (
     throw new Error("Algunos productos no son válidos. No se puede guardar.");
   }
 
-  const createdProducts = [];
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
 
-  for (const product of dataProducts) {
-    const {
-      code,
-      name,
-      description,
-      brand: brandName,
-      category: categoryName,
-      sale_price,
-      stock_type,
-      min_stock,
-      max_stock,
-    } = product;
+  const planLimits = companyPlanLimits[company.plan as companyPlan];
+  const currentProductCount = await Product.countDocuments({ company: companyId });
+  // Mismo chequeo que antes se hacía fila por fila dentro de createProduct —
+  // acá se valida una sola vez para el lote completo.
+  assertPlanLimit(
+    company.plan as companyPlan,
+    "productos",
+    currentProductCount + dataProducts.length - 1,
+    planLimits.maxProduct
+  );
 
-    let brand = await Brand.findOne({
-      name: brandName,
-      company: companyId,
-    });
-    if (!brand) {
-      brand = await Brand.create({
-        name: brandName,
-        company: companyId,
-      });
-    }
-
-    let category = await Category.findOne({
-      name: categoryName,
-      company: companyId,
-    });
-    if (!category) {
-      category = await Category.create({
-        name: categoryName,
-        company: companyId,
-      });
-    }
-
-    const created = await createProduct(companyId, {
-      code,
-      name,
-      description,
-      brand: brand._id,
-      category: category._id,
-      sale_price,
-      stock_type: stock_type as stockType,
-      min_stock,
-      max_stock,
-    });
-
-    createdProducts.push(created);
+  // Revalida nombres duplicados justo antes de guardar (preview pudo haber
+  // corrido hace rato) — una sola query en vez de una por fila.
+  const existingByName = await Product.find(
+    { company: companyId, name: { $in: dataProducts.map((p) => p.name) } },
+    { name: 1 }
+  ).lean();
+  if (existingByName.length > 0) {
+    throw new Error(
+      `Ya existen productos con estos nombres: ${existingByName.map((p) => p.name).join(", ")}`
+    );
   }
 
+  // Precarga marcas y categorías existentes de la empresa — se resuelven en
+  // memoria en vez de una consulta por fila.
+  const [existingBrands, existingCategories] = await Promise.all([
+    Brand.find({ company: companyId }).lean(),
+    Category.find({ company: companyId }).lean(),
+  ]);
+
+  const brandMap = new Map<string, MongooseTypes.ObjectId>(
+    existingBrands.map((b: any) => [String(b.name).trim().toLowerCase(), b._id])
+  );
+  const categoryMap = new Map<string, MongooseTypes.ObjectId>(
+    existingCategories.map((c: any) => [String(c.name).trim().toLowerCase(), c._id])
+  );
+
+  const missingBrandNames = [
+    ...new Set(
+      dataProducts
+        .map((p) => p.brand?.trim())
+        .filter((n): n is string => !!n && !brandMap.has(n.toLowerCase()))
+    ),
+  ];
+  const missingCategoryNames = [
+    ...new Set(
+      dataProducts
+        .map((p) => p.category?.trim())
+        .filter((n): n is string => !!n && !categoryMap.has(n.toLowerCase()))
+    ),
+  ];
+
+  if (missingBrandNames.length > 0) {
+    const created = await Brand.insertMany(
+      missingBrandNames.map((name) => ({ name, company: companyId })),
+      { ordered: false }
+    );
+    created.forEach((b: any) => brandMap.set(String(b.name).trim().toLowerCase(), b._id));
+  }
+
+  if (missingCategoryNames.length > 0) {
+    const created = await Category.insertMany(
+      missingCategoryNames.map((name) => ({ name, company: companyId })),
+      { ordered: false }
+    );
+    created.forEach((c: any) => categoryMap.set(String(c.name).trim().toLowerCase(), c._id));
+  }
+
+  // Códigos: las filas que ya traen código explícito lo usan tal cual (ya
+  // validado como único en el preview). Las que no, comparten un solo
+  // contador — se reserva todo el rango de una — en vez de leer y escribir
+  // el mismo documento contador dos veces por fila (generate() + increment()).
+  const rowsNeedingCode = dataProducts.filter((p) => !p.code).length;
+  let codeGeneratorDoc = await CodeGenerator.findOne({
+    type: codeType.PRODUCT,
+    company: companyId,
+  });
+  if (!codeGeneratorDoc && rowsNeedingCode > 0) {
+    codeGeneratorDoc = await CodeGenerator.create({
+      company: companyId,
+      type: codeType.PRODUCT,
+      code: "SKU_",
+      sequence: "00000",
+    });
+  }
+
+  let seq = codeGeneratorDoc ? parseInt(codeGeneratorDoc.sequence) : 0;
+  const seqLength = codeGeneratorDoc?.sequence.length ?? 5;
+  const codePrefix = codeGeneratorDoc?.code ?? "SKU_";
+
+  const productsToInsert = dataProducts.map((p) => {
+    let code = p.code;
+    if (!code) {
+      seq++;
+      code = `${codePrefix}${seq.toString().padStart(seqLength, "0")}`;
+    }
+
+    const brandId = p.brand ? brandMap.get(p.brand.trim().toLowerCase()) : undefined;
+    const categoryId = p.category ? categoryMap.get(p.category.trim().toLowerCase()) : undefined;
+
+    if (!brandId || !categoryId) {
+      throw new Error(`Fila ${p.row}: no se pudo resolver la marca o categoría`);
+    }
+
+    return {
+      code,
+      name: p.name,
+      description: p.description,
+      show_in_store: p.show_in_store,
+      sale_price: p.sale_price,
+      store_price: p.store_price,
+      store_discount_price: p.store_discount_price,
+      category: categoryId,
+      brand: brandId,
+      stock_type: p.stock_type as stockType,
+      min_stock: p.min_stock,
+      max_stock: p.max_stock,
+      company: companyId,
+    };
+  });
+
+  if (rowsNeedingCode > 0 && codeGeneratorDoc) {
+    await CodeGenerator.updateOne(
+      { _id: codeGeneratorDoc._id },
+      { sequence: seq.toString().padStart(seqLength, "0") }
+    );
+  }
+
+  const createdProducts = await Product.insertMany(productsToInsert, { ordered: false });
+
+  // Conteo de productos por marca/categoría — un $inc atómico por marca y
+  // por categoría (bulkWrite), en vez de leer+escribir cada documento una
+  // vez por producto (lo que además no era atómico).
+  const brandCounts = new Map<string, number>();
+  const categoryCounts = new Map<string, number>();
+  for (const p of productsToInsert) {
+    brandCounts.set(String(p.brand), (brandCounts.get(String(p.brand)) ?? 0) + 1);
+    categoryCounts.set(String(p.category), (categoryCounts.get(String(p.category)) ?? 0) + 1);
+  }
+
+  await Promise.all([
+    brandCounts.size > 0
+      ? Brand.bulkWrite(
+          [...brandCounts.entries()].map(([id, count]) => ({
+            updateOne: { filter: { _id: id }, update: { $inc: { count_product: count } } },
+          }))
+        )
+      : Promise.resolve(),
+    categoryCounts.size > 0
+      ? Category.bulkWrite(
+          [...categoryCounts.entries()].map(([id, count]) => ({
+            updateOne: { filter: { _id: id }, update: { $inc: { count_product: count } } },
+          }))
+        )
+      : Promise.resolve(),
+  ]);
+
   return createdProducts;
+};
+
+// Genera el .xlsx de plantilla al vuelo con las columnas que la importación
+// soporta hoy — antes era un archivo estático subido a mano a Cloudinary,
+// que quedaba desactualizado cada vez que se agregaba una columna nueva acá.
+export const generateProductImportTemplate = (): Buffer => {
+  const headers = [
+    "code",
+    "name",
+    "description",
+    "sale_price",
+    "brand",
+    "category",
+    "stock_type",
+    "min_stock",
+    "max_stock",
+    "show_in_store",
+    "store_price",
+    "store_discount_price",
+  ];
+
+  const exampleRows = [
+    {
+      code: "",
+      name: "Mouse Logitech G502 HERO",
+      description: "Mouse gaming con sensor HERO 25K",
+      sale_price: 45.9,
+      brand: "Logitech",
+      category: "Periféricos",
+      stock_type: "individual",
+      min_stock: 5,
+      max_stock: 40,
+      show_in_store: "si",
+      store_price: "",
+      store_discount_price: "",
+    },
+    {
+      code: "",
+      name: "Laptop Dell Inspiron 15 3000",
+      description: "i5, 8GB RAM, 256GB SSD",
+      sale_price: 520,
+      brand: "Dell",
+      category: "Laptops",
+      stock_type: "serializado",
+      min_stock: 1,
+      max_stock: 10,
+      show_in_store: "no",
+      store_price: "",
+      store_discount_price: "",
+    },
+  ];
+
+  const sheet = XLSX.utils.json_to_sheet(exampleRows, { header: headers });
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "Productos");
+  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+};
+
+// Exporta todos los productos de la empresa a .xlsx — mismas columnas que la
+// plantilla de importación (para poder editar y reimportar) más algunas de
+// solo lectura (stock actual, último costo, estado) que no se pueden
+// importar pero sirven para un reporte/respaldo completo.
+export const exportProducts = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<Buffer> => {
+  const products = await Product.find({ company: companyId })
+    .populate("brand")
+    .populate("category")
+    .sort({ name: 1 })
+    .lean<IProduct[]>();
+
+  const headers = [
+    "code",
+    "name",
+    "description",
+    "sale_price",
+    "brand",
+    "category",
+    "stock_type",
+    "min_stock",
+    "max_stock",
+    "show_in_store",
+    "store_price",
+    "store_discount_price",
+    "stock",
+    "last_cost_price",
+    "status",
+  ];
+
+  const rows = products.map((p: any) => ({
+    code: p.code,
+    name: p.name,
+    description: p.description,
+    sale_price: p.sale_price,
+    brand: p.brand?.name ?? "",
+    category: p.category?.name ?? "",
+    stock_type: p.stock_type,
+    min_stock: p.min_stock,
+    max_stock: p.max_stock,
+    show_in_store: p.show_in_store ? "si" : "no",
+    store_price: p.store_price ?? "",
+    store_discount_price: p.store_discount_price ?? "",
+    stock: p.stock,
+    last_cost_price: p.last_cost_price,
+    status: p.status,
+  }));
+
+  const sheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "Productos");
+  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 };

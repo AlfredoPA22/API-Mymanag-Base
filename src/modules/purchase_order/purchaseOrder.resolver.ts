@@ -19,6 +19,7 @@ import {
   findPurchaseOrder,
   findPurchaseOrderToPDF,
   listPurchaseOrderByProduct,
+  listPurchaseOrderByProvider,
   purchaseOrderReport,
   updatePurchaseOrderDetail,
 } from "./purchaseOrder.service";
@@ -42,6 +43,17 @@ export const purchaseOrderResolver = {
         context.user.companyId,
         context.user.id,
         args.productId
+      );
+    },
+    async listPurchaseOrderByProvider(
+      _: any,
+      args: Record<string, any>,
+      context: any
+    ): Promise<IPurchaseOrder[]> {
+      return await listPurchaseOrderByProvider(
+        context.user.companyId,
+        context.user.id,
+        args.providerId
       );
     },
     async listPurchaseOrderDetail(

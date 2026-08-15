@@ -175,6 +175,31 @@ export const purchaseOrderReport = async (
   return purchaseOrders;
 };
 
+export const listPurchaseOrderByProvider = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  providerId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<IPurchaseOrder[]> => {
+  const foundUser: IUser | null = await User.findOne({
+    _id: userId,
+    company: companyId,
+  });
+
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  return await PurchaseOrder.find({
+    company: companyId,
+    provider: providerId,
+    ...(foundUser.is_global ? {} : { created_by: userId }),
+  })
+    .sort({ date: -1 })
+    .populate("provider")
+    .populate("created_by")
+    .lean<IPurchaseOrder[]>();
+};
+
 export const findDetail = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   purchaseOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId

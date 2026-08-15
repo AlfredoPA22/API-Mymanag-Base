@@ -106,6 +106,7 @@ type Company {
   image: String
   currency: String
   exchange_rate: Float
+  payment_exchange_rate_source: String
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreTheme
@@ -146,6 +147,7 @@ input UpdateCompanyInput {
   image: String
   currency: String
   exchange_rate: Float
+  payment_exchange_rate_source: String
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreThemeInput
@@ -796,6 +798,7 @@ type CompanyWithPayment {
   image: String
   currency: String
   exchange_rate: Float
+  payment_exchange_rate_source: String
   store_enabled: Boolean
   store_banner_image: String
   store_theme: StoreTheme
@@ -819,6 +822,9 @@ input PreviewProductImport {
   stock_type: String!
   min_stock: Float!
   max_stock: Float!
+  show_in_store: Boolean
+  store_price: Float
+  store_discount_price: Float
   isValid: Boolean!
   errors: [String!]!
 }
@@ -989,6 +995,7 @@ type Query {
   findPurchaseOrder(purchaseOrderId: String!): PurchaseOrder
   findPurchaseOrderToPDF(purchaseOrderId: String!): PurchaseOrderToPDF
   listPurchaseOrderByProduct(productId: ID!): [PurchaseOrderByProduct]
+  listPurchaseOrderByProvider(providerId: ID!): [PurchaseOrder]
 
   listProductTransfer: [ProductTransfer]
   findProductTransfer(transferId: String!): ProductTransfer

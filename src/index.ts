@@ -16,7 +16,7 @@ import { initAccountsReceivableCron } from "./cron/checkAccountsReceivable";
 import { connectToMongoDB } from "./db";
 import { resolvers, typeDefs } from "./graphql";
 import { Company } from "./modules/company/company.model";
-import { previewImportProducts } from "./modules/product/product.service";
+import { previewImportProducts, generateProductImportTemplate, exportProducts } from "./modules/product/product.service";
 import { verifyEmailConnection } from "./utils/emailTransporter";
 import { buildAbility } from "./utils/ability";
 import { companyPlanLimits } from "./utils/planLimits";
@@ -342,6 +342,67 @@ const bootstrapServer = async () => {
       const preview = await previewImportProducts(companyId, fileLike);
 
       return res.json(preview);
+    } catch (error: any) {
+      return res.status(401).json({ message: error.message });
+    }
+  });
+
+  // Plantilla de importación de productos generada al vuelo — así nunca
+  // queda desactualizada respecto a las columnas que previewImportProducts
+  // realmente soporta (antes era un .xlsx estático subido a mano a Cloudinary).
+  app.get("/product-import-template", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: "No autorizado: Token no proporcionado" });
+    }
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.split("Bearer ")[1]
+      : authHeader;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as any;
+      const ability = buildAbility(decoded.permissions ?? []);
+      if (!ability.can("create", "Product")) {
+        return res.status(403).json({ message: "No tienes permisos para importar productos" });
+      }
+
+      const buffer = generateProductImportTemplate();
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader("Content-Disposition", "attachment; filename=plantilla_productos.xlsx");
+      return res.send(buffer);
+    } catch (error: any) {
+      return res.status(401).json({ message: error.message });
+    }
+  });
+
+  // Exporta todos los productos de la empresa a .xlsx.
+  app.get("/product-export", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: "No autorizado: Token no proporcionado" });
+    }
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.split("Bearer ")[1]
+      : authHeader;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as any;
+      const ability = buildAbility(decoded.permissions ?? []);
+      if (!ability.can("list", "Product")) {
+        return res.status(403).json({ message: "No tienes permisos para exportar productos" });
+      }
+
+      const companyId = new MongooseTypes.ObjectId(decoded.companyId);
+      const buffer = await exportProducts(companyId);
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader("Content-Disposition", "attachment; filename=productos.xlsx");
+      return res.send(buffer);
     } catch (error: any) {
       return res.status(401).json({ message: error.message });
     }
