@@ -206,39 +206,57 @@ export const findAllWithParams = async (
 
   const productIds = products.map((p) => p._id);
 
-  // Disponible por producto en ese almacén: se suma porque puede haber
-  // varios ProductInventory por almacén/producto (uno por lote de compra
-  // o por transferencia aprobada) — un solo findOne agarraría el lote
+  // $match de una agregación NO castea strings a ObjectId como sí hace
+  // .find() — hay que convertir explícitamente (mismo patrón que
+  // attachAvailableStock), si no la comparación nunca matchea y todo da 0.
+  const companyObjectId = new MongooseTypes.ObjectId(companyId.toString());
+  const warehouseObjectId = new MongooseTypes.ObjectId(warehouseId.toString());
+
+  // Stock por producto en ese almacén: se suma porque puede haber varios
+  // ProductInventory por almacén/producto (uno por lote de compra o por
+  // transferencia aprobada) — un solo findOne agarraría el lote
   // equivocado, igual que el bug ya corregido en la búsqueda de POS.
-  const [availableByInventory, availableBySerial] = await Promise.all([
+  // `stock` = todo lo que está físicamente ahí (disponible + reservado en
+  // ventas pendientes de aprobar); `available_stock` = lo que de verdad se
+  // puede vender ahora mismo. Se muestran ambos porque lo reservado sigue
+  // en el almacén, no se fue a ningún lado, solo que ya está comprometido.
+  const [inventoryTotals, serialTotals] = await Promise.all([
     ProductInventory.aggregate([
-      { $match: { company: companyId, product: { $in: productIds }, warehouse: warehouseId } },
-      { $group: { _id: "$product", available: { $sum: "$available" } } },
+      { $match: { company: companyObjectId, product: { $in: productIds }, warehouse: warehouseObjectId } },
+      { $group: { _id: "$product", available: { $sum: "$available" }, reserved: { $sum: "$reserved" } } },
     ]),
     ProductSerial.aggregate([
       {
         $match: {
-          company: companyId,
+          company: companyObjectId,
           product: { $in: productIds },
-          warehouse: warehouseId,
-          status: productSerialStatus.DISPONIBLE,
+          warehouse: warehouseObjectId,
+          status: { $in: [productSerialStatus.DISPONIBLE, productSerialStatus.RESERVADO] },
         },
       },
-      { $group: { _id: "$product", available: { $sum: 1 } } },
+      { $group: { _id: { product: "$product", status: "$status" }, count: { $sum: 1 } } },
     ]),
   ]);
 
   const stockMap = new Map<string, number>();
-  for (const row of availableByInventory) {
-    stockMap.set(row._id.toString(), (stockMap.get(row._id.toString()) ?? 0) + row.available);
+  const availableMap = new Map<string, number>();
+  for (const row of inventoryTotals) {
+    const key = row._id.toString();
+    availableMap.set(key, (availableMap.get(key) ?? 0) + row.available);
+    stockMap.set(key, (stockMap.get(key) ?? 0) + row.available + row.reserved);
   }
-  for (const row of availableBySerial) {
-    stockMap.set(row._id.toString(), (stockMap.get(row._id.toString()) ?? 0) + row.available);
+  for (const row of serialTotals) {
+    const key = row._id.product.toString();
+    stockMap.set(key, (stockMap.get(key) ?? 0) + row.count);
+    if (row._id.status === productSerialStatus.DISPONIBLE) {
+      availableMap.set(key, (availableMap.get(key) ?? 0) + row.count);
+    }
   }
 
   return products.map((product) => ({
     ...product,
     stock: stockMap.get(product._id.toString()) ?? 0,
+    available_stock: availableMap.get(product._id.toString()) ?? 0,
   }));
 };
 
