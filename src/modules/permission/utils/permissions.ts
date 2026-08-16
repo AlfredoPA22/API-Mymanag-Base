@@ -120,6 +120,8 @@ export const PERMISSIONS_TREE: IPermission[] = [
       { label: "Detalle de venta", name: "Detalle de venta", value: "DETAIL_SALE" },
       { label: "Editar venta", name: "Editar venta", value: "EDIT_SALE" },
       { label: "Eliminar venta", name: "Eliminar venta", value: "DELETE_SALE" },
+      { label: "Aplicar descuentos", name: "Aplicar descuentos", value: "APPLY_DISCOUNT" },
+      { label: "Vender bajo el precio mínimo", name: "Vender bajo el precio mínimo", value: "SELL_BELOW_MIN_PRICE" },
     ],
   },
   {
@@ -165,6 +167,15 @@ export const PERMISSIONS_TREE: IPermission[] = [
       { label: "Ver caja", name: "Ver caja", value: "LIST_CASH_REGISTER" },
       { label: "Abrir caja", name: "Abrir caja", value: "OPEN_CASH_REGISTER" },
       { label: "Cerrar caja", name: "Cerrar caja", value: "CLOSE_CASH_REGISTER" },
+    ],
+  },
+  {
+    label: "Comisiones",
+    name: "Comisiones",
+    value: "ALL_COMMISSION",
+    children: [
+      { label: "Ver comisiones", name: "Ver comisiones", value: "COMMISSION_REPORT" },
+      { label: "Marcar comisión como pagada", name: "Marcar comisión como pagada", value: "PAY_COMMISSION" },
     ],
   },
 ];

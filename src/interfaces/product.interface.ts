@@ -16,6 +16,7 @@ export interface IProduct {
   images?: string[];
   show_in_store?: boolean;
   sale_price: number;
+  min_sale_price?: number | null;
   store_price?: number | null;
   store_discount_price?: number | null;
   stock: number;
@@ -41,6 +42,7 @@ export interface ProductInput {
   images?: string[];
   show_in_store?: boolean;
   sale_price?: number;
+  min_sale_price?: number | null;
   store_price?: number | null;
   store_discount_price?: number | null;
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
@@ -58,6 +60,7 @@ export interface UpdateProductInput {
   show_in_store?: boolean;
   description: string;
   sale_price: number;
+  min_sale_price?: number | null;
   store_price?: number | null;
   store_discount_price?: number | null;
   category: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;

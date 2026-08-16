@@ -219,6 +219,7 @@ type User {
   role: Role
   is_active: Boolean
   is_global: Boolean
+  commission_rate: Float
 }
 
 input UserInput {
@@ -226,12 +227,14 @@ input UserInput {
   password: String!
   role: String!
   is_global: Boolean!
+  commission_rate: Float
 }
 
 input UpdateUserInput {
   user_name: String!
   role: String!
   is_global: Boolean!
+  commission_rate: Float
 }
 
 input ChangePasswordInput {
@@ -314,6 +317,7 @@ type Product {
   images: [String!]
   show_in_store: Boolean
   sale_price: Float
+  min_sale_price: Float
   store_price: Float
   store_discount_price: Float
   stock: Int
@@ -335,6 +339,7 @@ input ProductInput {
   images: [String!]
   show_in_store: Boolean
   sale_price: Float
+  min_sale_price: Float
   store_price: Float
   store_discount_price: Float
   category: String!
@@ -352,6 +357,7 @@ input UpdateProductInput {
   show_in_store: Boolean
   description: String!
   sale_price: Float!
+  min_sale_price: Float
   store_price: Float
   store_discount_price: Float
   category: String!
@@ -535,6 +541,7 @@ type SaleOrder {
   currency: String
   exchange_rate: Float
   warehouse: Warehouse
+  has_paid_commission: Boolean
 }
 
 input SaleOrderInput {
@@ -710,6 +717,12 @@ type ReportMonthlySales {
 type SaleOrderByProduct {
   saleOrder: SaleOrder
   saleOrderDetail: SaleOrderDetail
+}
+
+type CuentaCobrarRow {
+  sale_order: SaleOrder
+  total_paid: Float
+  total_pending: Float
 }
 
 type SaleReturn {
@@ -975,7 +988,7 @@ type Query {
   reportSaleOrderByProduct(startDate: Date, endDate: Date): [ReportSaleOrderByProduct]
   reportMonthlySales(startDate: Date, endDate: Date): [ReportMonthlySales]
   reportSaleOrderByMonth(startDate: Date, endDate: Date): [SaleOrder]
-  reportCuentasCobrar(startDate: Date, endDate: Date): [SaleOrder]
+  reportCuentasCobrar(startDate: Date, endDate: Date): [CuentaCobrarRow]
   generalData(startDate: Date, endDate: Date): GeneralData
   listSaleOrderByProduct(productId: ID!): [SaleOrderByProduct]
   listCustomSaleOrderDetail: [SaleOrderByProduct]
@@ -1436,4 +1449,31 @@ type Mutation {
     cashRegisterId: String!
     addCashMovementInput: AddCashMovementInput!
   ): CashRegister
+}
+
+type Commission {
+  _id: ID!
+  sale_order: SaleOrder
+  seller: User
+  rate: Float
+  amount: Float
+  status: String
+  paid_at: String
+  paid_by: User
+  createdAt: String
+}
+
+input CommissionFilterInput {
+  sellerId: String
+  startDate: Date
+  endDate: Date
+  status: String
+}
+
+type Query {
+  listCommissions(filter: CommissionFilterInput): [Commission]
+}
+
+type Mutation {
+  markCommissionPaid(commissionId: String!): Commission
 }

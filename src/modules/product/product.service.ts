@@ -30,6 +30,7 @@ import {
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
 import { CodeGenerator } from "../codeGenerator/codeGenerator.model";
 import { PurchaseOrderDetail } from "../purchase_order/purchase_order_detail.model";
+import { ProductTransferDetail } from "../product_transfer/product_transfer_detail.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
 import { SalePayment } from "../sale_payment/sale_payment.model";
@@ -738,6 +739,14 @@ export const createProduct = async (
     throw new Error("El stock mínimo no puede ser mayor que el stock máximo");
   }
 
+  if (
+    createProductInput.min_sale_price != null &&
+    createProductInput.sale_price != null &&
+    createProductInput.min_sale_price > createProductInput.sale_price
+  ) {
+    throw new Error("El precio de venta mínimo no puede ser mayor que el precio de venta");
+  }
+
   const customDataProduct: ProductInput = {
     code: createProductInput.code
       ? createProductInput.code
@@ -748,6 +757,7 @@ export const createProduct = async (
     images: createProductInput.images,
     show_in_store: createProductInput.show_in_store,
     sale_price: createProductInput.sale_price,
+    min_sale_price: createProductInput.min_sale_price,
     store_price: createProductInput.store_price,
     store_discount_price: createProductInput.store_discount_price,
     category: createProductInput.category,
@@ -810,6 +820,21 @@ export const deleteProduct = async (
 
   if (findPurchase.length > 0) {
     throw new Error("No se puede eliminar porque pertenece a una compra");
+  }
+
+  // Defensa adicional independiente del chequeo de arriba: si por algún otro
+  // camino quedó inventario, seriales o una transferencia apuntando a este
+  // producto sin que exista ya un PurchaseOrderDetail (ej. la compra que lo
+  // originó se borró), no lo dejamos borrar igual — evita dejar esas
+  // colecciones con una referencia a un producto inexistente.
+  const [findInventory, findSerial, findTransferDetail] = await Promise.all([
+    ProductInventory.findOne({ company: companyId, product: productId }),
+    ProductSerial.findOne({ company: companyId, product: productId }),
+    ProductTransferDetail.findOne({ company: companyId, product: productId }),
+  ]);
+
+  if (findInventory || findSerial || findTransferDetail) {
+    throw new Error("No se puede eliminar porque tiene inventario, seriales o transferencias asociadas");
   }
 
   const product = await Product.findOne({ _id: productId, company: companyId });
@@ -916,6 +941,14 @@ export const update = async (
     updateProductInput.min_stock > updateProductInput.max_stock
   ) {
     throw new Error("El stock mínimo no puede ser mayor que el stock máximo.");
+  }
+
+  if (
+    updateProductInput.min_sale_price != null &&
+    updateProductInput.sale_price != null &&
+    updateProductInput.min_sale_price > updateProductInput.sale_price
+  ) {
+    throw new Error("El precio de venta mínimo no puede ser mayor que el precio de venta.");
   }
 
   const brandChanged =

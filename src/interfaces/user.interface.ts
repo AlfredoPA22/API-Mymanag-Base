@@ -10,6 +10,7 @@ export interface IUser {
   is_active: boolean;
   is_global: boolean;
   company: ICompany;
+  commission_rate?: number | null;
 }
 
 export interface UserInput {
@@ -17,6 +18,7 @@ export interface UserInput {
   password: string;
   role: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   is_global: boolean;
+  commission_rate?: number | null;
 }
 
 export interface LoginInput {
@@ -28,6 +30,7 @@ export interface UpdateUserInput {
   user_name: string;
   role: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId;
   is_global: boolean;
+  commission_rate?: number | null;
 }
 
 export interface changePasswordInput {

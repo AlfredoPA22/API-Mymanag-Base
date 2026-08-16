@@ -12,11 +12,16 @@ import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { SaleOrderDetail } from "../sale_order/sale_order_detail.model";
+import { updateOrderTotal } from "../sale_order/saleOrder.service";
 import { SalePayment } from "../sale_payment/sale_payment.model";
 import { SaleReturn } from "./sale_return.model";
 import { SaleReturnDetail } from "./sale_return_detail.model";
 import { round2 } from "../../utils/money";
 import { createNotification } from "../notification/notification.service";
+import {
+  adjustCommissionForPartialReturn,
+  voidCommissionForSaleOrder,
+} from "../commission/commission.service";
 
 export interface SaleReturnItem {
   saleOrderDetailId: string;
@@ -69,6 +74,11 @@ export const createSaleReturn = async (
 
   // 5. Revertir stock por cada item seleccionado
   let returnTotal = 0;
+  // Monto realmente devuelto por cada línea, prorrateado sobre su subtotal
+  // NETO (ya con el descuento de esa línea aplicado) — no sobre el precio
+  // bruto. Antes se usaba `sale_price * cantidad`, que ignoraba cualquier
+  // descuento de línea y sobreestimaba lo devuelto/reembolsado.
+  const itemAmounts = new Map<string, number>();
 
   for (const item of validItems) {
     const detail = detailMap.get(item.saleOrderDetailId)!;
@@ -130,9 +140,12 @@ export const createSaleReturn = async (
       }
     }
 
-    const itemSubtotal = parseFloat((detail.sale_price * returnQty).toFixed(2));
-    returnTotal += itemSubtotal;
+    const unitNetPrice = detail.quantity > 0 ? detail.subtotal / detail.quantity : detail.sale_price;
+    const itemAmount = round2(unitNetPrice * returnQty);
+    itemAmounts.set(item.saleOrderDetailId, itemAmount);
+    returnTotal += itemAmount;
   }
+  returnTotal = round2(returnTotal);
 
   // 6. Actualizar los detalles de la orden de venta y el total
   for (const item of validItems) {
@@ -141,8 +154,8 @@ export const createSaleReturn = async (
       // Devolución total del ítem: eliminar el detalle
       await SaleOrderDetail.deleteOne({ _id: detail._id });
     } else {
-      // Devolución parcial: reducir cantidad y subtotal
-      const itemReturned = parseFloat((detail.sale_price * item.quantity).toFixed(2));
+      // Devolución parcial: reducir cantidad y subtotal (monto neto, no bruto)
+      const itemReturned = itemAmounts.get(item.saleOrderDetailId)!;
       await SaleOrderDetail.updateOne(
         { _id: detail._id },
         { $inc: { quantity: -item.quantity, subtotal: -itemReturned } }
@@ -150,7 +163,12 @@ export const createSaleReturn = async (
     }
   }
 
-  const newTotal = parseFloat((saleOrder.total - returnTotal).toFixed(2));
+  // El total de la nota se recalcula desde cero a partir de los detalles ya
+  // actualizados (misma función que usan createDetail/updateSaleOrderDetail),
+  // así el descuento de CABECERA se reaplica correctamente sobre la nueva
+  // suma de subtotales — antes se restaba `returnTotal` a ciegas del total
+  // viejo, lo que ignoraba el descuento de cabecera de la nota.
+  let newTotal = round2((await updateOrderTotal(companyId, saleOrderId)) ?? 0);
   const setFields: Record<string, any> = { has_return: true };
 
   let refundAmount = 0;
@@ -177,13 +195,30 @@ export const createSaleReturn = async (
     setFields.is_paid = true;
   }
 
+  // `updateOrderTotal` ya escribió el total correcto en la BD — acá solo
+  // faltan los campos de status/is_paid que dependen de la lógica de
+  // devolución (no se vuelve a tocar `total` salvo para forzarlo a 0 cuando
+  // la devolución deja la venta en Devuelto).
   await SaleOrder.updateOne(
     { _id: saleOrderId, company: companyId },
-    {
-      $set: setFields,
-      ...(newTotal > 0 ? { $inc: { total: -parseFloat(returnTotal.toFixed(2)) } } : {}),
-    }
+    { $set: setFields }
   );
+
+  // La venta quedó totalmente devuelta — si generó una comisión al
+  // aprobarse, se anula. Si fue una devolución parcial (todavía queda
+  // saldo), la comisión se reajusta proporcionalmente al nuevo total.
+  if (setFields.status === saleOrderStatus.DEVUELTO) {
+    await voidCommissionForSaleOrder(companyId, saleOrderId, saleOrder.code);
+  } else if (newTotal > 0) {
+    await adjustCommissionForPartialReturn(
+      companyId,
+      saleOrderId,
+      saleOrder.code,
+      newTotal,
+      saleOrder.currency,
+      saleOrder.exchange_rate
+    );
+  }
 
   if (refundAmount > 0) {
     await createNotification(companyId, {
@@ -225,7 +260,7 @@ export const createSaleReturn = async (
   await Promise.all(
     validItems.map(async (item) => {
       const detail = detailMap.get(item.saleOrderDetailId)!;
-      const itemSubtotal = parseFloat((detail.sale_price * item.quantity).toFixed(2));
+      const itemSubtotal = itemAmounts.get(item.saleOrderDetailId)!;
 
       const existingDetail = await SaleReturnDetail.findOne({
         sale_return: saleReturnDocId,

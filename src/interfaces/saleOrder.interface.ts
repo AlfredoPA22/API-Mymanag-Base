@@ -32,6 +32,9 @@ export interface ISaleOrder {
   // Almacén único de la nota, elegido al crearla. Null en notas viejas
   // (previas a este campo), que siguen con almacén por línea.
   warehouse?: IWarehouse | null;
+  // Calculado en findAll() — true si ya se le pagó al vendedor la comisión
+  // de esta venta, para advertir antes de dejarla eliminar (no bloquea).
+  has_paid_commission?: boolean;
 }
 
 export interface ISaleOrderByClient {
@@ -42,6 +45,15 @@ export interface ISaleOrderByClient {
 export interface ISaleOrderByProduct {
   saleOrder: ISaleOrder;
   saleOrderDetail: ISaleOrderDetail;
+}
+
+// Fila del reporte de Cuentas por cobrar — a diferencia de listar la nota
+// tal cual, ya trae descontado lo que se pagó (total_paid), para no mostrar
+// como "pendiente" un saldo que ya se cobró parcialmente.
+export interface ICuentaCobrarRow {
+  sale_order: ISaleOrder;
+  total_paid: number;
+  total_pending: number;
 }
 
 export interface SaleOrderInput {

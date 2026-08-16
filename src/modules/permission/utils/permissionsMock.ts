@@ -53,6 +53,8 @@ export const PERMISSIONS_MOCK: String[] = [
   "DETAIL_SALE",
   "EDIT_SALE",
   "DELETE_SALE",
+  "APPLY_DISCOUNT",
+  "SELL_BELOW_MIN_PRICE",
   // Usuarios y roles
   "USER_AND_ROLE",
   // Reportes
@@ -75,4 +77,7 @@ export const PERMISSIONS_MOCK: String[] = [
   "LIST_CASH_REGISTER",
   "OPEN_CASH_REGISTER",
   "CLOSE_CASH_REGISTER",
+  // Comisiones
+  "COMMISSION_REPORT",
+  "PAY_COMMISSION",
 ];

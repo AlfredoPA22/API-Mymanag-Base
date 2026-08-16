@@ -3,6 +3,7 @@ import { IProduct } from "../../interfaces/product.interface";
 import { IProductSerial } from "../../interfaces/productSerial.interface";
 import {
   FilterSaleOrderInput,
+  ICuentaCobrarRow,
   IQrPaymentInfo,
   ISaleOrder,
   ISaleOrderByProduct,
@@ -37,17 +38,24 @@ import { Product } from "../product/product.model";
 import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
 import { SalePayment } from "../sale_payment/sale_payment.model";
+import { SaleReturn } from "../sale_return/sale_return.model";
 import { User } from "../user/user.model";
 import { SaleOrder } from "./sale_order.model";
 import { QrPayment } from "../qr_payment/qr_payment.model";
 import { createNotification } from "../notification/notification.service";
 import { SaleOrderDetail } from "./sale_order_detail.model";
 import { Company } from "../company/company.model";
+import {
+  createCommissionForSaleOrder,
+  voidCommissionForSaleOrder,
+} from "../commission/commission.service";
+import { Commission } from "../commission/commission.model";
+import { commissionStatus } from "../../utils/enums/commissionStatus.enum";
 import dayjs from "dayjs";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
 import { assertPlanLimit } from "../../utils/assertPlanLimit";
-import { round2, toBaseCurrencyExpr } from "../../utils/money";
+import { round2, toBaseCurrency, toBaseCurrencyExpr, toOrderCurrency } from "../../utils/money";
 
 export const findAll = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -71,12 +79,32 @@ export const findAll = async (
     filter.source = source;
   }
 
-  return await SaleOrder.find(filter)
+  const orders = await SaleOrder.find(filter)
     .sort({ date: -1 })
     .populate("client")
     .populate("warehouse")
     .populate("created_by")
     .lean<ISaleOrder[]>();
+
+  // Para poder advertir antes de eliminar una venta cuya comisión ya se le
+  // pagó al vendedor (sin bloquear el borrado, solo avisar) — un solo query
+  // extra por toda la lista, no uno por fila.
+  const paidCommissionOrderIds = new Set(
+    (
+      await Commission.find({
+        company: companyId,
+        sale_order: { $in: orders.map((o) => o._id) },
+        status: commissionStatus.PAGADA,
+      })
+        .select("sale_order")
+        .lean()
+    ).map((c) => c.sale_order.toString())
+  );
+
+  return orders.map((order) => ({
+    ...order,
+    has_paid_commission: paidCommissionOrderIds.has(order._id.toString()),
+  }));
 };
 
 export const listSaleOrderByProduct = async (
@@ -266,6 +294,39 @@ export const findDetail = async (
   return listDetail;
 };
 
+// Usados por el resolver para saber si un update realmente está CAMBIANDO un
+// descuento (y por lo tanto exige el permiso APPLY_DISCOUNT) o si solo está
+// reenviando el mismo descuento que la línea/nota ya tenía — ej. la edición
+// en línea de SaleOrderDetailList.tsx reenvía siempre el discount_type/value
+// existente aunque el usuario solo haya tocado la cantidad.
+export const getSaleOrderDetailDiscount = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId | string
+): Promise<{ discount_type: string | null; discount_value: number } | null> => {
+  const detail = await SaleOrderDetail.findOne({ _id: saleOrderDetailId, company: companyId })
+    .select("discount_type discount_value")
+    .lean<{ discount_type?: string | null; discount_value?: number }>();
+  if (!detail) return null;
+  return {
+    discount_type: detail.discount_type ?? null,
+    discount_value: detail.discount_value ?? 0,
+  };
+};
+
+export const getSaleOrderDiscount = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId | string
+): Promise<{ discount_type: string | null; discount_value: number } | null> => {
+  const order = await SaleOrder.findOne({ _id: saleOrderId, company: companyId })
+    .select("discount_type discount_value")
+    .lean<{ discount_type?: string | null; discount_value?: number }>();
+  if (!order) return null;
+  return {
+    discount_type: order.discount_type ?? null,
+    discount_value: order.discount_value ?? 0,
+  };
+};
+
 export const findSaleOrder = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
@@ -442,7 +503,39 @@ const calcDetailDiscount = (
   return { discountAmount, subtotal };
 };
 
-const updateOrderTotal = async (
+// El piso es min_sale_price si está configurado, si no el propio sale_price
+// del producto (ambos siempre en la moneda BASE de la empresa, sea cual sea
+// la moneda de esta venta). Se compara contra el precio final YA con
+// descuento aplicado (no el precio bruto ingresado) — así no se puede
+// esquivar el mínimo dando un "descuento" grande. Sin permiso, lanza.
+const assertPriceAboveMinimum = (
+  product: { name: string; sale_price: number; min_sale_price?: number | null },
+  salePrice: number,
+  quantity: number,
+  discountType: string | null | undefined,
+  discountValue: number | null | undefined,
+  orderCurrency: string | null | undefined,
+  exchangeRate: number | null | undefined,
+  canSellBelowMin: boolean
+) => {
+  if (canSellBelowMin || quantity <= 0) return;
+
+  const floor = product.min_sale_price ?? product.sale_price;
+  if (!floor || floor <= 0) return;
+
+  const gross = round2(salePrice * quantity);
+  const { subtotal } = calcDetailDiscount(gross, discountType, discountValue ?? undefined);
+  const effectiveUnitPrice = subtotal / quantity;
+  const effectiveUnitPriceBase = toBaseCurrency(effectiveUnitPrice, orderCurrency, exchangeRate);
+
+  if (round2(effectiveUnitPriceBase) < round2(floor)) {
+    throw new Error(
+      `El precio final de "${product.name}" quedaría por debajo del mínimo permitido (${floor}). Necesitás el permiso para vender bajo el precio mínimo.`
+    );
+  }
+};
+
+export const updateOrderTotal = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: any
 ) => {
@@ -468,7 +561,8 @@ const updateOrderTotal = async (
 
 export const createDetail = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
-  createSaleOrderDetailInput: SaleOrderDetailInput
+  createSaleOrderDetailInput: SaleOrderDetailInput,
+  canSellBelowMin: boolean = false
 ) => {
   const foundDetail = await SaleOrderDetail.findOne({
     company: companyId,
@@ -483,6 +577,10 @@ export const createDetail = async (
 
   if (!foundOrder) {
     throw new Error("Orden no encontrada");
+  }
+
+  if (foundOrder.status !== saleOrderStatus.BORRADOR) {
+    throw new Error("No se pueden agregar productos a una venta que no está en Borrador.");
   }
 
   if (foundDetail) {
@@ -505,6 +603,17 @@ export const createDetail = async (
   if (!foundProduct) {
     throw new Error("Producto no encontrado");
   }
+
+  assertPriceAboveMinimum(
+    foundProduct,
+    createSaleOrderDetailInput.sale_price,
+    createSaleOrderDetailInput.quantity,
+    createSaleOrderDetailInput.discount_type,
+    createSaleOrderDetailInput.discount_value,
+    foundOrder.currency,
+    foundOrder.exchange_rate,
+    canSellBelowMin
+  );
 
   if (createSaleOrderDetailInput.quantity > foundProduct.stock) {
     throw new Error("No hay suficiente stock");
@@ -653,6 +762,10 @@ export const createCustomDetail = async (
 
   if (!foundOrder) {
     throw new Error("Orden no encontrada");
+  }
+
+  if (foundOrder.status !== saleOrderStatus.BORRADOR) {
+    throw new Error("No se pueden agregar productos a una venta que no está en Borrador.");
   }
 
   if (!input.name?.trim()) {
@@ -953,6 +1066,22 @@ export const deleteSaleOrder = async (
     );
   }
 
+  // Sin este chequeo, se podía borrar una venta con una devolución ya
+  // registrada (ej. CONTADO con devolución parcial, que nunca tiene
+  // SalePayment) — el SaleReturn quedaba huérfano, con `sale_order`
+  // apuntando a una venta inexistente y perdiendo toda su trazabilidad
+  // (cliente, código de venta).
+  const foundSaleReturn = await SaleReturn.findOne({
+    sale_order: saleOrderId,
+    company: companyId,
+  });
+
+  if (foundSaleReturn) {
+    throw new Error(
+      "No se puede eliminar venta porque tiene una devolución registrada"
+    );
+  }
+
   const foundSaleOrderDetails = await SaleOrderDetail.find({
     company: companyId,
     sale_order: saleOrderId,
@@ -1049,6 +1178,10 @@ export const deleteSaleOrder = async (
     });
 
     if (deleteSaleOrder.deletedCount > 0) {
+      // La venta aprobada podía tener una comisión generada — se anula para
+      // que no quede huérfana apuntando a una venta que ya no existe.
+      await voidCommissionForSaleOrder(companyId, saleOrderId, foundSaleOrder.code);
+
       if (
         foundSaleOrder.payment_method === paymentMethod.CONTADO &&
         foundSaleOrder.contado_payment_method === "QR" &&
@@ -1153,28 +1286,64 @@ export const approve = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
 ) => {
-  const foundOrder = await SaleOrder.findOne({
-    _id: saleOrderId,
-    company: companyId,
-  });
+  // "Reclamo" atómico del estado: si dos aprobaciones llegan casi al mismo
+  // tiempo (doble clic, webhook reintentado), el chequeo de status de antes
+  // era leer-y-después-escribir (no atómico) y ambas podían pasar la
+  // validación antes de que ninguna guardara — generando dos comisiones para
+  // la misma venta. findOneAndUpdate con el status en el filtro hace que solo
+  // una de las dos llamadas concurrentes pueda encontrar y actualizar el
+  // documento; la otra recibe null y falla con el mensaje de siempre. Por
+  // defecto (sin `new: true`) devuelve el documento ANTES de la
+  // actualización, que es justo lo que necesitamos para las validaciones que
+  // siguen (status original, payment_method, etc.).
+  const foundOrder = await SaleOrder.findOneAndUpdate(
+    {
+      _id: saleOrderId,
+      company: companyId,
+      status: { $nin: [saleOrderStatus.APROBADO, saleOrderStatus.CANCELADO] },
+    },
+    { $set: { status: saleOrderStatus.APROBADO } }
+  );
+
+  if (!foundOrder) {
+    const existing = await SaleOrder.findOne({ _id: saleOrderId, company: companyId });
+    if (!existing) {
+      throw new Error("La venta no fue encontrada");
+    }
+    if (existing.status === saleOrderStatus.APROBADO) {
+      throw new Error("La venta ya fue aprobada");
+    }
+    if (existing.status === saleOrderStatus.CANCELADO) {
+      throw new Error("La venta esta cancelada");
+    }
+    throw new Error("La venta no se puede aprobar en su estado actual");
+  }
+
+  try {
+    return await finishApprove(companyId, saleOrderId, foundOrder);
+  } catch (error) {
+    // Alguna validación posterior (stock, seriales, etc.) falló — se revierte
+    // el "reclamo" del status para no dejar la venta atascada en Aprobado
+    // sin haber aplicado ninguno de sus efectos (stock, seriales, comisión).
+    await SaleOrder.updateOne(
+      { _id: saleOrderId, company: companyId, status: saleOrderStatus.APROBADO },
+      { $set: { status: foundOrder.status } }
+    );
+    throw error;
+  }
+};
+
+const finishApprove = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  saleOrderId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  foundOrder: any
+) => {
   const foundDetail: ISaleOrderDetail[] = await SaleOrderDetail.find({
     company: companyId,
     sale_order: saleOrderId,
   })
     .populate("product")
     .lean<ISaleOrderDetail[]>();
-
-  if (!foundOrder) {
-    throw new Error("La venta no fue encontrada");
-  }
-
-  if (foundOrder.status === saleOrderStatus.APROBADO) {
-    throw new Error("La venta ya fue aprobada");
-  }
-
-  if (foundOrder.status === saleOrderStatus.CANCELADO) {
-    throw new Error("La venta esta cancelada");
-  }
 
   if (foundDetail.length === 0) {
     throw new Error("La venta debe tener almenos un producto");
@@ -1280,13 +1449,16 @@ export const approve = async (
 
   await foundOrder.save();
 
+  await createCommissionForSaleOrder(companyId, foundOrder);
+
   return foundOrder;
 };
 
 export const updateSaleOrderDetail = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   saleOrderDetailId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
-  updateSaleOrderInput: UpdateSaleOrderDetailInput
+  updateSaleOrderInput: UpdateSaleOrderDetailInput,
+  canSellBelowMin: boolean = false
 ) => {
   const findSaleOrderDetail = await SaleOrderDetail.findOne({
     _id: saleOrderDetailId,
@@ -1314,6 +1486,14 @@ export const updateSaleOrderDetail = async (
     );
   }
 
+  if (updateSaleOrderInput.sale_price <= 0) {
+    throw new Error("Ingrese un precio mayor a 0");
+  }
+
+  if (updateSaleOrderInput.quantity <= 0) {
+    throw new Error("Ingrese una cantidad mayor a 0");
+  }
+
   const stockProduct = await Product.findOne({
     _id: findSaleOrderDetail.product,
     company: companyId,
@@ -1322,6 +1502,17 @@ export const updateSaleOrderDetail = async (
   if (!stockProduct) {
     throw new Error("No hay stock.");
   }
+
+  assertPriceAboveMinimum(
+    stockProduct,
+    updateSaleOrderInput.sale_price,
+    updateSaleOrderInput.quantity,
+    updateSaleOrderInput.discount_type,
+    updateSaleOrderInput.discount_value,
+    findSaleOrder.currency,
+    findSaleOrder.exchange_rate,
+    canSellBelowMin
+  );
 
   if (updateSaleOrderInput.quantity > stockProduct.stock) {
     throw new Error("No hay stock suficiente.");
@@ -1429,6 +1620,10 @@ export const updateSaleOrderDiscount = async (
 ) => {
   const foundOrder = await SaleOrder.findOne({ _id: saleOrderId, company: companyId });
   if (!foundOrder) throw new Error("Orden de venta no encontrada");
+
+  if (foundOrder.status !== saleOrderStatus.BORRADOR) {
+    throw new Error("Solo se puede editar el descuento de una venta en Borrador.");
+  }
 
   foundOrder.discount_type = discountType ?? null;
   foundOrder.discount_value = discountValue ?? 0;
@@ -1833,9 +2028,12 @@ export const reportCuentasCobrar = async (
   userId: MongooseTypes.ObjectId,
   startDate?: Date | string,
   endDate?: Date | string
-): Promise<ISaleOrder[]> => {
+): Promise<ICuentaCobrarRow[]> => {
   const foundUser: IUser | null = await User.findOne({ _id: userId, company: companyId });
   if (!foundUser) throw new Error("Usuario no encontrado");
+
+  const company = await Company.findById(companyId).lean();
+  if (!company) throw new Error("Empresa no encontrada");
 
   const matchStage: any = {
     company: new MongooseTypes.ObjectId(companyId),
@@ -1854,12 +2052,47 @@ export const reportCuentasCobrar = async (
     if (endDate) matchStage["date"]["$lte"] = new Date(endDate);
   }
 
-  return await SaleOrder.find(matchStage)
+  const orders = await SaleOrder.find(matchStage)
     .populate("client")
     .populate("warehouse")
     .populate("created_by")
     .sort({ date: -1 })
     .lean<ISaleOrder[]>();
+
+  if (orders.length === 0) return [];
+
+  // Una nota puede tener pagos parciales ya registrados — sin restarlos, el
+  // reporte mostraría el total bruto de la venta como "pendiente" aunque el
+  // cliente ya haya pagado una parte. Cada pago se convierte a la moneda de
+  // SU nota (puede diferir de la del pago) con el tipo de cambio que ese
+  // pago tenía congelado, no el actual de la empresa.
+  const orderIds = orders.map((o) => o._id);
+  const payments = await SalePayment.find({
+    company: companyId,
+    sale_order: { $in: orderIds },
+  }).lean();
+
+  const paidByOrder = new Map<string, number>();
+  for (const payment of payments) {
+    const orderId = payment.sale_order.toString();
+    const order = orders.find((o) => o._id.toString() === orderId);
+    if (!order) continue;
+    const orderCurrency = order.currency ?? company.currency;
+    const amountInOrderCurrency = toOrderCurrency(
+      payment.amount,
+      payment.currency,
+      payment.exchange_rate,
+      company.currency,
+      orderCurrency
+    );
+    paidByOrder.set(orderId, (paidByOrder.get(orderId) ?? 0) + amountInOrderCurrency);
+  }
+
+  return orders.map((order) => {
+    const total_paid = round2(paidByOrder.get(order._id.toString()) ?? 0);
+    const total_pending = round2(order.total - total_paid);
+    return { sale_order: order, total_paid, total_pending };
+  });
 };
 
 export const reportSaleOrderByMonth = async (

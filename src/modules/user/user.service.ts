@@ -9,9 +9,16 @@ import {
   UserInput,
 } from "../../interfaces/user.interface";
 import { User } from "./user.model";
+import { Role } from "../role/role.model";
 import { SaleOrder } from "../sale_order/sale_order.model";
 import { PurchaseOrder } from "../purchase_order/purchase_order.model";
 import { SalePayment } from "../sale_payment/sale_payment.model";
+import { SaleReturn } from "../sale_return/sale_return.model";
+import { ProductTransfer } from "../product_transfer/product_transfer.model";
+import { QrPayment } from "../qr_payment/qr_payment.model";
+import { Commission } from "../commission/commission.model";
+import { commissionStatus } from "../../utils/enums/commissionStatus.enum";
+import { CashRegister } from "../cash_register/cash_register.model";
 import { Company } from "../company/company.model";
 import { companyPlanLimits } from "../../utils/planLimits";
 import { companyPlan } from "../../utils/enums/companyPlan.enum";
@@ -49,6 +56,17 @@ export const create = async (
 
   if (user) {
     throw new Error("El usuario ya existe");
+  }
+
+  // Sin esto, se podía guardar un `role` que no existe o que pertenece a
+  // OTRA empresa (nunca se validaba) — el usuario quedaba con una
+  // referencia rota/cruzada que después hacía crashear UserDetail.tsx si
+  // ese rol se borraba en su empresa real.
+  if (userInput.role) {
+    const foundRole = await Role.findOne({ _id: userInput.role, company: companyId });
+    if (!foundRole) {
+      throw new Error("El rol seleccionado no existe en esta empresa");
+    }
   }
 
   const newUser = (
@@ -91,6 +109,9 @@ export const login = async (loginInput: LoginInput) => {
     throw new Error("Usuario no encontrado");
   } else if (!user.is_active) {
     throw new Error("Usuario inactivo");
+  } else if (!user.role) {
+    // Dato viejo con rol huérfano (de antes de validar esto en create/update).
+    throw new Error("Tu rol de usuario ya no existe. Contactá a un administrador.");
   }
 
   const isMatch = await bcrypt.compare(loginInput.password, user.password);
@@ -170,6 +191,13 @@ export const update = async (
     }
   }
 
+  if (updateUserInput.role && updateUserInput.role.toString() !== user.role.toString()) {
+    const foundRole = await Role.findOne({ _id: updateUserInput.role, company: companyId });
+    if (!foundRole) {
+      throw new Error("El rol seleccionado no existe en esta empresa");
+    }
+  }
+
   const userUpdated = await User.findOneAndUpdate(
     { _id: userId, company: companyId },
     { $set: updateUserInput },
@@ -208,10 +236,36 @@ export const deleteUser = async (
     created_by: userId,
   });
 
+  // Antes solo se chequeaban estas 3 colecciones — un usuario que solo
+  // había hecho devoluciones, transferencias, cobros QR, o movimientos de
+  // caja (sin ser autor directo de una venta/compra/pago) se podía borrar
+  // igual, dejando esas referencias apuntando a un usuario inexistente.
+  const findSaleReturn = await SaleReturn.find({ company: companyId, created_by: userId });
+  const findProductTransfer = await ProductTransfer.find({ company: companyId, created_by: userId });
+  const findQrPayment = await QrPayment.find({ company: companyId, created_by: userId });
+  const findCommission = await Commission.find({
+    company: companyId,
+    status: { $ne: commissionStatus.ANULADA },
+    $or: [{ seller: userId }, { paid_by: userId }],
+  });
+  const findCashRegister = await CashRegister.find({
+    company: companyId,
+    $or: [
+      { opened_by: userId },
+      { closed_by: userId },
+      { "movements.created_by": userId },
+    ],
+  });
+
   if (
     findPurchaseOrder.length > 0 ||
     findSaleOrder.length > 0 ||
-    findSalePayment.length > 0
+    findSalePayment.length > 0 ||
+    findSaleReturn.length > 0 ||
+    findProductTransfer.length > 0 ||
+    findQrPayment.length > 0 ||
+    findCommission.length > 0 ||
+    findCashRegister.length > 0
   ) {
     throw new Error("No se puede eliminar porque pertenece a una transaccion");
   }

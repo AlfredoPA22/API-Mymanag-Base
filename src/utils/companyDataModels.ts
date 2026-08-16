@@ -1,10 +1,13 @@
 import { Model } from "mongoose";
 import { Brand } from "../modules/brand/brand.model";
+import { CashRegister } from "../modules/cash_register/cash_register.model";
 import { Category } from "../modules/category/category.model";
 import { Client } from "../modules/client/client.model";
 import { CodeGenerator } from "../modules/codeGenerator/codeGenerator.model";
+import { Commission } from "../modules/commission/commission.model";
 import { Notification } from "../modules/notification/notification.model";
 import { PaymentLanding } from "../modules/payment_landing/payment_landing.model";
+import { QrPayment } from "../modules/qr_payment/qr_payment.model";
 import { Product } from "../modules/product/product.model";
 import { ProductInventory } from "../modules/product/product_inventory.model";
 import { ProductSerial } from "../modules/product/product_serial.model";
@@ -52,4 +55,7 @@ export const companyDataModels: { key: string; label: string; model: Model<any> 
   { key: "notifications", label: "Notificaciones", model: Notification },
   { key: "payments", label: "Pagos a Inventasys", model: PaymentLanding },
   { key: "codeGenerators", label: "Contadores de código", model: CodeGenerator },
+  { key: "commissions", label: "Comisiones", model: Commission },
+  { key: "cashRegisters", label: "Turnos de caja", model: CashRegister },
+  { key: "qrPayments", label: "Cobros QR", model: QrPayment },
 ];

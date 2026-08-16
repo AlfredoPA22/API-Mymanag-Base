@@ -11,6 +11,10 @@ const productSchema = new mongoose.Schema(
     images: { type: [String], default: [] },
     show_in_store: { type: Boolean, default: true },
     sale_price: { type: Number, default: 0 },
+    // Piso opcional bajo el cual no se puede vender sin el permiso
+    // SELL_BELOW_MIN_PRICE — si es null, el propio sale_price actúa como
+    // mínimo (ver assertPriceAboveMinimum en saleOrder.service.ts).
+    min_sale_price: { type: Number, default: null },
     store_price: { type: Number, default: null },
     store_discount_price: { type: Number, default: null },
     last_cost_price: { type: Number, default: 0 },

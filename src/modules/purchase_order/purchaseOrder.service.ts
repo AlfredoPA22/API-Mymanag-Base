@@ -29,6 +29,7 @@ import { Product } from "../product/product.model";
 import { createProductSerial } from "../product/product.service";
 import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
+import { ProductTransferDetail } from "../product_transfer/product_transfer_detail.model";
 import { User } from "../user/user.model";
 import { PurchaseOrder } from "./purchase_order.model";
 import { PurchaseOrderDetail } from "./purchase_order_detail.model";
@@ -607,9 +608,43 @@ export const deletePurchaseOrder = async (
       $or: [{ sold: { $gt: 0 } }, { reserved: { $gt: 0 } }],
     });
 
-    if (soldOrReservedSerials.length > 0 || blockedInventory.length > 0) {
+    // Este chequeo original ignoraba por completo que parte de este stock ya
+    // se hubiera TRANSFERIDO a otro almacén — ahí el lote/serial vuelve a
+    // quedar "Disponible" (no "Reservado"/"Vendido"), así que pasaba de
+    // largo. Sin esto, se borraban ProductSerial/ProductInventory que seguían
+    // físicamente vivos en el almacén destino, dejando Product.stock
+    // desincronizado para siempre y, peor, habilitando borrar el Product
+    // (deleteProduct solo chequeaba PurchaseOrderDetail) mientras
+    // ProductTransferDetail seguía apuntándolo.
+    const purchaseOrderDetailIds = foundPurchaseOrderDetails.map((d) => d._id);
+
+    const transferredInventory = await ProductInventory.find({
+      company: companyId,
+      purchase_order_detail: { $in: purchaseOrderDetailIds },
+      transferred: { $gt: 0 },
+    });
+
+    const purchaseSerials = await ProductSerial.find({
+      company: companyId,
+      purchase_order_detail: { $in: purchaseOrderDetailIds },
+    }).select("serial");
+
+    const transferredSerial =
+      purchaseSerials.length > 0
+        ? await ProductTransferDetail.findOne({
+            company: companyId,
+            serials: { $in: purchaseSerials.map((s) => s.serial) },
+          })
+        : null;
+
+    if (
+      soldOrReservedSerials.length > 0 ||
+      blockedInventory.length > 0 ||
+      transferredInventory.length > 0 ||
+      transferredSerial
+    ) {
       throw new Error(
-        "No se puede eliminar la compra porque existen productos vendidos o reservados."
+        "No se puede eliminar la compra porque existen productos vendidos, reservados o transferidos a otro almacén."
       );
     }
 

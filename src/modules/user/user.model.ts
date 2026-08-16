@@ -19,6 +19,9 @@ const userSchema = new mongoose.Schema(
     is_active: { type: Boolean, default: true },
     is_global: { type: Boolean, default: false },
     is_admin: { type: Boolean, default: false },
+    // % de comisión sobre el total de cada venta que apruebe este usuario —
+    // null/0 significa que no cobra comisión. Ver modules/commission.
+    commission_rate: { type: Number, default: null },
   },
   { timestamps: true }
 );

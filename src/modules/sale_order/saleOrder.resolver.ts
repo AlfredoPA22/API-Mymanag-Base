@@ -1,4 +1,5 @@
 import {
+  ICuentaCobrarRow,
   IQrPaymentInfo,
   ISaleOrder,
   ISaleOrderByProduct,
@@ -12,6 +13,12 @@ import {
 } from "../../interfaces/saleOrder.interface";
 import { ISaleOrderDetail } from "../../interfaces/saleOrderDetail.interface";
 import { checkAbility, checkAnyAbility } from "../../utils/ability";
+
+// Un descuento "real" es un tipo distinto de NONE/null con un valor > 0 — el
+// permiso de descuentos solo se exige cuando el request de verdad intenta
+// aplicar uno, no en cada alta/edición de línea de venta.
+const hasDiscount = (type?: string | null, value?: number | null): boolean =>
+  !!type && type !== "NONE" && !!value && value > 0;
 import {
   addSerialToOrder,
   approve,
@@ -26,6 +33,8 @@ import {
   findQrPaymentInfoBySaleOrder,
   findSaleOrder,
   findSaleOrderToPDF,
+  getSaleOrderDetailDiscount,
+  getSaleOrderDiscount,
   getStoreOrderStats,
   listCustomSaleOrderDetail,
   listSaleOrderByProduct,
@@ -42,6 +51,20 @@ import {
   updateSaleOrderPaymentMethod,
   addManySerialsToOrder,
 } from "./saleOrder.service";
+
+// Un descuento "distinto" es el único caso en que de verdad hace falta el
+// permiso: si el payload reenvía el mismo discount_type/discount_value que ya
+// tenía la línea/nota (ej. la edición en línea de SaleOrderDetailList.tsx
+// siempre reenvía el descuento existente aunque solo se haya tocado la
+// cantidad), no se está "aplicando" nada nuevo.
+const isDiscountUnchanged = (
+  existing: { discount_type: string | null; discount_value: number } | null,
+  newType?: string | null,
+  newValue?: number | null
+): boolean =>
+  !!existing &&
+  (existing.discount_type ?? null) === (newType ?? null) &&
+  Number(existing.discount_value ?? 0) === Number(newValue ?? 0);
 
 export const saleOrderResolver = {
   Query: {
@@ -233,7 +256,7 @@ export const saleOrderResolver = {
       _: any,
       args: Record<string, any>,
       context: any
-    ): Promise<ISaleOrder[]> {
+    ): Promise<ICuentaCobrarRow[]> {
       checkAbility(context.ability, "read", "SaleReport");
       return await reportCuentasCobrar(
         context.user.companyId,
@@ -265,9 +288,13 @@ export const saleOrderResolver = {
         ["create", "Sale"],
         ["update", "Sale"],
       ]);
+      if (hasDiscount(args.saleOrderDetailInput?.discount_type, args.saleOrderDetailInput?.discount_value)) {
+        checkAbility(context.ability, "applyDiscount", "Sale");
+      }
       return await createDetail(
         context.user.companyId,
-        args.saleOrderDetailInput
+        args.saleOrderDetailInput,
+        context.ability.can("sellBelowMin", "Sale")
       );
     },
     async createCustomSaleOrderDetail(
@@ -279,6 +306,9 @@ export const saleOrderResolver = {
         ["create", "Sale"],
         ["update", "Sale"],
       ]);
+      if (hasDiscount(args.createCustomSaleOrderDetailInput?.discount_type, args.createCustomSaleOrderDetailInput?.discount_value)) {
+        checkAbility(context.ability, "applyDiscount", "Sale");
+      }
       return await createCustomDetail(
         context.user.companyId,
         args.createCustomSaleOrderDetailInput
@@ -293,10 +323,17 @@ export const saleOrderResolver = {
         ["create", "Sale"],
         ["update", "Sale"],
       ]);
+      if (hasDiscount(args.updateSaleOrderDetailInput?.discount_type, args.updateSaleOrderDetailInput?.discount_value)) {
+        const existing = await getSaleOrderDetailDiscount(context.user.companyId, args.saleOrderDetailId);
+        if (!isDiscountUnchanged(existing, args.updateSaleOrderDetailInput?.discount_type, args.updateSaleOrderDetailInput?.discount_value)) {
+          checkAbility(context.ability, "applyDiscount", "Sale");
+        }
+      }
       return await updateSaleOrderDetail(
         context.user.companyId,
         args.saleOrderDetailId,
-        args.updateSaleOrderDetailInput
+        args.updateSaleOrderDetailInput,
+        context.ability.can("sellBelowMin", "Sale")
       );
     },
     async deleteProductToSaleOrderDetail(
@@ -365,6 +402,12 @@ export const saleOrderResolver = {
         ["create", "Sale"],
         ["update", "Sale"],
       ]);
+      if (hasDiscount(args.updateSaleOrderDiscountInput?.discount_type, args.updateSaleOrderDiscountInput?.discount_value)) {
+        const existing = await getSaleOrderDiscount(context.user.companyId, args.saleOrderId);
+        if (!isDiscountUnchanged(existing, args.updateSaleOrderDiscountInput?.discount_type, args.updateSaleOrderDiscountInput?.discount_value)) {
+          checkAbility(context.ability, "applyDiscount", "Sale");
+        }
+      }
       return await updateSaleOrderDiscount(
         context.user.companyId,
         args.saleOrderId,

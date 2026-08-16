@@ -215,6 +215,12 @@ export function buildAbility(permissions: string[]): AppAbility {
       case "DELETE_SALE":
         can("delete", "Sale");
         break;
+      case "APPLY_DISCOUNT":
+        can("applyDiscount", "Sale");
+        break;
+      case "SELL_BELOW_MIN_PRICE":
+        can("sellBelowMin", "Sale");
+        break;
 
       // ── Pagos ───────────────────────────────────────────────────────────────
       case "ALL_PAYMENTS":
@@ -277,6 +283,18 @@ export function buildAbility(permissions: string[]): AppAbility {
         break;
       case "CLOSE_CASH_REGISTER":
         can("update", "CashRegister");
+        break;
+
+      // ── Comisiones ──────────────────────────────────────────────────────────
+      case "ALL_COMMISSION":
+        can("manage", "Commission");
+        break;
+      case "COMMISSION_REPORT":
+        can("list", "Commission");
+        can("read", "Commission");
+        break;
+      case "PAY_COMMISSION":
+        can("update", "Commission");
         break;
     }
   }

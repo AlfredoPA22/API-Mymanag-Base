@@ -104,7 +104,12 @@ export const detailSalePaymentBySaleOrder = async (
     sale_order: saleOrderId,
   })
     .sort({ date: -1 })
-    .populate("sale_order")
+    .populate({
+      path: "sale_order",
+      populate: {
+        path: "client",
+      },
+    })
     .populate("company")
     .lean<ISalePayment[]>();
 
@@ -116,7 +121,9 @@ export const detailSalePaymentBySaleOrder = async (
     saleOrder = await SaleOrder.findOne({
       _id: saleOrderId,
       company: companyId,
-    }).lean<ISaleOrder>();
+    })
+      .populate("client")
+      .lean<ISaleOrder>();
 
     if (!saleOrder) {
       throw new Error("Orden de venta no encontrada");
