@@ -58,6 +58,12 @@ const companySchema = new mongoose.Schema(
     // Segunda forma de armar una venta (grilla de productos tipo POS) —
     // opt-in por empresa, el formulario clásico sigue siendo el default.
     pos_sale_mode_enabled: { type: Boolean, default: false },
+    // Contenido libre que la empresa puede configurar para que salga
+    // impreso en el pie del PDF de la nota de venta (garantía, términos,
+    // redes, un sello/firma escaneada, etc.). Vacíos por defecto — no se
+    // imprime nada si no los configuran.
+    sale_pdf_footer_note: { type: String, default: "" },
+    sale_pdf_footer_image: { type: String, default: "" },
     // Legacy fields (kept for MyManag backward compatibility)
     plan: {
       type: String,

@@ -46,6 +46,8 @@ export interface ICompany {
   store_banner_image?: string;
   store_theme?: IStoreTheme;
   pos_sale_mode_enabled?: boolean;
+  sale_pdf_footer_note?: string;
+  sale_pdf_footer_image?: string;
   plan: companyPlan;
   status: companyStatus;
   trial_expires_at: Date;
@@ -82,4 +84,6 @@ export interface UpdateCompanyInput {
   store_banner_image?: string;
   store_theme?: IStoreTheme;
   pos_sale_mode_enabled?: boolean;
+  sale_pdf_footer_note?: string;
+  sale_pdf_footer_image?: string;
 }
