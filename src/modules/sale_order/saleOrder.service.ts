@@ -1082,6 +1082,23 @@ export const deleteSaleOrder = async (
     );
   }
 
+  // Antes esto solo avisaba en el frontend y dejaba borrar igual, anulando
+  // después la comisión ya pagada — plata real ya entregada al vendedor sin
+  // ninguna venta que la respalde. Ahora bloquea, igual que pagos y
+  // devoluciones; para destrabar un caso así hay que anular el pago de la
+  // comisión primero (ver revertCommissionPayment en commission.service.ts).
+  const foundPaidCommission = await Commission.findOne({
+    company: companyId,
+    sale_order: saleOrderId,
+    status: commissionStatus.PAGADA,
+  });
+
+  if (foundPaidCommission) {
+    throw new Error(
+      "No se puede eliminar venta porque ya se pagó su comisión — anulá el pago de la comisión primero"
+    );
+  }
+
   const foundSaleOrderDetails = await SaleOrderDetail.find({
     company: companyId,
     sale_order: saleOrderId,

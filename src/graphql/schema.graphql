@@ -1472,8 +1472,10 @@ input CommissionFilterInput {
 
 type Query {
   listCommissions(filter: CommissionFilterInput): [Commission]
+  findCommission(commissionId: String!): Commission
 }
 
 type Mutation {
   markCommissionPaid(commissionId: String!): Commission
+  revertCommissionPayment(commissionId: String!): Commission
 }

@@ -181,6 +181,39 @@ export const listCommissions = async (
     .lean<ICommission[]>();
 };
 
+// Para los documentos de impresión individual (ticket térmico y detallado):
+// se abren en una pestaña/ruta propia a partir del id en la URL, así que
+// necesitan poder recargar su propio dato en vez de depender del listado ya
+// cargado en memoria. Mismo alcance que listCommissions: un usuario sin
+// acceso global no puede imprimir la comisión de otro vendedor adivinando el id.
+export const findCommission = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  commissionId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<ICommission> => {
+  const foundUser = await User.findOne({ _id: userId, company: companyId });
+  if (!foundUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const query: any = { _id: commissionId, company: companyId };
+  if (!foundUser.is_global) {
+    query.seller = userId;
+  }
+
+  const commission = await Commission.findOne(query)
+    .populate({ path: "sale_order", populate: { path: "client" } })
+    .populate("seller")
+    .populate("paid_by")
+    .lean<ICommission>();
+
+  if (!commission) {
+    throw new Error("Comisión no encontrada");
+  }
+
+  return commission;
+};
+
 export const markCommissionPaid = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   userId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
@@ -199,6 +232,42 @@ export const markCommissionPaid = async (
   commission.status = commissionStatus.PAGADA;
   commission.paid_at = new Date();
   commission.paid_by = userId as any;
+
+  await commission.save();
+
+  const result = await Commission.findById(commission._id)
+    .populate({ path: "sale_order", populate: { path: "client" } })
+    .populate("seller")
+    .populate("paid_by")
+    .lean<ICommission>();
+
+  if (!result) {
+    throw new Error("Comisión no encontrada");
+  }
+
+  return result;
+};
+
+// Vuelve una comisión Pagada a Pendiente — la salida para el caso en que se
+// marcó como pagada por error, o para destrabar el borrado de una venta cuya
+// comisión ya se había pagado (deleteSaleOrder ahora bloquea ese caso).
+export const revertCommissionPayment = async (
+  companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
+  commissionId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId
+): Promise<ICommission> => {
+  const commission = await Commission.findOne({ _id: commissionId, company: companyId });
+
+  if (!commission) {
+    throw new Error("Comisión no encontrada");
+  }
+
+  if (commission.status !== commissionStatus.PAGADA) {
+    throw new Error("Solo se puede anular el pago de una comisión que está Pagada");
+  }
+
+  commission.status = commissionStatus.PENDIENTE;
+  commission.paid_at = null;
+  commission.paid_by = null as any;
 
   await commission.save();
 

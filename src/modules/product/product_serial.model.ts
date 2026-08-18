@@ -36,6 +36,14 @@ const productSerialSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Único guardarraíl real contra duplicados: la validación en
+// createProductSerial (product.service.ts) es un find-then-create no
+// atómico — dos solicitudes casi simultáneas (doble submit, dos pestañas,
+// una extensión del navegador reenviando el evento) pueden pasar ambas la
+// verificación antes de que cualquiera termine de crear. Solo la base de
+// datos puede rechazar eso de forma atómica.
+productSerialSchema.index({ company: 1, serial: 1 }, { unique: true });
+
 export const ProductSerial = mongoose.model(
   "product_serial",
   productSerialSchema

@@ -788,22 +788,38 @@ export const createProductSerial = async (
   companyId: MongooseSchema.Types.ObjectId | MongooseTypes.ObjectId,
   createProductSerialInput: ProductSerialInput
 ) => {
+  const serial = createProductSerialInput.serial.trim();
+
   const productSerialValidation = await ProductSerial.findOne({
     company: companyId,
-    serial: createProductSerialInput.serial,
+    serial,
   });
 
   if (productSerialValidation) {
     throw new Error("El Serial ya existe");
   }
 
+  // El find-then-create de arriba no es atómico: dos solicitudes casi
+  // simultáneas pueden pasar ambas la verificación antes de que cualquiera
+  // termine de crear. El índice único de company+serial es quien realmente
+  // lo impide — acá solo traducimos su error de clave duplicada al mismo
+  // mensaje amigable en vez de dejarlo salir como un error crudo de Mongo.
+  let created;
+  try {
+    created = await ProductSerial.create({
+      ...createProductSerialInput,
+      serial,
+      company: companyId,
+    });
+  } catch (error: any) {
+    if (error?.code === 11000) {
+      throw new Error("El Serial ya existe");
+    }
+    throw error;
+  }
+
   const newProductSerial: IProductSerial = await (
-    await (
-      await ProductSerial.create({
-        ...createProductSerialInput,
-        company: companyId,
-      })
-    ).populate("product")
+    await created.populate("product")
   ).populate("purchase_order_detail");
 
   return newProductSerial;
