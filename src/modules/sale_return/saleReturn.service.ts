@@ -5,8 +5,12 @@ import { productSerialStatus } from "../../utils/enums/productSerialStatus.enum"
 import { productStatus } from "../../utils/enums/productStatus.enum";
 import { saleOrderStatus } from "../../utils/enums/saleOrderStatus.enum";
 import { paymentMethod } from "../../utils/enums/saleOrderPaymentMethod";
+import { salePaymentMethod } from "../../utils/enums/salePaymentMethod";
 import { stockType } from "../../utils/enums/stockType.enum";
+import { cashRegisterStatus } from "../../utils/enums/cashRegisterStatus.enum";
 import { generate, increment } from "../codeGenerator/codeGenerator.service";
+import { CashRegister } from "../cash_register/cash_register.model";
+import { Company } from "../company/company.model";
 import { Product } from "../product/product.model";
 import { ProductInventory } from "../product/product_inventory.model";
 import { ProductSerial } from "../product/product_serial.model";
@@ -16,7 +20,7 @@ import { updateOrderTotal } from "../sale_order/saleOrder.service";
 import { SalePayment } from "../sale_payment/sale_payment.model";
 import { SaleReturn } from "./sale_return.model";
 import { SaleReturnDetail } from "./sale_return_detail.model";
-import { round2 } from "../../utils/money";
+import { round2, toOrderCurrency } from "../../utils/money";
 import { createNotification } from "../notification/notification.service";
 import {
   adjustCommissionForPartialReturn,
@@ -26,6 +30,12 @@ import {
 export interface SaleReturnItem {
   saleOrderDetailId: string;
   quantity: number;
+  // Solo aplica a productos serializados con una devolución PARCIAL (menos
+  // de lo vendido en esa línea) — ahí sí importa cuál serial específico
+  // vuelve, porque el sistema no puede adivinar qué unidad física entregó
+  // el cliente. Si se devuelve la línea completa no hace falta: se liberan
+  // todos los seriales de esa línea sin necesidad de listarlos uno por uno.
+  serials?: string[];
 }
 
 export const createSaleReturn = async (
@@ -57,6 +67,11 @@ export const createSaleReturn = async (
 
   const detailMap = new Map(allDetails.map((d) => [d._id.toString(), d]));
 
+  // Para serializados: qué ProductSerial puntuales hay que liberar por cada
+  // línea. Se resuelve acá (antes de tocar ningún stock) para que un serial
+  // inválido tumbe toda la devolución de entrada, no a mitad de camino.
+  const serialsToFreeMap = new Map<string, string[]>();
+
   for (const item of validItems) {
     const detail = detailMap.get(item.saleOrderDetailId);
     if (!detail) throw new Error(`Detalle ${item.saleOrderDetailId} no pertenece a esta orden`);
@@ -69,6 +84,55 @@ export const createSaleReturn = async (
       throw new Error(
         `La cantidad a devolver (${item.quantity}) supera la vendida (${detail.quantity}) para ${(detail.product as any).name}`
       );
+    }
+
+    const detailProduct = detail.product as any;
+    if (detailProduct.stock_type === stockType.SERIALIZADO) {
+      const isFullReturn = item.quantity === detail.quantity;
+
+      if (isFullReturn) {
+        // Se devuelve toda la línea: no hace falta elegir cuáles, se
+        // liberan todos los seriales vendidos de esa línea.
+        const allSerials = await ProductSerial.find({
+          company: companyId,
+          sale_order_detail: detail._id,
+          status: productSerialStatus.VENDIDO,
+        }).select("_id");
+        serialsToFreeMap.set(item.saleOrderDetailId, allSerials.map((s) => s._id.toString()));
+      } else {
+        // Devolución parcial: el sistema no puede adivinar cuál de las
+        // varias unidades vendidas en esta línea es la que el cliente
+        // devolvió físicamente — hay que decirlo explícitamente.
+        const requestedSerials = (item.serials ?? []).map((s) => s.trim()).filter(Boolean);
+
+        if (requestedSerials.length !== item.quantity) {
+          throw new Error(
+            `Para devolver ${item.quantity} unidad(es) de "${detailProduct.name}" hay que indicar exactamente ${item.quantity} serial(es) específico(s).`
+          );
+        }
+
+        const uniqueRequested = new Set(requestedSerials);
+        if (uniqueRequested.size !== requestedSerials.length) {
+          throw new Error(`Hay seriales repetidos en la lista para "${detailProduct.name}".`);
+        }
+
+        const foundSerials = await ProductSerial.find({
+          company: companyId,
+          sale_order_detail: detail._id,
+          status: productSerialStatus.VENDIDO,
+          serial: { $in: Array.from(uniqueRequested) },
+        });
+
+        if (foundSerials.length !== uniqueRequested.size) {
+          const foundValues = new Set(foundSerials.map((s) => s.serial));
+          const missing = Array.from(uniqueRequested).filter((s) => !foundValues.has(s));
+          throw new Error(
+            `Los siguientes seriales no corresponden a lo vendido en "${detailProduct.name}": ${missing.join(", ")}`
+          );
+        }
+
+        serialsToFreeMap.set(item.saleOrderDetailId, foundSerials.map((s) => s._id.toString()));
+      }
     }
   }
 
@@ -96,17 +160,24 @@ export const createSaleReturn = async (
     }
 
     if (detailProduct.stock_type === stockType.SERIALIZADO) {
-      // Liberar los primeros N seriales vendidos de este detalle
-      const serials = await ProductSerial.find({
-        company: companyId,
-        sale_order_detail: detail._id,
-        status: productSerialStatus.VENDIDO,
-      }).limit(returnQty);
-
+      // Ya resueltos arriba: todos los de la línea si se devolvió completa,
+      // o exactamente los seriales que se pidió devolver si fue parcial.
+      const serialIds = serialsToFreeMap.get(item.saleOrderDetailId) ?? [];
       await ProductSerial.updateMany(
-        { _id: { $in: serials.map((s) => s._id) } },
+        { _id: { $in: serialIds } },
         { $set: { status: productSerialStatus.DISPONIBLE, sale_order_detail: null } }
       );
+
+      // `SaleOrderDetail.serials` es un contador aparte (cuántos seriales
+      // hay asignados a esta línea), no algo derivado — sin este ajuste
+      // quedaba mostrando el conteo de antes de la devolución (p. ej. "3/1"
+      // en vez de "1/1" luego de devolver 2 de 3 seriales).
+      if (serialIds.length > 0 && !(item.quantity >= detail.quantity)) {
+        await SaleOrderDetail.updateOne(
+          { _id: detail._id, company: companyId },
+          { $inc: { serials: -serialIds.length } }
+        );
+      }
     }
 
     if (
@@ -180,8 +251,22 @@ export const createSaleReturn = async (
       refundIsQr = saleOrder.contado_payment_method === "QR";
     }
   } else if (saleOrder.payment_method === paymentMethod.CREDITO) {
+    // Cada abono puede estar en una moneda distinta a la de la venta (pago
+    // en Bs contra una venta en $, o viceversa) — hay que convertirlo a la
+    // moneda de la nota (con su propio tipo de cambio congelado) antes de
+    // sumarlo. Sumar los montos crudos mezclaba Bs y $ como si fueran la
+    // misma unidad, dejando `totalPaid`/`is_paid` mal calculados apenas
+    // hubiera pagos mixtos.
+    const company = await Company.findById(companyId).lean();
+    if (!company) throw new Error("Empresa no encontrada");
+    const orderCurrency = saleOrder.currency ?? company.currency;
     const payments = await SalePayment.find({ sale_order: saleOrder._id, company: companyId });
-    const totalPaid = round2(payments.reduce((sum, p) => sum + p.amount, 0));
+    const totalPaid = round2(
+      payments.reduce(
+        (sum, p) => sum + toOrderCurrency(p.amount, p.currency, p.exchange_rate, company.currency, orderCurrency),
+        0
+      )
+    );
     refundAmount = round2(Math.max(totalPaid - Math.max(newTotal, 0), 0));
     refundIsQr = payments.some((p) => p.payment_method === "QR");
     if (newTotal > 0) {
@@ -233,6 +318,7 @@ export const createSaleReturn = async (
 
   // 7. Crear o actualizar el encabezado de la devolución
   let saleReturnDocId: string;
+  let returnCode: string;
 
   if (existingReturn) {
     // Agregar al total de la devolución existente
@@ -241,6 +327,7 @@ export const createSaleReturn = async (
       { $inc: { total: parseFloat(returnTotal.toFixed(2)) } }
     );
     saleReturnDocId = existingReturn._id.toString();
+    returnCode = existingReturn.code;
   } else {
     const code = await generate(companyId, codeType.SALE_RETURN);
     const newReturn = await SaleReturn.create({
@@ -254,6 +341,39 @@ export const createSaleReturn = async (
     });
     await increment(companyId, codeType.SALE_RETURN);
     saleReturnDocId = newReturn._id.toString();
+    returnCode = code;
+  }
+
+  // Si el reembolso es en EFECTIVO (venta al contado en efectivo) y hay una
+  // caja abierta, hay que dejar constancia de esa salida de plata — sin
+  // esto, el "esperado" de la caja de hoy nunca se enteraba de que salió
+  // efectivo por una devolución.
+  //
+  // Solo hace falta si la venta original es de OTRO turno (uno cerrado, o
+  // sin caja de por medio): si es del mismo turno que sigue abierto,
+  // computeExpected ya la ajusta sola al releer el total ya reducido de la
+  // nota — agregar un movimiento acá la restaría dos veces.
+  if (
+    refundAmount > 0 &&
+    saleOrder.payment_method === paymentMethod.CONTADO &&
+    saleOrder.contado_payment_method === salePaymentMethod.EFECTIVO
+  ) {
+    const openRegister = await CashRegister.findOne({
+      company: companyId,
+      status: cashRegisterStatus.ABIERTA,
+    });
+
+    if (openRegister && saleOrder.createdAt < openRegister.opening_date) {
+      openRegister.movements.push({
+        type: "RETIRO",
+        amount: refundAmount,
+        currency: saleOrder.currency === "Bs" ? "Bs" : null,
+        description: `Reembolso devolución ${returnCode} — venta ${saleOrder.code}`,
+        date: new Date(),
+        created_by: userId,
+      } as any);
+      await openRegister.save();
+    }
   }
 
   // 8. Crear o actualizar los detalles de la devolución

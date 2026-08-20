@@ -1185,6 +1185,7 @@ type Mutation {
 input SaleReturnItemInput {
   saleOrderDetailId: String!
   quantity: Int!
+  serials: [String!]
 }
 
 type StoreOrderStatsProduct {
