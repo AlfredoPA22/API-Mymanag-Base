@@ -142,14 +142,27 @@ export const openCashRegister = async (
     throw new Error("El monto de apertura en Bs no puede ser negativo");
   }
 
-  const newCashRegister = await CashRegister.create({
-    company: companyId,
-    opening_amount: input.opening_amount,
-    opening_amount_bs: input.opening_amount_bs ?? null,
-    opening_date: new Date(),
-    opened_by: userId,
-    notes: input.notes ?? null,
-  });
+  // El findOne de arriba no es atómico: dos solicitudes casi simultáneas
+  // (doble click, delay de red) pueden pasar ambas la verificación antes de
+  // que cualquiera termine de crear. El índice parcial único de la empresa
+  // es quien realmente lo impide — acá se traduce su error de clave
+  // duplicada al mismo mensaje amigable en vez de dejarlo salir crudo.
+  let newCashRegister;
+  try {
+    newCashRegister = await CashRegister.create({
+      company: companyId,
+      opening_amount: input.opening_amount,
+      opening_amount_bs: input.opening_amount_bs ?? null,
+      opening_date: new Date(),
+      opened_by: userId,
+      notes: input.notes ?? null,
+    });
+  } catch (error: any) {
+    if (error?.code === 11000) {
+      throw new Error("Ya existe una caja abierta para esta empresa");
+    }
+    throw error;
+  }
 
   const cashRegister = await CashRegister.findOne({ _id: newCashRegister._id, company: companyId })
     .populate("opened_by")

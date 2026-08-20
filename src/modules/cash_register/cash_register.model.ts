@@ -56,4 +56,14 @@ const cashRegisterSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Solo puede haber una caja ABIERTA por empresa a la vez. La validación en
+// openCashRegister (findOne seguido de create) no es atómica — un doble
+// click o un delay de red puede disparar dos solicitudes casi simultáneas
+// que pasen ambas la verificación antes de que cualquiera termine de crear.
+// Este índice parcial es quien realmente lo impide, a nivel de base de datos.
+cashRegisterSchema.index(
+  { company: 1 },
+  { unique: true, partialFilterExpression: { status: "ABIERTA" } }
+);
+
 export const CashRegister = mongoose.model("cash_register", cashRegisterSchema);
